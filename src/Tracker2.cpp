@@ -12,7 +12,7 @@ Tracker2::Tracker2(double min_area, double max_area, double max_radius) :
 {
   threshtree_create_workspace( KRES_X, KRES_Y, &m_workspace );
 	blobtree_create(&m_blob);
-	blobtree_set_grid(m_blob, 4,4);
+	blobtree_set_grid(m_blob, 2,2);
 	blobtree_set_filter(m_blob, F_TREE_DEPTH_MIN, 1);//depth=0 => background
 	blobtree_set_filter(m_blob, F_TREE_DEPTH_MAX, 1);//depth=1 => blobs
 }
@@ -24,7 +24,7 @@ Tracker2::Tracker2(SettingKinect* pSettingKinect) :
 {
   threshtree_create_workspace( KRES_X, KRES_Y, &m_workspace );
 	blobtree_create(&m_blob);
-	blobtree_set_grid(m_blob, 4,4);
+	blobtree_set_grid(m_blob, 2,2);
 	blobtree_set_filter(m_blob, F_TREE_DEPTH_MIN, 1);//depth=0 => background
 	blobtree_set_filter(m_blob, F_TREE_DEPTH_MAX, 1);//depth=1 => blobs
 }
@@ -89,8 +89,13 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 	while( curNode != NULL ){
 		//printf("Check node %i\n", curNode->data.id);
 	  roi = &((Blob*)curNode->data)->roi;
+#ifdef BLOB_BARYCENTER
+		x     = ((Blob*)curNode->data)->barycenter[0];
+		y     = ((Blob*)curNode->data)->barycenter[1];
+#else
 		x     = roi->x + roi->width/2;
 		y     = roi->y + roi->height/2;
+#endif
 
 //		temp.areaid = areaMask.at<uchar>((int)x+p.x,(int)y+p.y);//?!not works
 		temp.areaid = (uchar) areaImg.imageData[ ((int)x+p.x) + ((int)y+p.y)*areaMask.size().width];//works

@@ -461,6 +461,9 @@ int main(int argc, char **argv) {
 				eView = (View) (k-48);
 			}
 
+		}else{
+			if( sleepSeconds>0 )
+				sleep(sleepSeconds);
 		}
 
 

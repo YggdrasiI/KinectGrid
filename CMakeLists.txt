@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 # Clipping require modified libfreenect
 OPTION(LIBFREENECT_OPT_CLIPPING "Enable clipping option. Require modified libfreenect driver." OFF)
 OPTION(MYBLOB "Use own lib for blob detection" ON)
-OPTION(CENTER_ADJUSTMENT "Extended search of maximal depth of blob and better midpoint detection." ON)
+OPTION(CENTER_ADJUSTMENT "Extended search of maximal depth of blob and better midpoint detection." OFF)
 
 #set(PG_FLAGS "-O2 -pg -g -fno-omit-frame-pointer -DNDEBUG -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls ")
 
@@ -41,6 +41,8 @@ if(MYBLOB)
 	# Use add_definition on top level
 	# to propagate it to all subdirs.
 	add_definitions(-DMYBLOB)
+	# Enable barycenter option for blobdetection lib.
+	add_definitions(-DBLOB_BARYCENTER)
 else(MYBLOB)
 	message(STATUS "Use cvblobslib for blob detection.")
 endif(MYBLOB)

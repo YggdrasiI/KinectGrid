@@ -442,14 +442,13 @@ void ImageAnalysis::finishDepthMaskCreation(){
 	//m_depthMask = max(m_depthMask,getFrontMask());//this would be bad for hand blobs which overlap the borders
 
 	/* Set up m_depthMask16U for directFiltering mode */
-	if( m_pSettingKinect->m_kinectProp.directFiltering){
-		//remap mask to 16UC1 format.
-		int m = m_pSettingKinect->m_kinectProp.minDepth;
-		int M = m_pSettingKinect->m_kinectProp.maxDepth;
-		float alphaInv = ( M-m )/( 0.0-255.0 );
-		float betaInv = ( m*0 - M*255.0 )/(0-255);
-		m_depthMask.convertTo(m_depthMask16U, CV_16UC1, alphaInv, betaInv);
-	}
+	//remap mask to 16UC1 format.
+	int m = m_pSettingKinect->m_kinectProp.minDepth;
+	int M = m_pSettingKinect->m_kinectProp.maxDepth;
+	float alphaInv = ( M-m )/( 0.0-255.0 );
+	float betaInv = ( m*0 - M*255.0 )/(0-255);
+	m_depthMask.convertTo(m_depthMask16U, CV_16UC1, alphaInv, betaInv);
+
 	m_depthMaskCounter = 0;
 }
 
@@ -463,6 +462,11 @@ typedef Vec<uchar, 4> VT;
 bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion::Response *pres){
 
 	switch(actionid){
+		case 12:
+			{ /* Regenerate masks */
+				resetMask( m_pSettingKinect, MASK|FRONT_MASK);
+			}
+			break;
 		case 10:
 			{ /* Generate png image */
 				int scale = atoi( onion_request_get_queryd(preq->c_handler(),"scale","100") );
@@ -515,28 +519,34 @@ bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion:
 				switch (m_pSettingKinect->m_view){
 					case VIEW_RGB:
 						channels=4;
-						std::swap( m_rgb, m_png_imgC3);
+						//std::swap( m_rgb, m_png_imgC3);
+						m_png_imgC3 = m_rgb;
 						png=&m_png_imgC3;
 					case VIEW_AREAS:
 						channels=4;
-						std::swap( m_areaCol, m_png_imgC3);
+						//std::swap( m_areaCol, m_png_imgC3);
+						m_png_imgC3 = m_areaCol;
 						png=&m_png_imgC3;
 						break;
 					case VIEW_MASK:
-						std::swap( m_depthMask, m_png_imgC1);
+						//std::swap( m_depthMask, m_png_imgC1);
+						m_png_imgC1 = m_depthMask;
 						png=&m_png_imgC1;
 						break;
 					case VIEW_FILTERED:
-						std::swap( m_filteredMat, m_png_imgC1);
+						//std::swap( m_filteredMat, m_png_imgC1);
+						m_png_imgC1 = m_filteredMat;
 						png=&m_png_imgC1;
 						break;
 					case VIEW_FRONTMASK:
-						std::swap( m_areaGrid, m_png_imgC1);
+						//std::swap( m_areaGrid, m_png_imgC1);
+						m_png_imgC1 = m_areaGrid;
 						png=&m_png_imgC1;
 						break;
 					case VIEW_DEPTH:
 					default:
-						std::swap( m_depthf, m_png_imgC1);
+						//std::swap( m_depthf, m_png_imgC1);
+						m_png_imgC1 = m_depthf;
 						png=&m_png_imgC1;
 						break;
 				}

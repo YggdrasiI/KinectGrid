@@ -2,17 +2,23 @@
 #define SETTINGS_H
 
 /* 0, 1, 2(with stops) */
+#ifndef VERBOSE
 //#define VERBOSE 1
+#endif
 
 /* Sort tree by child node structure and area size. This provide 
 	 some robustness on rotation for tree comparison. */
 //#define BLOB_SORT_TREE
 
 /* Set this env. variable to enable diagonal checks between compared pixels. */
+#ifndef BLOB_DIAGONAL_CHECK
 #define BLOB_DIAGONAL_CHECK
+#endif
 
 /* Eval vertical and horizontal dimension */
+#ifndef BLOB_DIMENSION
 #define BLOB_DIMENSION
+#endif
 
 /* Extend blob dimension of parent blobs (for depthblob algorithm).
  * If darker pixels do not sourrounding lighter pixels the bounding box
@@ -20,7 +26,9 @@
  * Set this env. variable to checked and fix this mostly unwanted behaviour.
  * The used algorithm is non-recursive relating to the tree depth.
  */
+#ifndef EXTEND_BOUNDING_BOXES
 #define EXTEND_BOUNDING_BOXES
+#endif
 
 /* Count pixels of each area. (Stored in node.data.area).
  * This is more accurate then
@@ -30,21 +38,27 @@
  * by the 'wetted area' of the bounding box and the
  * bounding boxes of children areas.
  */
+#ifndef BLOB_COUNT_PIXEL
 #define BLOB_COUNT_PIXEL
+#endif
 
 /* Evaluate the barycenter in both directions.
  *
  * Interally all pixel positions will be summed up
  * and finally divided by the area. Thus, bigger images
  * requires the long long data type. 
- * If your images not superseeded 2000x2000 pixels your
+ * If your images not superseeded 2000x2000 pixels you
  * are still on the secure side with unsigned long (32bit).
  *
  * Requires BLOB_COUNT_PIXEL.
  */
 #ifdef BLOB_COUNT_PIXEL
-#define BLOB_BARYCENTER
+#ifndef BLOB_BARYCENTER
+//#define BLOB_BARYCENTER
+#endif
 #define BLOB_BARYCENTER_TYPE unsigned long
+#else
+#undef BLOB_BARYCENTER
 #endif
 
 
