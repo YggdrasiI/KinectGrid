@@ -8,7 +8,13 @@
 #include <highgui.h>
 
 
-#include "BlobResult.h"
+//#include "BlobResult.h"
+#include "tracker.h"
+
+// tracker parameters
+static const double TMINAREA   = 16;    // minimum area of blob to track
+static const double TMAXRADIUS = 24;    // a blob is identified with a blob in the previous frame if it exists within this radius
+
 
 using namespace cv;
 using namespace std;
@@ -130,7 +136,9 @@ int main(int argc, char **argv) {
 	Mat depthf  (Size(640,480),CV_8UC1);
 	Mat rgbMat(Size(640,480),CV_8UC3,Scalar(0));
 	Mat ownMat(Size(640,480),CV_8UC3,Scalar(0));
-	
+
+	cTracker tracker(TMINAREA, TMAXRADIUS);
+	/*
 	CvSize _camSize;
 	IplImage* _tmpThresh;
 	CBlobResult* _newblobresult;
@@ -138,7 +146,7 @@ int main(int argc, char **argv) {
 	
 	_camSize = cvSize(640,480);
 	_tmpThresh = cvCreateImageHeader( _camSize, IPL_DEPTH_8U, 1 );
-
+*/
         //Freenect::Freenect<MyFreenectDevice> freenect;
         //MyFreenectDevice& device = freenect.createDevice(0);
         Freenect::Freenect freenect;
@@ -162,10 +170,13 @@ int main(int argc, char **argv) {
     	//depthMat.convertTo(depthf, CV_8UC1, 255.0/2048.0);
     	//depthMat.convertTo(depthf, CV_8UC1, 255.0/1048.0);
 			//
+
+			tracker.trackBlobs(depthf, true);
+/*
 	_tmpThresh->origin = 1;
 	_tmpThresh->imageData = (char*) depthf.data;
   _newblobresult = new CBlobResult(_tmpThresh, NULL, 0, false);
-/*
+
 		  _newblobresult->Filter( *_newblobresult, B_EXCLUDE, CBlobGetArea(), B_GREATER, val_blob_maxsize.internal_value );
 			  _newblobresult->Filter( *_newblobresult, B_EXCLUDE, CBlobGetArea(), B_LESS, val_blob_minsize.internal_value );
 */
@@ -192,7 +203,6 @@ int main(int argc, char **argv) {
 //   	device.stopVideo();
 	device.stopDepth();
 
-	_newblobresult = NULL;
 
 	return 0;
 }

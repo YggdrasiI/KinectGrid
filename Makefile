@@ -1,21 +1,20 @@
-all: test
+all: main
 
-CFLAGS=-fPIC -g -Wall `pkg-config --cflags opencv`
+PROGRAM = bin/main 
+CFLAGS = -fPIC -g -Wall `pkg-config --cflags opencv`
 LIBS = `pkg-config --libs opencv`
-INCLUDE = -I/usr/local/include/libfreenect -Icvblobslib
+INCLUDE = -I/usr/local/include/libfreenect -Icvblobslib -I./include
 FREE_LIBS = -L/usr/local/lib -lfreenect
 #TESTFLAGS= -march=armv7-a -mtune=cortex-a8 -mfpu=neon -O3
 
 SOURCEFILES = \
 	src/main.cpp \
-	cvblobslib/BlobResult.cpp
+	src/tracker.cpp
 
-test:  $(SOURCEFILES)
-	$(CXX) $(INCLUDE) $(CFLAGS) $(TESTFLAGS) $(SOURCEFILES) -o $@  $(LIBS) $(FREE_LIBS)
+main: $(SOURCEFILES)
+	$(CXX) $(INCLUDE) $(CFLAGS) $(TESTFLAGS) $(SOURCEFILES) cvblobslib/*.cpp -o $(PROGRAM)  $(LIBS) $(FREE_LIBS)
 
-%.o: %.cpp
-	$(CXX) -c $(CFLAGS) $(TESTFLAGS) $< -o $@
 
 clean:
-	rm -rf *.o test
+	rm -rf *.o main
 
