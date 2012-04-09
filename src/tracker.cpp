@@ -71,6 +71,12 @@ void cTracker::trackBlobs(cv::Mat &mat, bool history) {
 			blobs.push_back(blobs_previous[i]);
 		}
 	}
+
+	for (int i = 1; i < blob_result.GetNumBlobs(); i++) {
+				current_blob = blob_result.GetBlob(i);
+				printf("Blobcoordsd %f, %f\n", XCenter(current_blob), YCenter(current_blob) );
+	}
+
 }
 
 std::vector<cBlob>& cTracker::getBlobs() {
