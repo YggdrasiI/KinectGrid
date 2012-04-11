@@ -29,7 +29,8 @@
  * * W, H -- Width and Height of the complex area to show
  * * width, height -- Image size
  */
-int mandelbrot(void *p, onion_request *req, onion_response *res){
+int mandelbrot(void *p, onion_request *req, onion_response *res)
+{
 	int width=atoi(onion_request_get_queryd(req,"width","256"));
 	int height=atoi(onion_request_get_queryd(req,"height","256"));
 	double left=atof(onion_request_get_queryd(req,"X","-2"));
@@ -42,7 +43,8 @@ int mandelbrot(void *p, onion_request *req, onion_response *res){
 	return OCS_PROCESSED;
 }
 
-int mmtt_settings_js_template(void *p, onion_request *req, onion_response *res){
+int mmtt_settings_js_template(void *p, onion_request *req, onion_response *res)
+{
 	return OCS_PROCESSED;
 }
 
@@ -54,7 +56,8 @@ int index_html_template(void *, onion_request *req, onion_response *res);
 int mmtt_script_js_template(void *, onion_request *req, onion_response *res);
 }
 
-int data(void *, onion_request *req, onion_response *res){
+int data(void *, onion_request *req, onion_response *res)
+{
 onion_dict *d=onion_dict_new();
 onion_dict *birth=onion_dict_new();
 onion_dict *user=onion_dict_new();
@@ -69,7 +72,8 @@ return index_html_template(d, req, res);
 }
 
 /*+++++++++++++ OnionServer-Class ++++++++++++++++++ */
-int OnionServer::start_server(){
+int OnionServer::start_server()
+{
 	onion_url *url=onion_root_url(m_ponion);
 
 	onion_set_hostname(m_ponion, "0.0.0.0"); // Force ipv4.
@@ -83,7 +87,8 @@ int OnionServer::start_server(){
 	return pthread_create( &m_pthread, NULL, &start_myonion_server, m_ponion);	
 }
 
-int OnionServer::stop_server(){
+int OnionServer::stop_server()
+{
 	onion_listen_stop(m_ponion);//stop loop
 	int i = pthread_join( m_pthread, NULL);//wait till loop ends
 	onion_free(m_ponion);

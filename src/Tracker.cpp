@@ -1,12 +1,15 @@
 #include "Tracker.h"
 
-Tracker::Tracker(double min_area, double max_radius) : min_area(min_area), max_radius(max_radius) {
+Tracker::Tracker(double min_area, double max_radius) : min_area(min_area), max_radius(max_radius)
+{
 }
 
-Tracker::~Tracker() {
+Tracker::~Tracker()
+{
 }
 
-void Tracker::trackBlobs(cv::Mat &mat, bool history) {
+void Tracker::trackBlobs(cv::Mat &mat, bool history)
+{
 	double x, y, min_x, min_y, max_x, max_y;
 	cBlob temp;
 
@@ -79,6 +82,7 @@ void Tracker::trackBlobs(cv::Mat &mat, bool history) {
 
 }
 
-std::vector<cBlob>& Tracker::getBlobs() {
+std::vector<cBlob>& Tracker::getBlobs()
+{
 	return blobs;
 }

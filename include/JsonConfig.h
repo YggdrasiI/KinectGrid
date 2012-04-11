@@ -20,13 +20,13 @@ class JsonConfig{
 		cJSON* m_pjson_root;
 	public:
 		JsonConfig();
-		JsonConfig(char* filename);
+		JsonConfig(const char* filename);
 		~JsonConfig();
 	
-		int setConfig(char* json_str);
-		char* getConfig();
-		int loadConfigFile(char* filename, LoadDefaultsType* loadDefaultsFunc);
-		int saveConfigFile(char* filename);	
+		int setConfig(const char* json_str);
+		char* getConfig()const;
+		int loadConfigFile(const char* filename, LoadDefaultsType* loadDefaultsFunc);
+		int saveConfigFile(const char* filename);	
 		/* create minimal json element */
 		int loadDefaults();
 		static cJSON* loadMinimal();
