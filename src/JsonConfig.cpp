@@ -2,14 +2,17 @@
 #include <stdio.h>
 #include "JsonConfig.h"
 
-JsonConfig::JsonConfig()
+JsonConfig::JsonConfig():
+	m_pjson_root(NULL)
 {
 	m_pjson_root = loadMinimal();
 }
 
-JsonConfig::JsonConfig(const char* filename)
+JsonConfig::JsonConfig(const char* filename, LoadDefaultsType* loadDefaultsFunc):
+	m_pjson_root(NULL)
 {
-	loadConfigFile(filename, loadMinimal);
+	//loadConfigFile(filename, &loadMinimal);
+	loadConfigFile(filename, loadDefaultsFunc);
 }
 
 JsonConfig::~JsonConfig()
@@ -19,8 +22,9 @@ JsonConfig::~JsonConfig()
 
 int JsonConfig::clearConfig()
 {
-	if( m_pjson_root != NULL)
+	if( m_pjson_root != NULL){
 		cJSON_Delete(m_pjson_root);
+	}
 }
 
 int JsonConfig::setConfig(const char* json_str)

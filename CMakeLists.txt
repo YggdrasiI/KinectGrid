@@ -13,6 +13,7 @@ find_package(Freenect REQUIRED)
 find_package(Onion REQUIRED)
 #find_package(OtherPackage OPTIONAL)
 
+set(EXTRA_C_FLAGS_DEBUG "-g")
 
 include_directories(
 		${CMAKE_SOURCE_DIR}/include

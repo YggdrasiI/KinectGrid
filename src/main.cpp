@@ -33,7 +33,9 @@ int main(int argc, char **argv) {
 	}
 
 	//Load & Create settings
-	JsonConfig mmttSetting("settingMMTT.json", JsonConfig);
+	printf("Nothing loaded\n");
+	//JsonConfig mmttSetting("settingMMTT.json");
+	JsonConfig mmttSetting("settingMMTT.json", &(JsonConfig::loadMMTTlinuxSetting)  );
 	printf("First loaded\n");
 	JsonConfig kinectSetting("settingKinectDefault.json");
 

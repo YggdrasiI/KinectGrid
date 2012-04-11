@@ -20,7 +20,7 @@ class JsonConfig{
 		cJSON* m_pjson_root;
 	public:
 		JsonConfig();
-		JsonConfig(const char* filename);
+		JsonConfig(const char* filename, LoadDefaultsType* loadDefaultsFunc=NULL);
 		~JsonConfig();
 	
 		int setConfig(const char* json_str);
