@@ -3,7 +3,7 @@
 
 # Hier wird definiert, welche Quellcodedateien zur Bibliothek dazugehören.
 # Bei großen Projekten ist eine logische Unterteilung sinnvoll.
-set(library_SRCS
+set(cvblobslib_SRCS
 		Blob.cpp
 		BlobExtraction.cpp
 		BlobResult.cpp
@@ -12,15 +12,14 @@ set(library_SRCS
 # Es wird festgelegt, dass es sich um eine gemeinsam genutzt Bibliothek
 # handelt. Um eine statische Bibliothek zu bekommen, wird
 # SHARED durch STATIC ersetzt.
-add_library (library SHARED ${library_SRCS})
+add_library (cvblobslib SHARED ${cvblobslib_SRCS})
 
 # Wenn nötig können auch Bibliotheken gegen andere gelinkt werden.
-# hm, hier opencv angeben?!
-target_link_libraries(library
+target_link_libraries(cvblobslib
 	${OpenCV_LIBS} ${LIBFREENECT_LIBS}
 )
 
-install(TARGETS library
+install(TARGETS cvblobslib
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
 )

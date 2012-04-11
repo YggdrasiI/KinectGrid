@@ -10,7 +10,8 @@
 //#include "cJSON.h"
 
 #include "BlobResult.h"
-#include "tracker.h"
+#include "Tracker.h"
+#include "OnionServer.h"
 
 // tracker parameters
 static const double TMINAREA   = 512;    // minimum area of blob to track
@@ -164,10 +165,10 @@ void filter(Mat& src, Mat& mask, int nthresh, Mat& dst){
 
 int main(int argc, char **argv) {
 	bool die(false);
+  bool withKinect(false);
 	string filename("snapshot");
 	string suffix(".png");
 	int i_snap(0),iter(0);
-
 
 	int nthresh = 140;
 	if( argc > 1){
@@ -175,76 +176,59 @@ int main(int argc, char **argv) {
 		printf("Threshval: %i\n",nthresh);
 	}
 
+	//init onion server thread
+	OnionServer* onion = new OnionServer(); 
+	onion->start_server();
+
 	Mat depthMat(Size(640,480),CV_16UC1);
 	Mat depthf  (Size(640,480),CV_8UC1);
 	Mat filterMat  (Size(640,480),CV_8UC1);
 	Mat depthMask  (Size(640,480),CV_8UC1);
-	int depthMaskCounter = -30;//use -depthMaskCounter Frame as mask
+	int depthMaskCounter(-30);//use -depthMaskCounter Frame as mask
 	Mat filteredMat  (Size(640,480),CV_8UC1);
 	Mat rgbMat(Size(640,480),CV_8UC3,Scalar(0));
 	Mat ownMat(Size(640,480),CV_8UC3,Scalar(0));
 
-	cTracker tracker(TMINAREA, TMAXRADIUS);
-	/*
-	CvSize _camSize;
-	IplImage* _tmpThresh;
-	CBlobResult* _newblobresult;
-	CBlobResult* _oldblobresult;
-	
-	_camSize = cvSize(640,480);
-	_tmpThresh = cvCreateImageHeader( _camSize, IPL_DEPTH_8U, 1 );
-*/
-        //Freenect::Freenect<MyFreenectDevice> freenect;
-        //MyFreenectDevice& device = freenect.createDevice(0);
-        Freenect::Freenect freenect;
-				MyFreenectDevice& device = freenect.createDevice<MyFreenectDevice>(0); 
+	Tracker tracker(TMINAREA, TMAXRADIUS);
+	Freenect::Freenect freenect;
 
-				// Set vertical Position
-				device.setTiltDegrees(0.0);
+	MyFreenectDevice& device = freenect.createDevice<MyFreenectDevice>(0); 
+
+if(withKinect){
+
+	// Set vertical Position
+	device.setTiltDegrees(0.0);
 			
-				// Set Led of device
-				device.setLed(LED_GREEN);
+	// Set Led of device
+	device.setLed(LED_GREEN);
 
-//	namedWindow("rgb",CV_WINDOW_AUTOSIZE);
+	//device.startVideo();
+	device.startDepth();
+}
+
+	//namedWindow("rgb",CV_WINDOW_AUTOSIZE);
 	namedWindow("depth",CV_WINDOW_AUTOSIZE);
 	namedWindow("filter",CV_WINDOW_AUTOSIZE);
-//	device.startVideo();
-	device.startDepth();
-	//first image = filter mask
-	
-	/* Das geht hier nicht, da erster Frame komplett schwarz ist */
-  //device.getDepth8UC1(depthMask);
-	//add const value
-	//depthMask -= 5;
-	//
-	depthMask.setTo(Scalar(255));
 
     while (!die) {
-//   	device.getVideo(rgbMat);
-//        cv::imshow("rgb", rgbMat);
-//    	device.getDepth(depthMat);
-    	device.getDepth8UC1(depthf);
-			if( depthMaskCounter < 0){
-				depthMaskCounter++;
-				if( depthMaskCounter > -25) createMask(depthf,depthMask,nthresh,depthMask);
-				/*
-				for(int i=0;i<10;i++){
-				blur(depthf, depthMask, Size(2,2));
-				min(depthMask,depthf,depthMask);
-				depthf = depthMask;
-				}*/
-			}
-    	//depthMat.convertTo(depthf, CV_8UC1, 255.0/2048.0);
-    	//depthMat.convertTo(depthf, CV_8UC1, 255.0/1048.0);
-			//
-			//filter
-			//subtract(&depthMask, &depthf, &filterMat);
-			//filterMat = depthMask - depthf;//überlauf problematisch
-			//compare(depthMask,depthf,filterMat,CMP_GT);
+			//device.getVideo(rgbMat);
+			//cv::imshow("rgb", rgbMat);
+			//device.getDepth(depthMat);
 
+			//get 8 bit depth image
+if(withKinect)
+    	device.getDepth8UC1(depthf);
+
+			// Use eary frames to generate mask
+			if( depthMaskCounter < 0){
+				if( depthMaskCounter++ > -25) createMask(depthf,depthMask,nthresh,depthMask);
+			}
+
+			//filter image
 			filter(depthf,depthMask,nthresh, filteredMat);
 
-			tracker.trackBlobs(filteredMat, true);
+			//find blobs
+			//tracker.trackBlobs(filteredMat, true);
 /*
 	_tmpThresh->origin = 1;
 	_tmpThresh->imageData = (char*) depthf.data;
@@ -254,13 +238,14 @@ int main(int argc, char **argv) {
 			  _newblobresult->Filter( *_newblobresult, B_EXCLUDE, CBlobGetArea(), B_LESS, val_blob_minsize.internal_value );
 */
 
-        cv::imshow("depth",depthMask);
+        cv::imshow("depth",depthf);
         cv::imshow("filter",filteredMat);
-        //cv::imshow("filter",filterMat);
 		char k = cvWaitKey(5);
 		if( k == 27 ){
 //		    cvDestroyWindow("rgb");
 		    //cvDestroyWindow("depth");
+			printf("End main loop\n");
+			die = true;
 			break;
 		}
 		if( k == 8 ) {
@@ -273,13 +258,15 @@ int main(int argc, char **argv) {
 		iter++;
     }
 
-		    cvDestroyWindow("depth");
-		    cvDestroyWindow("filter");
 //   	device.stopVideo();
-	cvDestroyWindow("depth");
 	cvDestroyWindow("filter");
-	device.stopDepth();
+	cvDestroyWindow("depth");
 
+if(withKinect)
+	device.stopDepth();
+	//freenect.deleteDevice(0); 
+
+	delete onion;
 
 	return 0;
 }

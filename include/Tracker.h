@@ -6,7 +6,7 @@
 #include <vector>
 #include "blob.h"
 
-class cTracker {
+class Tracker {
   private:
 	CBlobResult blob_result;
 	CBlob *current_blob;
@@ -30,8 +30,8 @@ class cTracker {
   protected:
 
   public:
-	cTracker(double min_area, double max_radius);
-	~cTracker();
+	Tracker(double min_area, double max_radius);
+	~Tracker();
 	
 	void trackBlobs(cv::Mat &mat, bool history);
 	std::vector<cBlob>& getBlobs();
