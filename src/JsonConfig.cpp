@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "JsonConfig.h"
 
 JsonConfig::JsonConfig():
@@ -22,21 +23,30 @@ JsonConfig::~JsonConfig()
 
 int JsonConfig::clearConfig()
 {
+	m_pjson_mutex.lock();
 	if( m_pjson_root != NULL){
 		cJSON_Delete(m_pjson_root);
 	}
+	m_pjson_mutex.unlock();
 }
 
 int JsonConfig::setConfig(const char* json_str)
 {
 	clearConfig();
+	m_pjson_mutex.lock();
 	m_pjson_root = cJSON_Parse(json_str);
+	m_pjson_mutex.unlock();
 	return 0;
 }
 
-char* JsonConfig::getConfig()const
+char* JsonConfig::getConfig()//const
 {
 	return cJSON_Print(m_pjson_root);
+/*
+	char* foo = new char[20];
+	strcpy(foo,"foo");
+	return foo;
+*/
 }
 
 int JsonConfig::loadConfigFile(const char* filename, LoadDefaultsType* loadDefaultsFunc=NULL )
@@ -66,7 +76,9 @@ int JsonConfig::saveConfigFile(const char* filename)
 {
 	FILE *file;
 	file = fopen(filename,"w");
-	fprintf(file,"%s", getConfig() );
+	char* conf = getConfig();
+	fprintf(file,"%s", conf );
+	free(conf);
 	fclose(file); 
 	return 0;
 }

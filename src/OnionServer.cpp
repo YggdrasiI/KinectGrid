@@ -46,8 +46,8 @@ int mandelbrot(void *p, onion_request *req, onion_response *res)
 
 // This has to be extern, as we are compiling C++
 extern "C"{
-int index_html_template(void *, onion_request *req, onion_response *res);
-int mmtt_script_js_template(void *, onion_request *req, onion_response *res);
+int index_html_template(void *p, onion_request *req, onion_response *res);
+int mmtt_script_js_template(void *p, onion_request *req, onion_response *res);
 int mmtt_settings_js_template(void *p, onion_request *req, onion_response *res);
 }
 
@@ -88,10 +88,13 @@ int search_file(onion_dict *context, onion_request *req, onion_response *res){
 /*
  Replace some template variables and send mmtt_settings.js
 */
-int insert_json(void *, onion_request *req, onion_response *res, void* data, void* datafree)
+int insert_json(void *data, onion_request *req, onion_response *res, void* foo, void* datafree)
 {
+ //	printf("Pointer in callback: %p %p %p)\n",data,p,datafree);
 onion_dict *d=onion_dict_new();
-onion_dict_add(d, "ONION_JSON_KINECT",((JsonConfig*)data)->getConfig(),0);
+if( data != NULL){
+	onion_dict_add(d, "ONION_JSON_KINECT",((JsonConfig*)data)->getConfig(),0);
+}
 //onion_dict_add(d, "user", user, OD_DICT|OD_FREE_VALUE);
 
 return mmtt_settings_js_template(d, req, res);
@@ -102,8 +105,17 @@ int OnionServer::start_server()
 {
 	onion_url *url=onion_root_url(m_ponion);
 
-	onion_set_hostname(m_ponion, "0.0.0.0"); // Force ipv4.
-	onion_set_port(m_ponion, "8080");
+	const char *host, *port;
+	if( m_psettingMMTT != NULL){
+		host = m_psettingMMTT->getString("host");
+		port = m_psettingMMTT->getString("port");
+	}else{
+		host = "0.0.0.0";
+		port = "8080";
+	}
+
+	onion_set_hostname(m_ponion, host); // Force ipv4.
+	onion_set_port(m_ponion, port);
 	onion_url_add_with_data(url, "mmtt_settings.js", (void*)insert_json, m_psettingKinect, NULL);
 	onion_url_add(url, "mmtt_script.js", (void*)mmtt_script_js_template);
 	onion_url_add(url, "index.html", (void*)index_html_template);

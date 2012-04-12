@@ -7,6 +7,7 @@
 #define JSONCONFIG_H
 
 #include "cJSON.h"
+#include "Mutex.h"
 #include "settingStructs.h"
 
 /*
@@ -18,13 +19,14 @@ typedef cJSON* LoadDefaultsType(void);
 class JsonConfig{
 	private:
 		cJSON* m_pjson_root;
+		Mutex m_pjson_mutex;
 	public:
 		JsonConfig();
 		JsonConfig(const char* filename, LoadDefaultsType* loadDefaultsFunc=NULL);
 		~JsonConfig();
 	
 		int setConfig(const char* json_str);
-		char* getConfig()const;
+		char* getConfig();//const;
 		cJSON* getJSON() {return m_pjson_root;};
 		int loadConfigFile(const char* filename, LoadDefaultsType* loadDefaultsFunc);
 		int saveConfigFile(const char* filename);	
@@ -35,6 +37,19 @@ class JsonConfig{
 		static cJSON* loadKinectSetting();
 	private:
 		int clearConfig();
+
+	public:
+		/* Access to string child nodes of root node.*/
+		const char* getString(const char* string)const{
+			cJSON* obj = 	cJSON_GetObjectItem(m_pjson_root,string);
+			if( obj != NULL && obj->type == cJSON_String)
+				return obj->valuestring;
+			else{
+				printf("JsonConfig: Object %s not found.\n",string);
+				static const char* notfound = "not found";
+				return notfound;
+			}
+		}; 
 };
 
 

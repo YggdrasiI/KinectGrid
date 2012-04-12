@@ -33,13 +33,17 @@ int main(int argc, char **argv) {
 	}
 
 	//Load & Create settings
-	printf("Nothing loaded\n");
-	//JsonConfig settingMMTT("settingMMTT.json");
-	JsonConfig settingMMTT("settingMMTT.json", &JsonConfig::loadMMTTlinuxSetting  );
-	JsonConfig settingKinect("settingKinectDefault.json", &JsonConfig::loadKinectSetting );
+	//JsonConfig settingMMTT("settingMMTT.json", &JsonConfig::loadMMTTlinuxSetting  );
+	JsonConfig *settingMMTT = new JsonConfig("settingMMTT.json", &JsonConfig::loadMMTTlinuxSetting  );
+	
+	//JsonConfig settingKinect("settingKinectDefault.json", &JsonConfig::loadKinectSetting );
+	JsonConfig *settingKinect = new JsonConfig(
+			settingMMTT->getString("lastSetting"),
+			&JsonConfig::loadKinectSetting
+			);
 
 	//init onion server thread
-	OnionServer* onion = new OnionServer(&settingMMTT, &settingKinect); 
+	OnionServer* onion = new OnionServer(settingMMTT, settingKinect); 
 	onion->start_server();
 
 	ImageAnalysis* ia;
@@ -54,7 +58,7 @@ int main(int argc, char **argv) {
 		/* wie kann ich mir den umweg über mydevice sparen?!*/
 		MyFreenectDevice& mydevice = freenect->createDevice<MyFreenectDevice>(0); 
 		device = &mydevice;
-		ia = new ImageAnalysis(device, &settingKinect);
+		ia = new ImageAnalysis(device, settingKinect);
 
 		// Set vertical Position
 		device->setTiltDegrees(0.0);
@@ -70,7 +74,9 @@ int main(int argc, char **argv) {
 		namedWindow("filter",CV_WINDOW_AUTOSIZE);
 	}
 
-	printf("Settings:%s \n",settingKinect.getConfig());
+	char *conf = settingKinect->getConfig();
+	printf("Settings:%s \n", conf);
+	free(conf);
 
 	while (!die) {
 		//device.getVideo(rgbMat);
@@ -125,6 +131,8 @@ int main(int argc, char **argv) {
 	}
 
 	delete onion;
+	delete settingKinect;
+	delete settingMMTT;
 
 	return 0;
 }
