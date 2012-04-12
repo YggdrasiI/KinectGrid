@@ -1,0 +1,20 @@
+• onion (Webserver):
+Install the onion lib in the lib-dir of this project
+Run
+
+git clone https://github.com/davidmoreno/onion.git
+cd onion
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=../../lib/onionroot ..
+make
+make install
+
+If you want install the lib on your system omit the above CMAKE_INSTALL_PREFIX argument.
+
+
+
+• dform (Convert json to html formular):
+git clone https://github.com/daffl/jquery.dform.git
+
+Copy the Script jquery.dform/dist/jquery.dform-0.2.0.min.js to ${CMAKE_ROOT_DIR}/html
