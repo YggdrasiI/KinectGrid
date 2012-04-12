@@ -34,13 +34,12 @@ int main(int argc, char **argv) {
 
 	//Load & Create settings
 	printf("Nothing loaded\n");
-	//JsonConfig mmttSetting("settingMMTT.json");
-	JsonConfig mmttSetting("settingMMTT.json", &(JsonConfig::loadMMTTlinuxSetting)  );
-	printf("First loaded\n");
-	JsonConfig kinectSetting("settingKinectDefault.json");
+	//JsonConfig settingMMTT("settingMMTT.json");
+	JsonConfig settingMMTT("settingMMTT.json", &JsonConfig::loadMMTTlinuxSetting  );
+	JsonConfig settingKinect("settingKinectDefault.json", &JsonConfig::loadKinectSetting );
 
 	//init onion server thread
-	OnionServer* onion = new OnionServer(); 
+	OnionServer* onion = new OnionServer(&settingMMTT, &settingKinect); 
 	onion->start_server();
 
 	ImageAnalysis* ia;
@@ -55,7 +54,7 @@ int main(int argc, char **argv) {
 		/* wie kann ich mir den umweg über mydevice sparen?!*/
 		MyFreenectDevice& mydevice = freenect->createDevice<MyFreenectDevice>(0); 
 		device = &mydevice;
-		ia = new ImageAnalysis(device);
+		ia = new ImageAnalysis(device, &settingKinect);
 
 		// Set vertical Position
 		device->setTiltDegrees(0.0);
@@ -70,6 +69,8 @@ int main(int argc, char **argv) {
 		namedWindow("depth",CV_WINDOW_AUTOSIZE);
 		namedWindow("filter",CV_WINDOW_AUTOSIZE);
 	}
+
+	printf("Settings:%s \n",settingKinect.getConfig());
 
 	while (!die) {
 		//device.getVideo(rgbMat);

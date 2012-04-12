@@ -16,6 +16,7 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	*/
 
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "OnionServer.h"
@@ -43,32 +44,57 @@ int mandelbrot(void *p, onion_request *req, onion_response *res)
 	return OCS_PROCESSED;
 }
 
-int mmtt_settings_js_template(void *p, onion_request *req, onion_response *res)
-{
-	return OCS_PROCESSED;
-}
-
-
-
 // This has to be extern, as we are compiling C++
 extern "C"{
 int index_html_template(void *, onion_request *req, onion_response *res);
 int mmtt_script_js_template(void *, onion_request *req, onion_response *res);
+int mmtt_settings_js_template(void *p, onion_request *req, onion_response *res);
 }
 
-int data(void *, onion_request *req, onion_response *res)
+
+/*
+ Return raw file if found. Security risk?! Check of filename/path required?!
+*/
+int search_file(onion_dict *context, onion_request *req, onion_response *res){
+	//const char* path = onion_request_get_path(req);//empty?!
+	const char* path = onion_request_get_fullpath(req);
+	printf("Request of %s %i.\n",path, strlen(path));
+	char filename[strlen(path)+8];
+	//sprintf(filename,"./%s",path);
+	sprintf(filename,"./html/%s",path);
+
+		//read file 
+	if( FILE *f=fopen(filename,"rb") ){
+		fseek(f,0,SEEK_END);
+		long len=ftell(f);
+		fseek(f,0,SEEK_SET);
+		char *data=(char*)malloc(len+1);
+		fread(data,1,len,f);
+		fclose(f);
+
+		if (context) onion_dict_add(context, "LANG", onion_request_get_language_code(req), OD_FREE_VALUE);
+		onion_response_set_length(res, len);
+		onion_response_write(res, data, len); 
+		if (context) onion_dict_free(context);
+
+		free(data);
+	}else{
+		onion_response_set_length(res, 24);
+		onion_response_write(res, "<h1>File not found</h1>", 24); 
+	}
+	return OCS_PROCESSED;
+}
+
+/*
+ Replace some template variables and send mmtt_settings.js
+*/
+int insert_json(void *, onion_request *req, onion_response *res, void* data, void* datafree)
 {
 onion_dict *d=onion_dict_new();
-onion_dict *birth=onion_dict_new();
-onion_dict *user=onion_dict_new();
+onion_dict_add(d, "ONION_JSON_KINECT",((JsonConfig*)data)->getConfig(),0);
+//onion_dict_add(d, "user", user, OD_DICT|OD_FREE_VALUE);
 
-onion_dict_add(birth, "year","1980",0);
-
-onion_dict_add(user, "birth", birth, OD_DICT|OD_FREE_VALUE); onion_dict_add(user, "name","David Moreno",0);
-
-onion_dict_add(d, "user", user, OD_DICT|OD_FREE_VALUE); onion_dict_add(d, "title","My title",0);
-
-return index_html_template(d, req, res);
+return mmtt_settings_js_template(d, req, res);
 }
 
 /*+++++++++++++ OnionServer-Class ++++++++++++++++++ */
@@ -78,10 +104,11 @@ int OnionServer::start_server()
 
 	onion_set_hostname(m_ponion, "0.0.0.0"); // Force ipv4.
 	onion_set_port(m_ponion, "8080");
-	onion_url_add(url, "mmtt_settings.js", (void*)data);
+	onion_url_add_with_data(url, "mmtt_settings.js", (void*)insert_json, m_psettingKinect, NULL);
 	onion_url_add(url, "mmtt_script.js", (void*)mmtt_script_js_template);
 	onion_url_add(url, "index.html", (void*)index_html_template);
 	onion_url_add(url, "", (void*)index_html_template);
+	onion_url_add(url, "^.*$", (void*)search_file);
 
 	//start loop as thread
 	return pthread_create( &m_pthread, NULL, &start_myonion_server, m_ponion);	
@@ -94,3 +121,6 @@ int OnionServer::stop_server()
 	onion_free(m_ponion);
 	return i;
 }
+
+
+

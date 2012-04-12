@@ -1,6 +1,7 @@
 #include "ImageAnalysis.h"
 
-ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice):
+ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, JsonConfig* psettingKinect):
+	m_psettingKinect(psettingKinect),
 	m_depthMat(Size(640,480),CV_16UC1),
 	m_depthf  (Size(640,480),CV_8UC1),
 	m_filterMat  (Size(640,480),CV_8UC1),

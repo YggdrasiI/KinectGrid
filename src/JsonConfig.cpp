@@ -98,10 +98,28 @@ cJSON* JsonConfig::loadMMTTlinuxSetting()
 cJSON* JsonConfig::loadKinectSetting()
 {
 	cJSON* root = cJSON_CreateObject();	
+	cJSON* html = cJSON_CreateArray();	
 	cJSON* pareas = cJSON_CreateArray();
 	cJSON* parea1 = cJSON_CreateObject();
 	cJSON_AddStringToObject(root, "type", "settingKinect");
+
+	cJSON_AddStringToObject(root, "action", "index.html");
+	cJSON_AddStringToObject(root, "method", "get");
+
+	cJSON_AddItemToObject(root, "html", html);
+
+	cJSON_AddItemToArray(html, jsonDoubleField("kinectMotorAngle",0,-16,16,5) );
+	cJSON_AddItemToArray(html, jsonDoubleField("minBlobArea",256,16,4092,100) );
+	cJSON_AddItemToArray(html, jsonDoubleField("maxBlobArea",256,16,4092,100) );
+/*
 	cJSON_AddNumberToObject(root, "minBlobArea", 256 );
+	cJSON_AddNumberToObject(root, "maxBlobArea", 2048 );
+//	cJSON_AddNumberToObject(root, "marginFront", 0 );
+	cJSON_AddNumberToObject(root, "marginBack", 0 );
+	cJSON_AddNumberToObject(root, "marginLeft", 0 );
+	cJSON_AddNumberToObject(root, "marginRight", 0 );
+	cJSON_AddNumberToObject(root, "marginTop", 0 );
+	cJSON_AddNumberToObject(root, "marginBottom", 0 );
 
 	cJSON_AddItemToObject(root, "areas", pareas );
 	cJSON_AddItemToObject(pareas, "area1", parea1 );
@@ -109,6 +127,9 @@ cJSON* JsonConfig::loadKinectSetting()
 	cJSON_AddNumberToObject(parea1, "left", 0 );
 	cJSON_AddNumberToObject(parea1, "width", 640 );
 	cJSON_AddNumberToObject(parea1, "height", 480 );
-
+*/
 	return root;
 }
+
+
+

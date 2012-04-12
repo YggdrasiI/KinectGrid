@@ -33,4 +33,4 @@ add_subdirectory(lib)
 add_subdirectory(src)
 
 # Es sollen auch einige Dateien installiert werden, z.B. Bilder oder Übersetzungen
-#install(FILES img/icon.png DESTINATION img)
+install(FILES html/jquery* DESTINATION html)

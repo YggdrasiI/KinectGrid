@@ -9,6 +9,8 @@
 #include <onion/dict.h>
 #include <onion/extras/png.h>
 
+#include "JsonConfig.h"
+
 /* Declare jSON data object here
  *
  *
@@ -23,14 +25,18 @@ static void* start_myonion_server(void* arg){
 }
 
 class OnionServer{
-	private:
 	public:	
 		onion* m_ponion;
 		pthread_t m_pthread;
+	private:
+		JsonConfig* m_psettingMMTT;
+		JsonConfig* m_psettingKinect;
 	public:
-		OnionServer():
+		OnionServer(JsonConfig* psettingMMTT, JsonConfig* psettingKinect):
 			m_ponion( onion_new(O_THREADED) ),
-			m_pthread()
+			m_pthread(),
+			m_psettingMMTT(psettingMMTT),
+			m_psettingKinect(psettingKinect)
 		{
 			//start_server();
 		}
@@ -40,8 +46,8 @@ class OnionServer{
 		}
 
 		int start_server();
-
 		int stop_server();
+
 };
 
 #endif

@@ -25,6 +25,7 @@ class JsonConfig{
 	
 		int setConfig(const char* json_str);
 		char* getConfig()const;
+		cJSON* getJSON() {return m_pjson_root;};
 		int loadConfigFile(const char* filename, LoadDefaultsType* loadDefaultsFunc);
 		int saveConfigFile(const char* filename);	
 		/* create minimal json element */
@@ -35,5 +36,22 @@ class JsonConfig{
 	private:
 		int clearConfig();
 };
+
+
+
+/*
+ * json representation of extended html input field.
+ */
+static cJSON* jsonDoubleField(const char* id, double val, double min, double max, double diff){
+	cJSON* df = cJSON_CreateObject();
+	cJSON_AddStringToObject(df, "type", "doubleField");
+	cJSON_AddStringToObject(df, "id", id);
+	cJSON_AddNumberToObject(df, "val", val );
+	cJSON_AddNumberToObject(df, "min", min );
+	cJSON_AddNumberToObject(df, "max", max );
+	cJSON_AddNumberToObject(df, "diff", diff );
+
+	return df;
+}
 
 #endif

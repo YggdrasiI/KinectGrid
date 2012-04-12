@@ -2,13 +2,15 @@
 #define IMAGEANALYSIS_H
 
 #include "MyFreenectDevice.h"
+#include "JsonConfig.h"
 
 class ImageAnalysis{
 public:
-	ImageAnalysis(MyFreenectDevice* device);
+	ImageAnalysis(MyFreenectDevice* device, JsonConfig* psettingKinect);
 	~ImageAnalysis();
 	void analyse();
 private:
+	JsonConfig* m_psettingKinect;
 	Mat m_depthMat;
 public:
 	Mat m_depthf  ;
