@@ -10,6 +10,8 @@
 #include <onion/extras/png.h>
 
 #include "JsonConfig.h"
+#include "SettingKinect.h"
+#include "SettingMMTT.h"
 
 /* Declare jSON data object here
  *
@@ -47,7 +49,7 @@ class OnionServer{
 
 		int start_server();
 		int stop_server();
-		int readConfig(const char* json);
+		int updateSetting(onion_request *req, onion_response *res);
 
 };
 

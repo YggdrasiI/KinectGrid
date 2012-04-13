@@ -34,13 +34,16 @@ int main(int argc, char **argv) {
 
 	//Load & Create settings
 	//JsonConfig settingMMTT("settingMMTT.json", &JsonConfig::loadMMTTlinuxSetting  );
-	JsonConfig *settingMMTT = new JsonConfig("settingMMTT.json", &JsonConfig::loadMMTTlinuxSetting  );
+	JsonConfig *settingMMTT = new SettingMMTT("settingMMTT.json.x");
 	
+	if(true){
+	char *conf = settingMMTT->getConfig();
+	printf("Settings:%s \n", conf);
+	free(conf);
+	}
 	//JsonConfig settingKinect("settingKinectDefault.json", &JsonConfig::loadKinectSetting );
-	JsonConfig *settingKinect = new JsonConfig(
-			settingMMTT->getString("lastSetting"),
-			&JsonConfig::loadKinectSetting
-			);
+	JsonConfig *settingKinect = new SettingKinect( settingMMTT->getString("lastSetting") );
+
 
 	//init onion server thread
 	OnionServer* onion = new OnionServer(settingMMTT, settingKinect); 
@@ -74,11 +77,6 @@ int main(int argc, char **argv) {
 		namedWindow("filter",CV_WINDOW_AUTOSIZE);
 	}
 
-	if(false){
-	char *conf = settingKinect->getConfig();
-	printf("Settings:%s \n", conf);
-	free(conf);
-	}
 
 	while (!die) {
 		//device.getVideo(rgbMat);

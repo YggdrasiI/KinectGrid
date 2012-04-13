@@ -8,6 +8,8 @@ include_directories(
 set(json_SRCS
 	cJSON.c
 	JsonConfig.cpp	
+	SettingKinect.cpp
+	SettingMMTT.cpp
 	)
 
 

@@ -56,23 +56,16 @@ int mmtt_settings_js_template(void *p, onion_request *req, onion_response *res);
  (Or use *p for other callbacks (not implemented))
 */
 int checkFormularValues(void *p, onion_request *req, onion_response *res){
-	printf("check post values\n");
-	const char* json= onion_request_get_post(req,"json");
-	if( json != NULL){
-		printf("get json: %s\n",json);
-		OnionServer* os = (OnionServer*)p;
-		os->readConfig(json);
-	}
-	
-	if(false){
+	int ok = ((OnionServer*)p)->updateSetting(req,res);
+	if( ok == 0){
 		onion_response_set_length(res, 6);
 		onion_response_write(res, "reload", 6); 
 	}else{
 		onion_response_set_length(res, 2);
 		onion_response_write(res, "Ok", 2); 
+
 	}
 	return OCS_PROCESSED;
- //return index_html_template(NULL,req,res);
 }
 
 /*
@@ -159,9 +152,24 @@ int OnionServer::stop_server()
 	return i;
 }
 
-int OnionServer::readConfig(const char* json_str){
-	m_psettingKinect->setConfig(json_str);
-	//force extraction of some config values here, if ness.
-	return 0;
+int OnionServer::updateSetting(onion_request *req, onion_response *res){
+	printf("update settingKinect values\n");
+	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
+	switch(actionid){
+		case 1:
+			printf("Get new settingMMTT: %s\n","todo");
+			break;
+		case 0:
+		default:
+			const char* json_str = onion_request_get_post(req,"json");
+			if( json_str != NULL){
+				printf("Get new settingKinect: %s\n",json_str);
+				m_psettingKinect->setConfig(json_str);
+			}else{
+				return -1;
+			}
+			break;
+	}
+	return 0; 
 }
 

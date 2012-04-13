@@ -6,6 +6,9 @@
 #ifndef JSONCONFIG_H
 #define JSONCONFIG_H
 
+#include <stdlib.h>
+#include <stdio.h>
+#include "string.h"
 #include "cJSON.h"
 #include "Mutex.h"
 #include "settingStructs.h"
@@ -21,23 +24,38 @@ class JsonConfig{
 		cJSON* m_pjson_root;
 		Mutex m_pjson_mutex;
 	public:
-		JsonConfig();
-		JsonConfig(const char* filename, LoadDefaultsType* loadDefaultsFunc=NULL);
-		~JsonConfig();
+		JsonConfig(LoadDefaultsType loadHandle=&JsonConfig::loadDefaults ):
+			m_pjson_root(NULL)
+		{
+			m_pjson_root = loadHandle();
+		};
+		JsonConfig(const char* filename, LoadDefaultsType* loadHandle):
+			m_pjson_root(NULL)
+		{
+			loadConfigFile(filename, loadHandle);
+		};
+
+		~JsonConfig(){
+			clearConfig();
+		};
 	
 		int setConfig(const char* json_str);
 		char* getConfig();//const;
-		cJSON* getJSON() {return m_pjson_root;};
-		int loadConfigFile(const char* filename, LoadDefaultsType* loadDefaultsFunc);
+		int loadConfigFile(const char* filename, LoadDefaultsType* loadHandle=&JsonConfig::loadDefaults);
 		int saveConfigFile(const char* filename);	
-		/* create minimal json element */
-		int loadDefaults();
-		static cJSON* loadMinimal();
-		static cJSON* loadMMTTlinuxSetting();
-		static cJSON* loadKinectSetting();
+		/* create minimal json element
+		 * This method can not be defined as virtual since it's called in constructors.
+		 * */
+		static cJSON* loadDefaults(){
+			cJSON* root = cJSON_CreateObject();	
+			cJSON_AddItemToObject(root, "kind", cJSON_CreateString("unknown"));
+			printf("Should not execute.\n");
+			return root;
+		};
+		cJSON* getJSON() {return m_pjson_root;};
 	private:
 		int clearConfig();
-
+		virtual int update(cJSON* new_json, cJSON* old_json){	return 0; };
 	public:
 		/* Access to string child nodes of root node.*/
 		const char* getString(const char* string)const{
@@ -51,8 +69,6 @@ class JsonConfig{
 			}
 		}; 
 };
-
-
 
 /*
  * json representation of extended html input field.
