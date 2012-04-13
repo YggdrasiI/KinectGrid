@@ -68,10 +68,10 @@ int JsonConfig::loadConfigFile(const char* filename, LoadDefaultsType* loadDefau
 		setConfig(data);
 		free(data);
 	}else if(loadDefaultsFunc != NULL){
-		printf("File not found. Use default values.\n");
+		printf("File %s not found. Use default values.\n",filename);
 		m_pjson_root = loadDefaultsFunc();
 	}else{
-		fprintf(stderr,"File not found.\n");
+		fprintf(stderr,"File %s not found.\n", filename);
 		return -1;
 	}
 	return 0;

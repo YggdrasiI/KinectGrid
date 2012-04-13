@@ -18,3 +18,11 @@ If you want install the lib on your system omit the above CMAKE_INSTALL_PREFIX a
 git clone https://github.com/daffl/jquery.dform.git
 
 Copy the Script jquery.dform/dist/jquery.dform-0.2.0.min.js to ${CMAKE_ROOT_DIR}/html
+
+
+• json2.js and jsmin 
+https://github.com/douglascrockford/JSON-js.git
+https://github.com/douglascrockford/JSMin.git
+
+jsmin < file.js > file.min.js
+remove unessesary chars.

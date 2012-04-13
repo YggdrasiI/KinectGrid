@@ -51,18 +51,20 @@ $.dform.subscribe({
 
 
 function change(id,min,max,diff){
+	//update displayed value
 	o = document.getElementById(id);
  	val = Math.min(Math.max(min,Number(o.value)+diff),max);
  	o.value = val;
 
-	//alert( document.getElementById("settingKinectForm").innerHTML );
-//modify json-object, too.
+	//modify json-object, too.
 	$.each(	json_kinect.html, function(index,v){
 		if(v.id==id){ v.val=val; }
 		});
-//update hidden form field
-//	document.getElementById("json").value = json_kinect.toSource();
 
+	/*
+	//update hidden form field
+	//document.getElementById("json").value = json_kinect.toSource().slice(1,-1);// toSource is bad
+	document.getElementById("json").value = JSON.stringify(json_kinect);
 
  //submit parent form of object o. Only json-object will be attend by the server
 	while( o.parentNode != null && o.parentNode.tagName != "BODY"){
@@ -71,6 +73,16 @@ function change(id,min,max,diff){
 		}
 		o = o.parentNode;
   }
+ */
+	//send complete json struct
+	$.post('json', json_kinect , function(data){
+		if( data == "reload" ){
+			window.location.reload();
+		}else{
+			//some other reaction...
+		}
+	});
+
 	return true;
 }
 

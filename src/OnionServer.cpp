@@ -63,8 +63,16 @@ int checkFormularValues(void *p, onion_request *req, onion_response *res){
 		OnionServer* os = (OnionServer*)p;
 		os->readConfig(json);
 	}
-
- return index_html_template(NULL,req,res);
+	
+	if(false){
+		onion_response_set_length(res, 6);
+		onion_response_write(res, "reload", 6); 
+	}else{
+		onion_response_set_length(res, 2);
+		onion_response_write(res, "Ok", 2); 
+	}
+	return OCS_PROCESSED;
+ //return index_html_template(NULL,req,res);
 }
 
 /*
@@ -132,10 +140,11 @@ int OnionServer::start_server()
 	onion_set_hostname(m_ponion, host); // Force ipv4.
 	onion_set_port(m_ponion, port);
 	onion_url_add_with_data(url, "mmtt_settings.js", (void*)insert_json, m_psettingKinect, NULL);
-	//onion_url_add(url, "mmtt_script.js", (void*)mmtt_script_js_template);//included by search_file
-	//onion_url_add(url, "", (void*)index_html_template);
-	onion_url_add_with_data(url, "index.html", (void*)checkFormularValues, this, NULL);
-	onion_url_add_with_data(url, "", (void*)checkFormularValues, this, NULL);
+	onion_url_add(url, "index.html", (void*)index_html_template);
+	onion_url_add(url, "", (void*)index_html_template);
+	//onion_url_add_with_data(url, "index.html", (void*)checkFormularValues, this, NULL);
+	//onion_url_add_with_data(url, "", (void*)checkFormularValues, this, NULL);
+	onion_url_add_with_data(url, "json", (void*)checkFormularValues, this, NULL);
 	onion_url_add(url, "^.*$", (void*)search_file);
 
 	//start loop as thread
