@@ -24,7 +24,7 @@ set(main_SRCS
 set(server_SRCS
 	OnionServer.cpp
 	index_html.c
-	mmtt_script_js.c
+#	mmtt_script_js.c
 	mmtt_settings_js.c
 	)
 

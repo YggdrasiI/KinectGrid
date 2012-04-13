@@ -33,4 +33,25 @@ add_subdirectory(lib)
 add_subdirectory(src)
 
 # Es sollen auch einige Dateien installiert werden, z.B. Bilder oder Übersetzungen
-install(FILES html/jquery* DESTINATION html)
+#install(FILES ${CMAKE_SOURCE_DIR}/html/jquery* html/mmtt_script.js DESTINATION html)
+
+macro(copy_files GLOBPAT DESTINATION)
+  file(GLOB COPY_FILES
+    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    ${GLOBPAT})
+  add_custom_target(copy ALL
+    COMMENT "Copying files: ${GLOBPAT}")
+
+  foreach(FILENAME ${COPY_FILES})
+    set(SRC "${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}")
+    set(DST "${DESTINATION}/${FILENAME}")
+
+    add_custom_command(
+      TARGET copy
+      COMMAND ${CMAKE_COMMAND} -E copy ${SRC} ${DST}
+      )
+  endforeach(FILENAME)
+endmacro(copy_files)
+
+
+#add_dependencies(main copy_files "html/*.js" "${CMAKE_CURRENT_BINARY_DIR}/html" )

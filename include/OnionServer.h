@@ -47,6 +47,7 @@ class OnionServer{
 
 		int start_server();
 		int stop_server();
+		int readConfig(const char* json);
 
 };
 

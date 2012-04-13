@@ -51,6 +51,21 @@ int mmtt_script_js_template(void *p, onion_request *req, onion_response *res);
 int mmtt_settings_js_template(void *p, onion_request *req, onion_response *res);
 }
 
+/*
+ Check post values and then return template of index.html.
+ (Or use *p for other callbacks (not implemented))
+*/
+int checkFormularValues(void *p, onion_request *req, onion_response *res){
+	printf("check post values\n");
+	const char* json= onion_request_get_post(req,"json");
+	if( json != NULL){
+		printf("get json: %s\n",json);
+		OnionServer* os = (OnionServer*)p;
+		os->readConfig(json);
+	}
+
+ return index_html_template(NULL,req,res);
+}
 
 /*
  Return raw file if found. Security risk?! Check of filename/path required?!
@@ -117,9 +132,10 @@ int OnionServer::start_server()
 	onion_set_hostname(m_ponion, host); // Force ipv4.
 	onion_set_port(m_ponion, port);
 	onion_url_add_with_data(url, "mmtt_settings.js", (void*)insert_json, m_psettingKinect, NULL);
-	onion_url_add(url, "mmtt_script.js", (void*)mmtt_script_js_template);
-	onion_url_add(url, "index.html", (void*)index_html_template);
-	onion_url_add(url, "", (void*)index_html_template);
+	//onion_url_add(url, "mmtt_script.js", (void*)mmtt_script_js_template);//included by search_file
+	//onion_url_add(url, "", (void*)index_html_template);
+	onion_url_add_with_data(url, "index.html", (void*)checkFormularValues, this, NULL);
+	onion_url_add_with_data(url, "", (void*)checkFormularValues, this, NULL);
 	onion_url_add(url, "^.*$", (void*)search_file);
 
 	//start loop as thread
@@ -134,5 +150,9 @@ int OnionServer::stop_server()
 	return i;
 }
 
-
+int OnionServer::readConfig(const char* json_str){
+	m_psettingKinect->setConfig(json_str);
+	//force extraction of some config values here, if ness.
+	return 0;
+}
 

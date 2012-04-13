@@ -62,6 +62,7 @@ static cJSON* jsonDoubleField(const char* id, double val, double min, double max
 	cJSON_AddStringToObject(df, "type", "doubleField");
 	cJSON_AddStringToObject(df, "id", id);
 	cJSON_AddNumberToObject(df, "val", val );
+//	cJSON_AddNumberToObject(df, "value", val );
 	cJSON_AddNumberToObject(df, "min", min );
 	cJSON_AddNumberToObject(df, "max", max );
 	cJSON_AddNumberToObject(df, "diff", diff );

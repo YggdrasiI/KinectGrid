@@ -26,16 +26,21 @@ int JsonConfig::clearConfig()
 	m_pjson_mutex.lock();
 	if( m_pjson_root != NULL){
 		cJSON_Delete(m_pjson_root);
+		m_pjson_root = NULL;
 	}
 	m_pjson_mutex.unlock();
 }
 
 int JsonConfig::setConfig(const char* json_str)
 {
+printf("pointer:%p\n",m_pjson_root);
 	clearConfig();
+printf("pointer:%p\(",m_pjson_root);
 	m_pjson_mutex.lock();
 	m_pjson_root = cJSON_Parse(json_str);
+printf("pointer:%p\n",m_pjson_root);
 	m_pjson_mutex.unlock();
+printf("new json: %s\n",getConfig());
 	return 0;
 }
 
@@ -86,7 +91,7 @@ int JsonConfig::saveConfigFile(const char* filename)
 cJSON* JsonConfig::loadMinimal()
 {
 	cJSON* root = cJSON_CreateObject();	
-	cJSON_AddItemToObject(root, "type", cJSON_CreateString("unknown"));
+	cJSON_AddItemToObject(root, "kind", cJSON_CreateString("unknown"));
 	return root;
 }
 
@@ -96,7 +101,8 @@ cJSON* JsonConfig::loadMinimal()
 cJSON* JsonConfig::loadMMTTlinuxSetting()
 {
 	cJSON* root = cJSON_CreateObject();	
-	cJSON_AddItemToObject(root, "type", cJSON_CreateString("settingMMTT"));
+	//cJSON_AddItemToObject(root, "type", cJSON_CreateString("settingMMTT"));//type is keyword in formular generation
+	cJSON_AddItemToObject(root, "kind", cJSON_CreateString("settingMMTT"));
 	cJSON_AddItemToObject(root, "host", cJSON_CreateString("0.0.0.0"));
 	cJSON_AddItemToObject(root, "port", cJSON_CreateString("8080"));
 	cJSON_AddItemToObject(root, "lastSetting", cJSON_CreateString("settingKinectDefault.json"));
@@ -110,16 +116,13 @@ cJSON* JsonConfig::loadMMTTlinuxSetting()
 cJSON* JsonConfig::loadKinectSetting()
 {
 	cJSON* root = cJSON_CreateObject();	
-	cJSON* html = cJSON_CreateArray();	
-	cJSON* pareas = cJSON_CreateArray();
-	cJSON* parea1 = cJSON_CreateObject();
-	cJSON_AddStringToObject(root, "type", "settingKinect");
+	cJSON_AddStringToObject(root, "kind", "settingKinect");
+	cJSON_AddItemToObject(root, "type", cJSON_CreateString("form"));
 
 	cJSON_AddStringToObject(root, "action", "index.html");
-	cJSON_AddStringToObject(root, "method", "get");
+	cJSON_AddStringToObject(root, "method", "post");
 
-	cJSON_AddItemToObject(root, "html", html);
-
+	cJSON* html = cJSON_CreateArray();	
 	cJSON_AddItemToArray(html, jsonDoubleField("kinectMotorAngle",0,-16,16,5) );
 	cJSON_AddItemToArray(html, jsonDoubleField("minBlobArea",256,16,4092,100) );
 	cJSON_AddItemToArray(html, jsonDoubleField("maxBlobArea",256,16,4092,100) );
@@ -133,13 +136,17 @@ cJSON* JsonConfig::loadKinectSetting()
 	cJSON_AddNumberToObject(root, "marginTop", 0 );
 	cJSON_AddNumberToObject(root, "marginBottom", 0 );
 
-	cJSON_AddItemToObject(root, "areas", pareas );
-	cJSON_AddItemToObject(pareas, "area1", parea1 );
+	cJSON* pareas = cJSON_CreateArray();
+	cJSON* parea1 = cJSON_CreateObject();
 	cJSON_AddNumberToObject(parea1, "top", 0 );
 	cJSON_AddNumberToObject(parea1, "left", 0 );
 	cJSON_AddNumberToObject(parea1, "width", 640 );
 	cJSON_AddNumberToObject(parea1, "height", 480 );
+	cJSON_AddItemToObject(pareas, "area1", parea1 );
+	cJSON_AddItemToObject(root, "areas", pareas );
 */
+	cJSON_AddItemToObject(root, "html", html);
+
 	return root;
 }
 

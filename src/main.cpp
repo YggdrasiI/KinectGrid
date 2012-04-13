@@ -74,9 +74,11 @@ int main(int argc, char **argv) {
 		namedWindow("filter",CV_WINDOW_AUTOSIZE);
 	}
 
+	if(false){
 	char *conf = settingKinect->getConfig();
 	printf("Settings:%s \n", conf);
 	free(conf);
+	}
 
 	while (!die) {
 		//device.getVideo(rgbMat);
