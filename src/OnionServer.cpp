@@ -153,7 +153,6 @@ int OnionServer::stop_server()
 }
 
 int OnionServer::updateSetting(onion_request *req, onion_response *res){
-	printf("update settingKinect values\n");
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 	switch(actionid){
 		case 1:
@@ -161,6 +160,7 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 			break;
 		case 0:
 		default:
+			printf("update settingKinect values\n");
 			const char* json_str = onion_request_get_post(req,"json");
 			if( json_str != NULL){
 				printf("Get new settingKinect: %s\n",json_str);

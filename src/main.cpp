@@ -6,16 +6,13 @@
 #include <cxcore.h>
 #include <highgui.h>
 
+#include "constants.h"
 #include "MyFreenectDevice.h"
 #include "ImageAnalysis.h"
 #include "BlobResult.h"
 #include "Tracker.h"
 #include "JsonConfig.h"
 #include "OnionServer.h"
-
-// tracker parameters
-static const double TMINAREA   = 512;    // minimum area of blob to track
-static const double TMAXRADIUS = 24;    // a blob is identified with a blob in the previous frame if it exists within this radius
 
 
 
@@ -43,6 +40,12 @@ int main(int argc, char **argv) {
 	}
 	//JsonConfig settingKinect("settingKinectDefault.json", &JsonConfig::loadKinectSetting );
 	JsonConfig *settingKinect = new SettingKinect( settingMMTT->getString("lastSetting") );
+
+	if(true){
+	char *conf = settingKinect->getConfig();
+	printf("Settings:%s \n", conf);
+	free(conf);
+	}
 
 
 	//init onion server thread

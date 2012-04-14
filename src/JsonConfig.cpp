@@ -35,6 +35,7 @@ int JsonConfig::clearConfig()
 int JsonConfig::setConfig(const char* json_str)
 {
 	cJSON* pNewRoot = cJSON_Parse(json_str);
+	/* if setConfig will called from construtor, virtual update will fail*/
 	update(pNewRoot,m_pjson_root);
 
 	clearConfig();
