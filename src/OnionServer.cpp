@@ -19,8 +19,37 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <regex.h>
 #include "OnionServer.h"
 
+
+int check_filename(const char *filename){
+	regex_t regex;
+	int reti, ret;
+	char msgbuf[100];
+
+	/* Compile regular expression */
+	reti = regcomp(&regex, "^[[:alnum:]]", 0);
+	if( reti ){ fprintf(stderr, "Could not compile regex\n"); return -1; }
+
+	/* Execute regular expression */
+	reti = regexec(&regex, filename, 0, NULL, 0);
+	if( !reti ){
+		ret= 0;
+	}else if( reti == REG_NOMATCH ){
+		ret= -1;
+	}else{
+		regerror(reti, &regex, msgbuf, sizeof(msgbuf));
+		fprintf(stderr, "Regex match failed: %s\n", msgbuf);
+		ret= -1;
+	}
+
+	/* Free compiled regular expression if you want to use the regex_t again */
+	regfree(&regex);
+
+	return ret;
+}
 /**
  * @short Calculates the given mandelbrot, and returns the PNG image
  * 
@@ -57,13 +86,12 @@ int mmtt_settings_js_template(void *p, onion_request *req, onion_response *res);
 */
 int checkFormularValues(void *p, onion_request *req, onion_response *res){
 	int ok = ((OnionServer*)p)->updateSetting(req,res);
-	if( ok == 0){
+	if( ok != 0){
 		onion_response_set_length(res, 6);
 		onion_response_write(res, "reload", 6); 
 	}else{
 		onion_response_set_length(res, 2);
 		onion_response_write(res, "Ok", 2); 
-
 	}
 	return OCS_PROCESSED;
 }
@@ -155,21 +183,48 @@ int OnionServer::stop_server()
 int OnionServer::updateSetting(onion_request *req, onion_response *res){
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 	switch(actionid){
-		case 1:
-			printf("Get new settingMMTT: %s\n","todo");
+		case 2:{
+						 const char* filename = onion_request_get_post(req,"filename");
+						 printf("Save new settingMMTT: %s\n",filename);
+						 if( check_filename(filename )){
+							 m_psettingKinect->saveConfigFile(filename);
+							 m_psettingMMTT->setString("lastSetting",filename);
+							 m_psettingMMTT->saveConfigFile("settingMMTT.json");
+						 }else{
+						 	printf("Filename not allowed\n");
+						 }
+						 /* force reloading of website */
+						 return 0;
+					 }
+			break;
+		case 1:{
+						 const char* filename = onion_request_get_post(req,"filename");
+						 printf("Load new settingMMTT: %s\n",filename);
+						 if( check_filename(filename )){
+							 m_psettingKinect->loadConfigFile(filename);
+						 }else{
+							 printf("Filename not allowed\n");
+						 }
+						 return -1;
+					 }
 			break;
 		case 0:
-		default:
-			printf("update settingKinect values\n");
-			const char* json_str = onion_request_get_post(req,"json");
-			if( json_str != NULL){
-				printf("Get new settingKinect: %s\n",json_str);
-				m_psettingKinect->setConfig(json_str);
-			}else{
-				return -1;
-			}
+		default:{
+							printf("update settingKinect values\n");
+							const char* json_str = onion_request_get_post(req,"settingKinect");
+							if( json_str != NULL){
+								printf("Get new settingKinect: %s\n",json_str);
+								m_psettingKinect->setConfig(json_str);
+							}else{
+								return -1;
+							}
+						}
 			break;
 	}
 	return 0; 
 }
+
+
+
+
 

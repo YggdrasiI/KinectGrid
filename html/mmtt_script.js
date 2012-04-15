@@ -72,7 +72,7 @@ function changeDouble(id,min,max,diff){
 	modifyJson(id,val);
 
 	//send altered obj. to server
-	send();
+	send("json?actionid=0",{"settingKinect":json_kinect});
 }
 
 function changeInt(id,min,max,diff){
@@ -85,7 +85,7 @@ function changeInt(id,min,max,diff){
 	modifyJson(id,val);
 
 	//send altered obj. to server
-	send();
+	send("json?actionid=0","settingKinect="+JSON.stringify(json_kinect));
 }
 
 //modifiy children of html node (no rekursion implemented)
@@ -96,9 +96,10 @@ function modifyJson(id,val){
 }
 
 //send complete json struct
-function send(){
-	$.post('json', json_kinect , function(data){
+function send(url,val){
+	$.post(url, val , function(data){
 		if( data == "reload" ){
+			alert("Reload Page");
 			window.location.reload();
 		}else{
 			//some other reaction...
@@ -108,6 +109,15 @@ function send(){
 	return true;
 }
 
+function loadConfig(){
+	filename = document.getElementById("configFilename").value;
+	send("json?actionid=1","filename="+filename);
+}
+
+function saveConfig(){
+	filename = document.getElementById("configFilename").value;
+	send("json?actionid=2","filename="+filename);
+}
 
 function deepCopy(p,c) {
 	var c = c||{}; for (var i in p) {

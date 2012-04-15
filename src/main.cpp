@@ -31,7 +31,8 @@ int main(int argc, char **argv) {
 
 	//Load & Create settings
 	//JsonConfig settingMMTT("settingMMTT.json", &JsonConfig::loadMMTTlinuxSetting  );
-	JsonConfig *settingMMTT = new SettingMMTT("settingMMTT.json.x");
+	SettingMMTT *settingMMTT = new SettingMMTT();
+	settingMMTT->init("settingMMTT.json");
 	
 	if(true){
 	char *conf = settingMMTT->getConfig();
@@ -39,7 +40,9 @@ int main(int argc, char **argv) {
 	free(conf);
 	}
 	//JsonConfig settingKinect("settingKinectDefault.json", &JsonConfig::loadKinectSetting );
-	JsonConfig *settingKinect = new SettingKinect( settingMMTT->getString("lastSetting") );
+	SettingKinect *settingKinect = new SettingKinect();
+	//settingKinect->init("settingKinectDefault.json");
+	settingKinect->init( settingMMTT->getString("lastSetting") );
 
 	if(true){
 	char *conf = settingKinect->getConfig();
@@ -51,6 +54,10 @@ int main(int argc, char **argv) {
 	//init onion server thread
 	OnionServer* onion = new OnionServer(settingMMTT, settingKinect); 
 	onion->start_server();
+
+	//saves settings
+	//settingMMTT->saveConfigFile("settingMMTT.json");
+	//settingKinect->saveConfigFile("settingKinectDefault.json");
 
 	ImageAnalysis* ia;
 	//Freenect::Freenect freenect;

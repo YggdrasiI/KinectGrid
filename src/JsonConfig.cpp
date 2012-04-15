@@ -3,25 +3,6 @@
 #include <string.h>
 #include "JsonConfig.h"
 
-/*
-JsonConfig::JsonConfig():
-	m_pjson_root(NULL)
-{
-	m_pjson_root = loadDefaults();
-}
-
-JsonConfig::JsonConfig(const char* filename):
-	m_pjson_root(NULL)
-{
-	loadConfigFile(filename);
-}
-
-JsonConfig::~JsonConfig()
-{
-	clearConfig();
-}
-*/
-
 int JsonConfig::clearConfig()
 {
 	m_pjson_mutex.lock();
@@ -35,7 +16,8 @@ int JsonConfig::clearConfig()
 int JsonConfig::setConfig(const char* json_str)
 {
 	cJSON* pNewRoot = cJSON_Parse(json_str);
-	/* if setConfig will called from construtor, virtual update will fail*/
+	if( pNewRoot == NULL ) return -1;
+	/* Not call setConfig from construtor. update is virtual. Use init()*/
 	update(pNewRoot,m_pjson_root);
 
 	clearConfig();
@@ -50,7 +32,7 @@ char* JsonConfig::getConfig()//const
 	return cJSON_Print(m_pjson_root);
 }
 
-int JsonConfig::loadConfigFile(const char* filename, LoadDefaultsType* loadHandle)
+int JsonConfig::loadConfigFile(const char* filename)
 {
 		clearConfig();
 	if( FILE *f=fopen(filename,"rb") ){
@@ -65,7 +47,7 @@ int JsonConfig::loadConfigFile(const char* filename, LoadDefaultsType* loadHandl
 		free(data);
 	}else{
 		printf("File %s not found. Use default values.\n",filename);
-		m_pjson_root = loadHandle();
+		m_pjson_root = loadDefaults();
 	}
 	return 0;
 }
@@ -81,14 +63,18 @@ int JsonConfig::saveConfigFile(const char* filename)
 	return 0;
 }
 
-/*
 cJSON* JsonConfig::loadDefaults()
 {
-	cJSON* root = cJSON_CreateObject();	
-	cJSON_AddItemToObject(root, "kind", cJSON_CreateString("unknown"));
-	return root;
+cJSON* root = cJSON_CreateObject();	
+cJSON_AddItemToObject(root, "kind", cJSON_CreateString("unknown"));
+printf("Should not execute.\n");
+return root;
 }
-*/
 
 
+int JsonConfig::update(cJSON* new_json, cJSON* old_json)
+{
+	printf("Error (JsonConfig): Parent update method called.\n");
+	return 0;
+};
 

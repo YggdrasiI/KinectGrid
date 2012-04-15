@@ -7,19 +7,19 @@
 	#settingKinectForm input { text-align:center;}
 	#settingKinectForm input[type="button"] { width:3em; }
 </style>
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<!--<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>-->
+<script type="text/javascript" src="jquery_1.7.1_jquery.min.js"></script>
 <script type="text/javascript" src="jquery.dform-0.2.0.min.js"></script>
 <script type="text/javascript" src="json2.min.js"></script>
 <script type="text/javascript" src="mmtt_settings.js"></script>
 <script type="text/javascript" src="mmtt_script.js"></script>
 </head>
 <body>
-	<h1>List of Configs</h1>
+	<h1>Configs</h1>
 	<div id="configs">
-		<select>
-			<option value="a">Testconfig</option>
-			<option value="b">Testconfig2</option>
-		</select>
+		<input type="button" value="Load Config" onclick="loadConfig()"/>
+		<input id="configFilename" type="text" size="10" value="settingKinect" />
+		<input type="button" value="Save Config" onclick="saveConfig()"/>
 	</div>	
 <h1>Variables</h1>
 <div id="settingKinectForm"> </div>

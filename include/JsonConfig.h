@@ -17,22 +17,23 @@
  * Functioal for second parameter of loadConfigFile method.
  * Use a function of this type to create default values if file is not found.
  */
-typedef cJSON* LoadDefaultsType(void);
+typedef cJSON* DefaultsType(void);
 
 class JsonConfig{
+	private:
+		int clearConfig();
 	protected:
 		cJSON* m_pjson_root;
 		Mutex m_pjson_mutex;
 	public:
-		JsonConfig(LoadDefaultsType loadHandle=&JsonConfig::loadDefaults ):
+		JsonConfig():
 			m_pjson_root(NULL)
 		{
-			m_pjson_root = loadHandle();
 		};
-		JsonConfig(const char* filename, LoadDefaultsType* loadHandle):
-			m_pjson_root(NULL)
+
+		void init(const char* filename="")
 		{
-			loadConfigFile(filename, loadHandle);
+			loadConfigFile(filename);
 		};
 
 		~JsonConfig(){
@@ -41,26 +42,40 @@ class JsonConfig{
 	
 		int setConfig(const char* json_str);
 		char* getConfig();//const;
-		int loadConfigFile(const char* filename, LoadDefaultsType* loadHandle=&JsonConfig::loadDefaults);
+		int loadConfigFile(const char* filename);
 		int saveConfigFile(const char* filename);	
-		/* create minimal json element
-		 * This method can not be defined as virtual since it's called in constructors.
-		 * */
-		static cJSON* loadDefaults(){
-			cJSON* root = cJSON_CreateObject();	
-			cJSON_AddItemToObject(root, "kind", cJSON_CreateString("unknown"));
-			printf("Should not execute.\n");
-			return root;
-		};
+		/* 
+		 * Create minimal json element.
+		 */
+		virtual cJSON* loadDefaults();
+		virtual int update(cJSON* new_json, cJSON* old_json);
 		cJSON* getJSON() {return m_pjson_root;};
-	private:
-		int clearConfig();
-		virtual int update(cJSON* new_json, cJSON* old_json){	return 0; };
-	public:
+
+
+		/*
+		 * Some helper functions.
+		 */
+		void setString(const char* string, const char* value){
+			m_pjson_mutex.lock();
+			setString(m_pjson_root, string, value);
+			m_pjson_mutex.unlock();
+			return;
+		}
+
+		static void setString(cJSON* r,const char* string, const char* value){
+			cJSON* old = 	cJSON_GetObjectItem(r,string);
+			cJSON_ReplaceItemInObject(r, string, cJSON_CreateString(value) );
+ 			if( old != NULL ){
+				cJSON_Delete(old);
+				old = NULL;
+			}
+			return;
+		}
 		/* Access to string child nodes of root node.*/
 		const char* getString(const char* string)const{
 			return getString(m_pjson_root, string);
 		}
+
 		static const char* getString(cJSON* r, const char* string){
 			cJSON* obj = 	cJSON_GetObjectItem(r,string);
 			if( obj != NULL && obj->type == cJSON_String)
@@ -81,7 +96,7 @@ class JsonConfig{
 			}
 		};
 
-		cJSON* getArrayEntry(cJSON* arr, const char* string)const{
+		static cJSON* getArrayEntry(cJSON* arr, const char* string){
 			for(int i=0,n=cJSON_GetArraySize(arr);i<n;i++){
 				cJSON* tmp = 	cJSON_GetArrayItem(arr,i);
 				cJSON* id = 	cJSON_GetObjectItem(tmp,"id");
@@ -99,6 +114,8 @@ class JsonConfig{
 		inline int intFieldValue(cJSON* ndf, cJSON* odf){return (int)doubleFieldValue(ndf,odf); }
 
 };
+/* End JsonConfig class */
+
 
 /*
  * json representation of extended html input field.

@@ -31,10 +31,10 @@ class OnionServer{
 		onion* m_ponion;
 		pthread_t m_pthread;
 	private:
-		JsonConfig* m_psettingMMTT;
-		JsonConfig* m_psettingKinect;
+		SettingMMTT* m_psettingMMTT;
+		SettingKinect* m_psettingKinect;
 	public:
-		OnionServer(JsonConfig* psettingMMTT, JsonConfig* psettingKinect):
+		OnionServer(SettingMMTT* psettingMMTT, SettingKinect* psettingKinect):
 			m_ponion( onion_new(O_THREADED) ),
 			m_pthread(),
 			m_psettingMMTT(psettingMMTT),
