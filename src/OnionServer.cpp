@@ -30,19 +30,19 @@ int check_filename(const char *filename){
 	char msgbuf[100];
 
 	/* Compile regular expression */
-	reti = regcomp(&regex, "^[[:alnum:]]", 0);
+	reti = regcomp(&regex, "^[[:alnum:]]*\\.json$", 0);
 	if( reti ){ fprintf(stderr, "Could not compile regex\n"); return -1; }
 
 	/* Execute regular expression */
 	reti = regexec(&regex, filename, 0, NULL, 0);
 	if( !reti ){
-		ret= 0;
+		ret= 1;
 	}else if( reti == REG_NOMATCH ){
-		ret= -1;
+		ret= 0;
 	}else{
 		regerror(reti, &regex, msgbuf, sizeof(msgbuf));
 		fprintf(stderr, "Regex match failed: %s\n", msgbuf);
-		ret= -1;
+		ret= 0;
 	}
 
 	/* Free compiled regular expression if you want to use the regex_t again */
@@ -186,10 +186,10 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 		case 2:{
 						 const char* filename = onion_request_get_post(req,"filename");
 						 printf("Save new settingMMTT: %s\n",filename);
-						 if( check_filename(filename )){
+						 if( check_filename(filename ) == 1){
 							 m_psettingKinect->saveConfigFile(filename);
 							 m_psettingMMTT->setString("lastSetting",filename);
-							 m_psettingMMTT->saveConfigFile("settingMMTT.json");
+							 m_psettingMMTT->saveConfigFile("settingMMTT.ini");
 						 }else{
 						 	printf("Filename not allowed\n");
 						 }
@@ -200,7 +200,7 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 		case 1:{
 						 const char* filename = onion_request_get_post(req,"filename");
 						 printf("Load new settingMMTT: %s\n",filename);
-						 if( check_filename(filename )){
+						 if( check_filename(filename ) == 1){
 							 m_psettingKinect->loadConfigFile(filename);
 						 }else{
 							 printf("Filename not allowed\n");

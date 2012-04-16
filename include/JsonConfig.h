@@ -63,12 +63,12 @@ class JsonConfig{
 		}
 
 		static void setString(cJSON* r,const char* string, const char* value){
-			cJSON* old = 	cJSON_GetObjectItem(r,string);
+			//cJSON* old = 	cJSON_GetObjectItem(r,string);
 			cJSON_ReplaceItemInObject(r, string, cJSON_CreateString(value) );
- 			if( old != NULL ){
-				cJSON_Delete(old);
+ 			/*if( old != NULL ){
+				cJSON_Delete(old); //already done in ReplaceItem
 				old = NULL;
-			}
+			}*/
 			return;
 		}
 		/* Access to string child nodes of root node.*/

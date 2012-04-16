@@ -32,11 +32,11 @@ int main(int argc, char **argv) {
 	//Load & Create settings
 	//JsonConfig settingMMTT("settingMMTT.json", &JsonConfig::loadMMTTlinuxSetting  );
 	SettingMMTT *settingMMTT = new SettingMMTT();
-	settingMMTT->init("settingMMTT.json");
+	settingMMTT->init("settingMMTT.ini");
 	
 	if(true){
 	char *conf = settingMMTT->getConfig();
-	printf("Settings:%s \n", conf);
+	//printf("Settings:%s \n", conf);
 	free(conf);
 	}
 	//JsonConfig settingKinect("settingKinectDefault.json", &JsonConfig::loadKinectSetting );
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
 
 	if(true){
 	char *conf = settingKinect->getConfig();
-	printf("Settings:%s \n", conf);
+	//printf("Settings:%s \n", conf);
 	free(conf);
 	}
 
