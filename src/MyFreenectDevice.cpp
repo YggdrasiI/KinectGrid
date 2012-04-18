@@ -10,6 +10,8 @@ MyFreenectDevice::MyFreenectDevice(freenect_context *_ctx, int _index):
 	m_depthMat(Size(640,480),CV_16UC1),
 	m_rgbMat(Size(640,480),CV_8UC3,Scalar(0))
 {
+
+
 	for( unsigned int i = 0 ; i < 2048 ; i++) {
 		float v = i/2048.0;
 		v = std::pow(v, 3)* 6;
@@ -67,7 +69,13 @@ bool MyFreenectDevice::getDepth8UC1(Mat& output)
 	m_depth_mutex.lock();
 	if(m_new_depth_frame) {
 		//m_depthMat.copyTo(output);
-		m_depthMat.convertTo(output, CV_8UC1, -255.0/2048.0, 255.0);//Invert colors!
+		//
+
+		Mat roi(output,m_pSettingKinect->m_roi);
+printf("Dim of roiMat: %i %i\n", roi.size().width, roi.size().height);
+
+		//m_depthMat.convertTo(output, CV_8UC1, -255.0/2048.0, 255.0);//Invert colors!
+		m_depthMat(m_pSettingKinect->m_roi).convertTo(roi, CV_8UC1, -255.0/2048.0, 255.0);//Invert colors!
 		m_new_depth_frame = false;
 		m_depth_mutex.unlock();
 		return true;

@@ -2,16 +2,13 @@
 #define IMAGEANALYSIS_H
 
 #include "MyFreenectDevice.h"
-#include "JsonConfig.h"
+#include "SettingKinect.h"
 
 class ImageAnalysis{
 public:
-	ImageAnalysis(MyFreenectDevice* device, JsonConfig* psettingKinect);
+	ImageAnalysis(MyFreenectDevice* device, SettingKinect* pSettingKinect);
 	~ImageAnalysis();
 	void analyse();
-private:
-	JsonConfig* m_psettingKinect;
-	Mat m_depthMat;
 public:
 	Mat m_depthf  ;
 	Mat m_filterMat;
@@ -19,9 +16,8 @@ public:
 	Mat m_filteredMat;
 private:
 	MyFreenectDevice* m_pdevice;
+	SettingKinect* m_pSettingKinect;
 	int m_depthMaskCounter;//use -depthMaskCounter Frames for mask generation
-
-
 };
 
 #endif

@@ -13,6 +13,8 @@
 #include "Mutex.h"
 #include "BlobResult.h"
 
+#include "SettingKinect.h"
+
 using namespace cv;
 using namespace std;
 
@@ -32,6 +34,19 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
  Convert depth direct to U8C1 to avoid copy and convert later.
 */
 	bool getDepth8UC1(Mat& output); 
+	void setSettingKinect(SettingKinect* sk){
+		if(sk==NULL) return;
+		m_pSettingKinect=sk;
+		update();
+	};
+
+	/* propagate setting changes */
+	void update(){
+		// Set vertical Position
+		setTiltDegrees(m_pSettingKinect->m_kinectMotorAngle);
+		// Set Led of device
+		setLed(LED_GREEN);
+	};
 
   private:
 	std::vector<uint8_t> m_buffer_depth;
@@ -43,6 +58,7 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 	Mutex m_depth_mutex;
 	bool m_new_rgb_frame;
 	bool m_new_depth_frame;
+	SettingKinect* m_pSettingKinect;
 };
 
 

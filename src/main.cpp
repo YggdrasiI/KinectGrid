@@ -71,16 +71,14 @@ int main(int argc, char **argv) {
 		/* wie kann ich mir den umweg über mydevice sparen?!*/
 		MyFreenectDevice& mydevice = freenect->createDevice<MyFreenectDevice>(0); 
 		device = &mydevice;
-		ia = new ImageAnalysis(device, settingKinect);
 
-		// Set vertical Position
-		device->setTiltDegrees(0.0);
-
-		// Set Led of device
-		device->setLed(LED_GREEN);
+		// Add Setting
+		device->setSettingKinect(settingKinect);
 
 		//device.startVideo();
 		device->startDepth();
+
+		ia = new ImageAnalysis(device, settingKinect);
 
 		//namedWindow("rgb",CV_WINDOW_AUTOSIZE);
 		namedWindow("depth",CV_WINDOW_AUTOSIZE);
