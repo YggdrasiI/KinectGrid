@@ -101,7 +101,7 @@ function modifyJson(id,val){
 function send(url,val){
 	$.post(url, val , function(data){
 		if( data == "reload" ){
-			alert("Reload Page");
+			//alert("Reload Page");
 			window.location.reload();
 		}else{
 			//some other reaction...

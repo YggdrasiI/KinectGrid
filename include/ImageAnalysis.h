@@ -1,6 +1,7 @@
 #ifndef IMAGEANALYSIS_H
 #define IMAGEANALYSIS_H
 
+#include "constants.h"
 #include "MyFreenectDevice.h"
 #include "SettingKinect.h"
 
@@ -9,6 +10,7 @@ public:
 	ImageAnalysis(MyFreenectDevice* device, SettingKinect* pSettingKinect);
 	~ImageAnalysis();
 	void analyse();
+	void resetMask(SettingKinect* pSettingKinect, int changes);
 public:
 	Mat m_depthf  ;
 	Mat m_filterMat;

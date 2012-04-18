@@ -26,10 +26,9 @@ int main(int argc, char **argv) {
 	string suffix(".png");
 	int iter(0);
 
-	int nthresh = 140;
 	if( argc > 1){
-		nthresh = atoi(argv[1]);
-		printf("Threshval: %i\n",nthresh);
+		int wk = atoi(argv[1]);
+		if(wk==0) withKinect=false;
 	}
 
 	//Load & Create settings
@@ -75,15 +74,15 @@ int main(int argc, char **argv) {
 		MyFreenectDevice& mydevice = freenect->createDevice<MyFreenectDevice>(0); 
 		device = &mydevice;
 
-		// Add Setting
-		//device->setSettingKinect(settingKinect);
+		ia = new ImageAnalysis(device, settingKinect);
+
 		//Set Signals
-		settingKinect->updateSig.connect(boost::bind(&MyFreenectDevice::update,device, _1));
+		settingKinect->updateSig.connect(boost::bind(&MyFreenectDevice::update,device, _1,1));
+		settingKinect->updateSig.connect(boost::bind(&ImageAnalysis::resetMask,ia, _1,_2));
 
 		//device.startVideo();
 		device->startDepth();
 
-		ia = new ImageAnalysis(device, settingKinect);
 
 		//namedWindow("rgb",CV_WINDOW_AUTOSIZE);
 		namedWindow("depth",CV_WINDOW_AUTOSIZE);

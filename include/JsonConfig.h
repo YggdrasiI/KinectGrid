@@ -40,7 +40,7 @@ class JsonConfig{
 			clearConfig();
 		};
 	
-		int setConfig(const char* json_str);
+		int setConfig(const char* json_str, int update);
 		char* getConfig();//const;
 		int loadConfigFile(const char* filename);
 		int saveConfigFile(const char* filename);	
@@ -48,7 +48,7 @@ class JsonConfig{
 		 * Create minimal json element.
 		 */
 		virtual cJSON* loadDefaults();
-		virtual int update(cJSON* new_json, cJSON* old_json);
+		virtual int update(cJSON* new_json, cJSON* old_json, int changes);
 		cJSON* getJSON() {return m_pjson_root;};
 
 

@@ -193,7 +193,7 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 						 }else{
 						 	printf("Filename not allowed\n");
 						 }
-						 /* force reloading of website */
+						 /* force reload of website */
 						 return 0;
 					 }
 			break;
@@ -213,8 +213,8 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 							printf("update settingKinect values\n");
 							const char* json_str = onion_request_get_post(req,"settingKinect");
 							if( json_str != NULL){
-								printf("Get new settingKinect: %s\n",json_str);
-								m_psettingKinect->setConfig(json_str);
+								//printf("Get new settingKinect: %s\n",json_str);
+								m_psettingKinect->setConfig(json_str, NO);
 							}else{
 								return -1;
 							}

@@ -13,12 +13,12 @@ int JsonConfig::clearConfig()
 	m_pjson_mutex.unlock();
 }
 
-int JsonConfig::setConfig(const char* json_str)
+int JsonConfig::setConfig(const char* json_str, int changes=NO)
 {
 	cJSON* pNewRoot = cJSON_Parse(json_str);
 	if( pNewRoot == NULL ) return -1;
 	/* Not call setConfig from construtor. update is virtual. Use init() instead.*/
-	update(pNewRoot,m_pjson_root);
+	update(pNewRoot,m_pjson_root, changes);
 
 	clearConfig();
 	m_pjson_mutex.lock();
@@ -43,7 +43,7 @@ int JsonConfig::loadConfigFile(const char* filename)
 		fread(data,1,len,f);
 		fclose(f);
 
-		setConfig(data);
+		setConfig(data, CONFIG);
 		free(data);
 	}else{
 		printf("File %s not found. Use default values.\n",filename);
@@ -72,7 +72,7 @@ return root;
 }
 
 
-int JsonConfig::update(cJSON* new_json, cJSON* old_json)
+int JsonConfig::update(cJSON* new_json, cJSON* old_json, int changes=NO)
 {
 	printf("Error (JsonConfig): Parent update method called.\n");
 	return 0;

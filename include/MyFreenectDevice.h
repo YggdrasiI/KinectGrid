@@ -37,7 +37,7 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 //	void setSettingKinect(SettingKinect* sk);
 
 	/* propagate setting changes */
-	void update(SettingKinect* pSettingKinect);
+	void update(SettingKinect* pSettingKinect, int changes);
 
   private:
 	std::vector<uint8_t> m_buffer_depth;

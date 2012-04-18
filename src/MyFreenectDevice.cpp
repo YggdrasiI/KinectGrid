@@ -103,9 +103,13 @@ bool MyFreenectDevice::getDepth(Mat& output)
 	update();
 }*/
 
-void MyFreenectDevice::update(SettingKinect* pSettingKinect){
+void MyFreenectDevice::update(SettingKinect* pSettingKinect, int changes){
 	// Set vertical Position
-	setTiltDegrees(pSettingKinect->m_kinectMotorAngle);
+		printf("MyFreenectDevice: ================\n");
+	if( changes &  MOTOR ){
+		printf("MyFreenectDevice: Set motor degree\n");
+		setTiltDegrees(pSettingKinect->m_kinectMotorAngle);
+	}
 	// Set Led of device
 	setLed(LED_GREEN);
 }
