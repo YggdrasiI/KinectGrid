@@ -18,20 +18,20 @@ ImageAnalysis::~ImageAnalysis()
 
 void ImageAnalysis::analyse()
 {
-/*	cvSetImageROI((IplImage*)&m_depthf,m_pSettingKinect->m_roi);
-	cvSetImageROI((IplImage*)&m_depthMask,m_pSettingKinect->m_roi);
-	cvSetImageROI((IplImage*)&m_filteredMat,m_pSettingKinect->m_roi); */
-	m_pdevice->getDepth8UC1(m_depthf);
+	Rect roi = m_pSettingKinect->m_roi;
+	Mat dfRoi(m_depthf,roi);
+	Mat dMRoi(m_depthMask,roi);
+	Mat fMRoi(m_filteredMat,roi);
 
-	// Use eary frames to generate mask
 	if( m_depthMaskCounter < 0){
+		// Use (fullsize) eary frames to generate mask
+		m_pdevice->getDepth8UC1(m_depthf, Rect(0,0,KRES_X,KRES_Y));
 		if( m_depthMaskCounter++ > -25) createMask(m_depthf,m_depthMask,80,m_depthMask);
+	}else{
+		// Analyse Roi of depth frame
+		m_pdevice->getDepth8UC1(dfRoi, roi);
 	}
 
 	//filter image
-	filter(m_depthf,m_depthMask,80, m_filteredMat);
-
-/*	cvResetImageROI((IplImage*)&m_filteredMat);
-	cvResetImageROI((IplImage*)&m_depthMask);
-	cvResetImageROI((IplImage*)&m_depthf);*/
+	filter(dfRoi,dMRoi,80,fMRoi);
 }

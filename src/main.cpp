@@ -6,6 +6,9 @@
 #include <cxcore.h>
 #include <highgui.h>
 
+#include <boost/signal.hpp>
+#include <boost/bind.hpp>
+
 #include "constants.h"
 #include "MyFreenectDevice.h"
 #include "ImageAnalysis.h"
@@ -18,7 +21,7 @@
 
 int main(int argc, char **argv) {
 	bool die(false);
-  bool withKinect(false);
+  bool withKinect(true);
 	string filename("snapshot");
 	string suffix(".png");
 	int iter(0);
@@ -34,9 +37,9 @@ int main(int argc, char **argv) {
 	SettingMMTT *settingMMTT = new SettingMMTT();
 	settingMMTT->init("settingMMTT.ini");
 	
-	if(true){
+	if(false){
 	char *conf = settingMMTT->getConfig();
-	//printf("Settings:%s \n", conf);
+	printf("Settings:%s \n", conf);
 	free(conf);
 	}
 	//JsonConfig settingKinect("settingKinectDefault.json", &JsonConfig::loadKinectSetting );
@@ -44,9 +47,9 @@ int main(int argc, char **argv) {
 	//settingKinect->init("settingKinectDefault.json");
 	settingKinect->init( settingMMTT->getString("lastSetting") );
 
-	if(true){
+	if(false){
 	char *conf = settingKinect->getConfig();
-	//printf("Settings:%s \n", conf);
+	printf("Settings:%s \n", conf);
 	free(conf);
 	}
 
@@ -73,7 +76,9 @@ int main(int argc, char **argv) {
 		device = &mydevice;
 
 		// Add Setting
-		device->setSettingKinect(settingKinect);
+		//device->setSettingKinect(settingKinect);
+		//Set Signals
+		settingKinect->updateSig.connect(boost::bind(&MyFreenectDevice::update,device, _1));
 
 		//device.startVideo();
 		device->startDepth();
@@ -105,8 +110,8 @@ int main(int argc, char **argv) {
 				 _newblobresult->Filter( *_newblobresult, B_EXCLUDE, CBlobGetArea(), B_LESS, val_blob_minsize.internal_value );
 				 */
 
-			cv::imshow("depth",ia->m_depthf);
-			cv::imshow("filter",ia->m_filteredMat);
+			cv::imshow("depth",ia->m_depthf(settingKinect->m_roi));
+			cv::imshow("filter",ia->m_filteredMat(settingKinect->m_roi));
 		}else{
 			sleep(1);
 		}

@@ -66,13 +66,15 @@ function changeDouble(id,min,max,diff){
 	//update displayed value
 	o = document.getElementById(id);
  	val = Math.min(Math.max(min,Number(o.value)+diff),max);
+	//round to cut rounding errors
+	val = Math.round( val*1E6)/1E6;
  	o.value = val;
 
 	//modifyJson obj.
 	modifyJson(id,val);
 
 	//send altered obj. to server
-	send("json?actionid=0",{"settingKinect":json_kinect});
+	send("json?actionid=0","settingKinect="+JSON.stringify(json_kinect));
 }
 
 function changeInt(id,min,max,diff){

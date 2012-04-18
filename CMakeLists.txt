@@ -11,7 +11,16 @@ find_package(OpenCV REQUIRED)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 find_package(Freenect REQUIRED)
 find_package(Onion REQUIRED)
+
+set(Boost_USE_STATIC_LIBS        OFF)
+#set(Boost_USE_MULTITHREADED      ON)
+#set(Boost_USE_STATIC_RUNTIME    OFF)
+#set(Boost_DEBUG TRUE)
+find_package(Boost COMPONENTS signals REQUIRED)
+
 #find_package(OtherPackage OPTIONAL)
+
+
 
 set(EXTRA_C_FLAGS_DEBUG "-g")
 
@@ -23,6 +32,7 @@ link_directories (
 	${Freenect_LIBRARY}
 	${Onion_LIBRARY}
 	${MMTTlinux_BINARY_DIR}/lib/cvblobslib
+	${Boost_LIBRARY_DIRS}
 	) 
 
 

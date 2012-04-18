@@ -17,7 +17,7 @@ int JsonConfig::setConfig(const char* json_str)
 {
 	cJSON* pNewRoot = cJSON_Parse(json_str);
 	if( pNewRoot == NULL ) return -1;
-	/* Not call setConfig from construtor. update is virtual. Use init()*/
+	/* Not call setConfig from construtor. update is virtual. Use init() instead.*/
 	update(pNewRoot,m_pjson_root);
 
 	clearConfig();

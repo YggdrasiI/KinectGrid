@@ -1,5 +1,6 @@
 #include "MyFreenectDevice.h"
 
+
 MyFreenectDevice::MyFreenectDevice(freenect_context *_ctx, int _index):
 	Freenect::FreenectDevice(_ctx, _index),
 	m_buffer_depth(FREENECT_DEPTH_11BIT),
@@ -64,18 +65,13 @@ bool MyFreenectDevice::getVideo(Mat& output)
 /*
  Convert depth to U8C1 to avoid copy and convert later.
 */
-bool MyFreenectDevice::getDepth8UC1(Mat& output) 
+bool MyFreenectDevice::getDepth8UC1(Mat& output, Rect roi) 
 {
 	m_depth_mutex.lock();
 	if(m_new_depth_frame) {
-		//m_depthMat.copyTo(output);
-		//
-
-		Mat roi(output,m_pSettingKinect->m_roi);
-printf("Dim of roiMat: %i %i\n", roi.size().width, roi.size().height);
-
+		//printf("Dim of roiMat: %i %i\n", output.size().width, output.size().height);
 		//m_depthMat.convertTo(output, CV_8UC1, -255.0/2048.0, 255.0);//Invert colors!
-		m_depthMat(m_pSettingKinect->m_roi).convertTo(roi, CV_8UC1, -255.0/2048.0, 255.0);//Invert colors!
+		m_depthMat(roi).convertTo(output, CV_8UC1, -255.0/2048.0, 255.0);//Invert colors!
 		m_new_depth_frame = false;
 		m_depth_mutex.unlock();
 		return true;
@@ -98,5 +94,19 @@ bool MyFreenectDevice::getDepth(Mat& output)
 		m_depth_mutex.unlock();
 		return false;
 	}
+}
+
+/*void MyFreenectDevice::setSettingKinect(SettingKinect* sk){
+	if(sk==NULL) return;
+	m_pSettingKinect=sk;
+	m_pSettingKinect->setDevice(this);
+	update();
+}*/
+
+void MyFreenectDevice::update(SettingKinect* pSettingKinect){
+	// Set vertical Position
+	setTiltDegrees(pSettingKinect->m_kinectMotorAngle);
+	// Set Led of device
+	setLed(LED_GREEN);
 }
 

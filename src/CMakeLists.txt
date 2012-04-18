@@ -1,6 +1,7 @@
 # Zusätzliche include-Verzeichnisse
 include_directories(
 	${CMAKE_SOURCE_DIR}/lib/cvblobslib
+	${Boost_INCLUDE_DIR}
 	)
 
 # Hier wird definiert, welche Quellcodedateien zur Programmdatei dazugehören.
@@ -59,7 +60,7 @@ add_library (server SHARED ${server_SRCS})
 add_executable (main ${main_SRCS} )
 
 # Die ausführbare Datei wird gegen diese Bibliotheken gelinkt.
-target_link_libraries(main cvblobslib server ${OpenCV_LIBS} ${Freenect_LIBS} ${Onion_LIBS})
+target_link_libraries(main cvblobslib server ${OpenCV_LIBS} ${Freenect_LIBS} ${Onion_LIBS} ${Boost_LIBRARIES})
 #add_dependencies(main server)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
