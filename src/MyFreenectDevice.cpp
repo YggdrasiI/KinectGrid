@@ -22,7 +22,9 @@ MyFreenectDevice::MyFreenectDevice(freenect_context *_ctx, int _index):
 
 MyFreenectDevice::~MyFreenectDevice()
 {
+	m_depth_mutex.lock();
 	stopDepth();
+	m_depth_mutex.unlock();
 	//freenect.deleteDevice(0); 
 }
 

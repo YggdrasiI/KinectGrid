@@ -12,6 +12,7 @@ static const int NMASKFRAMES = 30;
 
 // tracker parameters
 static const double TMINAREA   = 512;    // minimum area of blob to track
+static const double TMAXAREA   = 512*8;    // maximum area of blob to track
 static const double TMAXRADIUS = 24;    // a blob is identified with a blob in the previous frame if it exists within this radius
 //
 //

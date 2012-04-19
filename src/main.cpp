@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 	//MyFreenectDevice& device = freenect.createDevice<MyFreenectDevice>(0); 
 	Freenect::Freenect* freenect;
 	MyFreenectDevice* device;
-	Tracker tracker(TMINAREA, TMAXRADIUS);
+	Tracker tracker(settingKinect);
 
 	if(withKinect){
 		freenect = new Freenect::Freenect;
@@ -84,6 +84,11 @@ int main(int argc, char **argv) {
 		//device.startVideo();
 		device->startDepth();
 
+		/* This should fix the problem, that opencv window did not closed on quit.
+		 * See http://stackoverflow.com/questions/8842901/opencv-closing-the-image-display-window
+		 * But I see no advancement.
+		 */
+		//cvStartWindowThread();
 
 		namedWindow("img",CV_WINDOW_AUTOSIZE);
 	}
@@ -98,7 +103,9 @@ int main(int argc, char **argv) {
 		if(withKinect){
 			ia->analyse(); 
 			//find blobs
-			//tracker.trackBlobs(ia->m_filteredMat, true);
+			
+			tracker.trackBlobs(ia->m_filteredMat, true);
+
 			/*
 				 _tmpThresh->origin = 1;
 				 _tmpThresh->imageData = (char*) depthf.data;
@@ -125,7 +132,7 @@ int main(int argc, char **argv) {
 			sleep(1);
 		}
 
-		char k = cvWaitKey(30);
+		char k = cvWaitKey(10);
 		if( k == 27 ){
 			printf("End main loop\n");
 			die = true;
@@ -147,15 +154,20 @@ int main(int argc, char **argv) {
 	}
 
 	/* Clean up objects */
+	delete onion;
+
 	if(withKinect){
 		//device->stopVideo();
-		device->stopDepth();
-		cvDestroyWindow("img");
+		//device->stopDepth();
 		delete ia;
 		delete freenect;
+		//cvDestroyWindow("img");
+		cvDestroyAllWindows();
+
+		//wait some time to give img-window enouth time to close.
+		cvWaitKey(1);//no, did not work on linux. Use cvStartWindowThread()
 	}
 
-	delete onion;
 	delete settingKinect;
 	delete settingMMTT;
 

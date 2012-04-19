@@ -6,10 +6,12 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 	m_depthf  (Size(640,480),CV_8UC1),
 	m_filterMat  (Size(640,480),CV_8UC1),
 	m_depthMask  (Size(640,480),CV_8UC1),
+	m_depthMaskWithoutThresh  (Size(640,480),CV_8UC1),//backup to generate new deptMask
 	m_filteredMat  (Size(640,480),CV_8UC1),
 	m_pdevice(pdevice),
 	m_depthMaskCounter(-NMASKFRAMES)//use -depthMaskCounter Frames as mask
 {
+		m_depthMask = Scalar(255);//temporary full mask
 }
 
 ImageAnalysis::~ImageAnalysis()
@@ -26,7 +28,10 @@ void ImageAnalysis::analyse()
 	if( m_depthMaskCounter < 0){
 		// Use (fullsize) eary frames to generate mask
 		m_pdevice->getDepth8UC1(m_depthf, Rect(0,0,KRES_X,KRES_Y));
-		if( m_depthMaskCounter++ > 5-NMASKFRAMES) createMask(m_depthf,m_depthMask,80,m_depthMask);
+		if( m_depthMaskCounter++ > 5-NMASKFRAMES)
+			createMask(m_depthf,m_depthMaskWithoutThresh,/*m_pSettingKinect->m_marginBack,*/m_depthMaskWithoutThresh);
+		if( m_depthMaskCounter == 0)
+			addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
 	}else{
 		// Analyse Roi of depth frame
 		m_pdevice->getDepth8UC1(dfRoi, roi);
@@ -43,7 +48,12 @@ void ImageAnalysis::analyse()
 void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 	if( changes & (MASK|MOTOR|CONFIG) ){
 		printf("ImageAnalysis: Create new mask\n");
-		m_depthMask = Scalar(0);
+		m_depthMaskWithoutThresh = Scalar(0);
+		m_depthMask = Scalar(255);//temporary full mask
 		m_depthMaskCounter = -NMASKFRAMES;
+	}
+	if( changes & MARGIN ){
+		printf("ImageAnalysis: Change thresh val\n");
+			addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
 	}
 }

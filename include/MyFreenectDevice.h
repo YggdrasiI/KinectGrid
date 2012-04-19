@@ -58,7 +58,11 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 /*
  * 
  */
-static void createMask(Mat& src, Mat& oldMask, int nthresh, Mat& mask){
+inline void addThresh(Mat& src, int nthresh, Mat& dst){
+	dst = max(src,nthresh);
+}
+
+static void createMask(Mat& src, Mat& oldMask,/* int nthresh,*/ Mat& mask){
 
 	//Increase dark (near) parts to filter contur errors.
 	Mat Kernel(Size(5, 5), CV_8UC1);
@@ -70,10 +74,10 @@ static void createMask(Mat& src, Mat& oldMask, int nthresh, Mat& mask){
 	/*Mat threshold(src.size(), src.type());
 	threshold.setTo(Scalar(nthresh));
 	mask = max(mask,threshold);*/
-	mask = max(mask+4,nthresh);
+	//mask = max(mask+4,nthresh);
 
 	//shift mask to filter small distance errors.
-	mask = max(mask,oldMask);
+	mask = max(mask+4,oldMask);
 }
 
 //dst will used as tmp val

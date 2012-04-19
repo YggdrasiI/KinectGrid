@@ -15,6 +15,7 @@ public:
 	Mat m_depthf  ;
 	Mat m_filterMat;
 	Mat m_depthMask;
+	Mat m_depthMaskWithoutThresh;
 	Mat m_filteredMat;
 private:
 	MyFreenectDevice* m_pdevice;

@@ -1,7 +1,22 @@
+/*
+ * Code from: 
+ * http://www.keithlantz.net/2011/04/detecting-blobs-with-cvblobslib-and-tracking-blob-events-across-frames/
+ */
+
 #include "Tracker.h"
 
-Tracker::Tracker(double min_area, double max_radius) : min_area(min_area), max_radius(max_radius)
+Tracker::Tracker(double min_area, double max_area, double max_radius) : m_pSettingKinect(NULL), m_min_area(min_area), m_max_area(max_area), m_max_radius(max_radius)
 {
+	m_pmin_area = &m_min_area;
+	m_pmax_area = &m_max_area;
+	m_pmax_radius = &m_max_radius;
+}
+
+Tracker::Tracker(SettingKinect* pSettingKinect) : m_pSettingKinect(pSettingKinect), m_min_area(-1.0/*pSettingKinect->m_minBlobArea*/), m_max_area(-1.0/*pSettingKinect->m_maxBlobArea*/), m_max_radius(TMAXRADIUS)
+{
+	m_pmin_area = &(m_pSettingKinect->m_minBlobArea);
+	m_pmax_area = &(m_pSettingKinect->m_maxBlobArea);
+	m_pmax_radius = &m_max_radius;
 }
 
 Tracker::~Tracker()
@@ -10,6 +25,9 @@ Tracker::~Tracker()
 
 void Tracker::trackBlobs(cv::Mat &mat, bool history)
 {
+	double min_area = *m_pmin_area;
+	double max_area = *m_pmax_area;
+	double max_radius = *m_pmax_radius;
 	double x, y, min_x, min_y, max_x, max_y;
 	cBlob temp;
 
@@ -17,8 +35,9 @@ void Tracker::trackBlobs(cv::Mat &mat, bool history)
 	img = mat;
 
 	// cvblobslib blob extraction
-	blob_result = CBlobResult(&img, NULL, 127, false);
-	blob_result.Filter(blob_result, B_EXCLUDE, CBlobGetArea(), B_LESS, min_area); // filter blobs with area less than min_area units
+	blob_result = CBlobResult(&img, NULL, 127/*img∈{0,255}->thresh unimportant*/, false);
+	blob_result.Filter(blob_result, B_EXCLUDE, CBlobGetArea(), B_LESS, min_area); 
+	blob_result.Filter(blob_result, B_EXCLUDE, CBlobGetArea(), B_GREATER, max_area);
 
 	// clear the blobs from two frames ago
 	blobs_previous.clear();
