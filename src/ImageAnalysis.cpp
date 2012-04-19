@@ -41,7 +41,6 @@ void ImageAnalysis::analyse()
  * New mask will generated.
  */
 void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
-		printf("In ImageAnalysis: =============\n");
 	if( changes & (MASK|MOTOR|CONFIG) ){
 		printf("ImageAnalysis: Create new mask\n");
 		m_depthMask = Scalar(0);

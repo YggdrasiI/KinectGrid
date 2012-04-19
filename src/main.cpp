@@ -17,11 +17,12 @@
 #include "JsonConfig.h"
 #include "OnionServer.h"
 
-
+enum Show {SHOW_DEPTH=1,SHOW_MASK=2,SHOW_FILTERED=3};
 
 int main(int argc, char **argv) {
 	bool die(false);
   bool withKinect(true);
+	int imshowNbr = SHOW_FILTERED; 
 	string filename("snapshot");
 	string suffix(".png");
 	int iter(0);
@@ -77,16 +78,14 @@ int main(int argc, char **argv) {
 		ia = new ImageAnalysis(device, settingKinect);
 
 		//Set Signals
-		settingKinect->updateSig.connect(boost::bind(&MyFreenectDevice::update,device, _1,1));
-		settingKinect->updateSig.connect(boost::bind(&ImageAnalysis::resetMask,ia, _1,_2));
+		settingKinect->updateSig.connect(boost::bind(&MyFreenectDevice::update,device, _1, _2));
+		settingKinect->updateSig.connect(boost::bind(&ImageAnalysis::resetMask,ia, _1, _2));
 
 		//device.startVideo();
 		device->startDepth();
 
 
-		//namedWindow("rgb",CV_WINDOW_AUTOSIZE);
-		namedWindow("depth",CV_WINDOW_AUTOSIZE);
-		namedWindow("filter",CV_WINDOW_AUTOSIZE);
+		namedWindow("img",CV_WINDOW_AUTOSIZE);
 	}
 
 
@@ -109,13 +108,24 @@ int main(int argc, char **argv) {
 				 _newblobresult->Filter( *_newblobresult, B_EXCLUDE, CBlobGetArea(), B_LESS, val_blob_minsize.internal_value );
 				 */
 
-			cv::imshow("depth",ia->m_depthf(settingKinect->m_roi));
-			cv::imshow("filter",ia->m_filteredMat(settingKinect->m_roi));
+			switch (imshowNbr){
+				case SHOW_DEPTH:
+					cv::imshow("img",ia->m_depthf(settingKinect->m_roi));
+					break;
+				case SHOW_MASK:
+					cv::imshow("img",ia->m_depthMask(settingKinect->m_roi));
+					break;
+				case SHOW_FILTERED:
+				default:
+					cv::imshow("img",ia->m_filteredMat(settingKinect->m_roi));
+					break;
+			}
+
 		}else{
 			sleep(1);
 		}
 
-		char k = cvWaitKey(5);
+		char k = cvWaitKey(30);
 		if( k == 27 ){
 			printf("End main loop\n");
 			die = true;
@@ -129,15 +139,18 @@ int main(int argc, char **argv) {
 				 i_snap++;
 				 */
 		}
+		if( k > 48 && k<58 ){
+			imshowNbr = k-48;			
+		}
 		if(iter >= 20000) break;
 		iter++;
 	}
 
 	/* Clean up objects */
 	if(withKinect){
-		//device.stopVideo();
-		cvDestroyWindow("filter");
-		cvDestroyWindow("depth");
+		//device->stopVideo();
+		device->stopDepth();
+		cvDestroyWindow("img");
 		delete ia;
 		delete freenect;
 	}
