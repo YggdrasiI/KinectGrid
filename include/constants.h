@@ -14,6 +14,20 @@ static const int NMASKFRAMES = 30;
 static const double TMINAREA   = 512;    // minimum area of blob to track
 static const double TMAXAREA   = 512*8;    // maximum area of blob to track
 static const double TMAXRADIUS = 24;    // a blob is identified with a blob in the previous frame if it exists within this radius
+static const int MAXHANDS = 20; //maximal number of detected hands for tuio messages. This value limit the pool of ids.
+static const int MAXAREAS = 20; //maximal number of areas.
+static const int AREACOLORS[10][3] = { 
+	{255, 0, 0 },
+  {0, 255, 0 },
+	{0, 0, 255},
+	{255, 255, 0},
+	{255, 0, 255},
+	{0, 255, 255},
+	{255, 128, 128},
+	{128, 255, 128},
+	{128, 128, 255},
+	{255, 255, 255}
+};
 //
 //
 

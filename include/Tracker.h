@@ -6,7 +6,9 @@
 #ifndef TRACKER_H
 #define TRACKER_H
 
-#include <opencv/cv.h>
+#include <cv.h>
+#include <cxcore.h>
+#include <highgui.h>
 #include "../cvblobslib/BlobResult.h"
 #include <vector>
 #include "blob.h"
@@ -35,9 +37,14 @@ class Tracker {
 
 	// we will convert the matrix object passed from our cFilter class to an object of type IplImage for calling the CBlobResult constructor
 	IplImage img;
+	IplImage areaImg;
 
 	// storage of the current blobs and the blobs from the previous frame
 	std::vector<cBlob> blobs, blobs_previous;
+
+	// storage of used handids
+	bool handids[MAXHANDS];
+	int last_handid;
 
   protected:
 
@@ -46,7 +53,7 @@ class Tracker {
 	Tracker(double min_area, double max_area, double max_radius);
 	~Tracker();
 	
-	void trackBlobs(cv::Mat &mat, bool history);
+	void trackBlobs(const Mat &mat, const Mat &areas, bool history);
 	std::vector<cBlob>& getBlobs();
 };
 

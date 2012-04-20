@@ -4,7 +4,7 @@
 enum { BLOB_NULL, BLOB_DOWN, BLOB_MOVE, BLOB_UP }; // event types
 
 struct point {
-	double x, y;
+	double x, y;//avoid double for ARM?
 };
 
 class cBlob {
@@ -17,6 +17,8 @@ class cBlob {
 	point min, max;		// to define our axis-aligned bounding box
 	int event;		// event type: one of BLOB_NULL, BLOB_DOWN, BLOB_MOVE, BLOB_UP
 	bool tracked;		// a flag to indicate this blob has been processed
+	int handid; // associate id for tuio processing
+	int areaid; 
 };
 
 #endif

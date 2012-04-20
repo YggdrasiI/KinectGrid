@@ -17,7 +17,8 @@
 #include "JsonConfig.h"
 #include "OnionServer.h"
 
-enum Show {SHOW_DEPTH=1,SHOW_MASK=2,SHOW_FILTERED=3};
+// Selection of output image
+enum Show {SHOW_DEPTH=1,SHOW_MASK=2,SHOW_FILTERED=3,SHOW_AREAS=4};
 
 int main(int argc, char **argv) {
 	bool die(false);
@@ -101,11 +102,23 @@ int main(int argc, char **argv) {
 
 		//get 8 bit depth image
 		if(withKinect){
-			ia->analyse(); 
-			//find blobs
-			
-			tracker.trackBlobs(ia->m_filteredMat, true);
 
+			switch (settingMMTT->m_mode){
+				case HAND_DETECTION:
+					{
+						ia->analyse(); 
+						//find blobs
+						//Mat foo = ia->m_areaMask(settingKinect->m_roi);
+						tracker.trackBlobs(ia->m_filteredMat(settingKinect->m_roi), ia->m_areaMask, true);
+					}
+					break;
+				case AREA_DETECTION:
+				default:
+					{
+						ia->hand_detection();
+					}
+					break;
+			}
 			/*
 				 _tmpThresh->origin = 1;
 				 _tmpThresh->imageData = (char*) depthf.data;
@@ -118,6 +131,9 @@ int main(int argc, char **argv) {
 			switch (imshowNbr){
 				case SHOW_DEPTH:
 					cv::imshow("img",ia->m_depthf(settingKinect->m_roi));
+					break;
+				case SHOW_AREAS:
+					cv::imshow("img",ia->getColoredAreas()(settingKinect->m_roi) );
 					break;
 				case SHOW_MASK:
 					cv::imshow("img",ia->m_depthMask(settingKinect->m_roi));
@@ -146,7 +162,7 @@ int main(int argc, char **argv) {
 				 i_snap++;
 				 */
 		}
-		if( k > 48 && k<58 ){
+		if( k > 48 && k<58 ){ // '1'<=k<='9'
 			imshowNbr = k-48;			
 		}
 		if(iter >= 20000) break;
