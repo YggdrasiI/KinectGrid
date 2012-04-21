@@ -1,10 +1,9 @@
-# Der Projektname
 project(MMTTlinux)
-
-# Minimal benötigte CMake-Version wenn z.B. bestimmte CMake-Kommandos benutzt werden
 cmake_minimum_required(VERSION 2.6)
 
-# Benötigte oder optionale Pakete. Hier können z.B. Qt4 oder Boost stehen
+set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} -g")
+
+## required and optional packages
 #set(CMAKE_MODULE_PATH ${CMAKE_ROOT}/Modules ${CMAKE_SOURCE_DIR})
 #set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 find_package(OpenCV REQUIRED)
@@ -20,10 +19,10 @@ find_package(Boost COMPONENTS signals REQUIRED)
 
 #find_package(OtherPackage OPTIONAL)
 
+## end required and optional packages
 
 
-set(EXTRA_C_FLAGS_DEBUG "-g")
-
+## add include dirs and lib dirs of above packages
 include_directories(
 		${CMAKE_SOURCE_DIR}/include
 		${Freenect_INCLUDE_DIR}
@@ -31,9 +30,11 @@ include_directories(
 link_directories (
 	${Freenect_LIBRARY}
 	${Onion_LIBRARY}
-	${MMTTlinux_BINARY_DIR}/lib/cvblobslib
+	${${CMAKE_PROJECT_NAME}_BINARY_DIR}/lib/cvblobslib
 	${Boost_LIBRARY_DIRS}
 	) 
+## end add include dis and lib dirs of above packages
+
 
 
 #SET(LIBS ${LIBS} ${OpenCV_LIBS} ${Freenect_LIBS})
@@ -42,6 +43,7 @@ link_directories (
 add_subdirectory(lib)
 add_subdirectory(src)
 
+## TODO (did not work)
 # Es sollen auch einige Dateien installiert werden, z.B. Bilder oder Übersetzungen
 #install(FILES ${CMAKE_SOURCE_DIR}/html/jquery* html/mmtt_script.js DESTINATION html)
 
@@ -62,6 +64,6 @@ macro(copy_files GLOBPAT DESTINATION)
       )
   endforeach(FILENAME)
 endmacro(copy_files)
-
+## end TODO
 
 #add_dependencies(main copy_files "html/*.js" "${CMAKE_CURRENT_BINARY_DIR}/html" )

@@ -102,6 +102,7 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history)
 				blobs[i].origin.y = history ? blobs_previous[j].origin.y : blobs_previous[j].location.y;
 
 				blobs[i].handid = blobs_previous[j].handid;
+				blobs[i].cursor = blobs_previous[j].cursor;
 				new_hand = false;
 				break;
 			}
@@ -143,7 +144,7 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history)
 				counter++;
 				tb = blobs[i];
 				//printf("Blobcoordsd %f, %f\n", blobs[i].location.x, blobs[i].location.y );
-				printf("Blob areaid: %i, handid: %i, (%f,%f)\n", blobs[i].areaid, blobs[i].handid, blobs[i].location.x, blobs[i].location.y );
+				//printf("Blob areaid: %i, handid: %i, (%f,%f)\n", blobs[i].areaid, blobs[i].handid, blobs[i].location.x, blobs[i].location.y );
 				cvLine(&img,
 						Point((int)tb.origin.x,(int)tb.origin.y),
 						Point((int)tb.location.x,(int)tb.location.y),Scalar(244),2);

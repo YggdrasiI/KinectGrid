@@ -16,6 +16,7 @@
 #include "Tracker.h"
 #include "JsonConfig.h"
 #include "OnionServer.h"
+#include "MyTuioServer.h"
 
 // Selection of output image
 enum Show {SHOW_DEPTH=1,SHOW_MASK=2,SHOW_FILTERED=3,SHOW_AREAS=4};
@@ -58,6 +59,8 @@ int main(int argc, char **argv) {
 	//init onion server thread
 	OnionServer* onion = new OnionServer(settingMMTT, settingKinect); 
 	onion->start_server();
+
+	MyTuioServer tuio;
 
 	//saves settings
 	//settingMMTT->saveConfigFile("settingMMTT.json");
@@ -110,6 +113,9 @@ int main(int argc, char **argv) {
 						//find blobs
 						//Mat foo = ia->m_areaMask(settingKinect->m_roi);
 						tracker.trackBlobs(ia->m_filteredMat(settingKinect->m_roi), ia->m_areaMask, true);
+
+						//send tuio
+						tuio.send_blobs(tracker.getBlobs());
 					}
 					break;
 				case AREA_DETECTION:

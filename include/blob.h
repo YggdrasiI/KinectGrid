@@ -1,10 +1,12 @@
 #ifndef BLOB_H
 #define BLOB_H
 
+#include "TuioCursor.h"
+
 enum { BLOB_NULL, BLOB_DOWN, BLOB_MOVE, BLOB_UP }; // event types
 
 struct point {
-	double x, y;//avoid double for ARM?
+	float x, y;//avoid double for ARM?
 };
 
 class cBlob {
@@ -19,6 +21,7 @@ class cBlob {
 	bool tracked;		// a flag to indicate this blob has been processed
 	int handid; // associate id for tuio processing
 	int areaid; 
+	TUIO::TuioCursor *cursor;
 };
 
 #endif
