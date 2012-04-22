@@ -6,6 +6,8 @@
 
 #include <stdlib.h>
 #include <vector>
+#include <cv.h>
+#include "constants.h"
 #include "blob.h"
 
 using namespace TUIO;
@@ -23,7 +25,7 @@ class MyTuioServer: public TuioServer {
 			//tuioServer->enablePeriodicMessages();
 		};
 		~MyTuioServer() { };
-		void send_blobs(std::vector<cBlob>& blobs);
+		void send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& areas, cv::Rect& roi);
 	private:
 		TuioCursor *cursor;
 		TuioTime currentTime;

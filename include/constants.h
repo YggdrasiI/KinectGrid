@@ -1,6 +1,8 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+#include <cv.h>
+
 /* Resoluton of kinect images */
 //#define KRES_X = 640;
 //#define KRES_Y = 480;
@@ -39,6 +41,15 @@ enum Changes {NO=0,MASK=1,MOTOR=2,CONFIG=4,MARGIN=8,AREAS=16, ALL=1023};
  * I.e. hand detection mode, area detection mode, ...
  */
 enum FunctionMode{ HAND_DETECTION, AREA_DETECTION, DEPTH_MASK_DETECTION };
+
+class Area{
+	public:
+		cv::Rect rect;//minx,miny, width and height. Position is absolute and ignore roi.
+		int id;
+		cv::Scalar color;
+		double area;//Flaecheninhalt
+};
+
 
 inline double min(double a,double b){return a<b?a:b;};
 inline double max(double a,double b){return a>b?a:b;};

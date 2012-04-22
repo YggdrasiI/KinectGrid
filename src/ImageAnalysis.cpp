@@ -24,8 +24,10 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 	 *  | 1 | |———|
 	 *  |___||_20_|
 	 */
-	Rect a1 = Rect(30,30,KRES_X/2-60,KRES_Y-60);
-	m_areaMask(a1) = Scalar(1);
+	//Rect a1 = Rect(30,30,KRES_X/2-60,KRES_Y-60);
+	Rect a1 = Rect(200,100,200,200);
+	int areaid = 1;
+	m_areaMask(a1) = Scalar(areaid);
 	//m_areaMask(Rect(KRES_X/2+30,30,KRES_X/2-60,KRES_Y/2-30)) = Scalar(2);
 	//m_areaMask(Rect(KRES_X/2+30,KRES_Y/2-30,KRES_X/2-60,KRES_Y/2-30)) = Scalar(20);
 
@@ -34,7 +36,6 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 		 m_areaMask( Rect(i*40,j*40,40,40 )) = Scalar(i>8?200:10);
 		 } */
 
-	int areaid = 1;
 	Area area;
 	area.rect = a1;
 	area.id = areaid;

@@ -2,6 +2,7 @@ project(MMTTlinux)
 cmake_minimum_required(VERSION 2.6)
 
 set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} -g")
+set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -g")
 
 ## required and optional packages
 #set(CMAKE_MODULE_PATH ${CMAKE_ROOT}/Modules ${CMAKE_SOURCE_DIR})

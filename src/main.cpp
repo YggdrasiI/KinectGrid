@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 						tracker.trackBlobs(ia->m_filteredMat(settingKinect->m_roi), ia->m_areaMask, true);
 
 						//send tuio
-						tuio.send_blobs(tracker.getBlobs(), settingKinect->m_areas);
+						tuio.send_blobs(tracker.getBlobs(), settingKinect->m_areas, settingKinect->m_roi);
 					}
 					break;
 				case AREA_DETECTION:
