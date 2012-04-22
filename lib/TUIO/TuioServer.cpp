@@ -270,8 +270,13 @@ void TuioServer::removeExternalTuioObject(TuioObject *tobj) {
 		std::cout << "del obj " << tobj->getSymbolID() << " (" << tobj->getSessionID() << ")" << std::endl;
 }
 
+
 TuioCursor* TuioServer::addTuioCursor(float x, float y) {
 	sessionID++;
+	return addTuioCursor(x,y,sessionID);
+}
+
+TuioCursor* TuioServer::addTuioCursor(float x, float y, long _sessionID) {
 	
 	int cursorID = (int)cursorList.size();
 	if (((int)(cursorList.size())<=maxCursorID) && ((int)(freeCursorList.size())>0)) {
@@ -287,7 +292,7 @@ TuioCursor* TuioServer::addTuioCursor(float x, float y) {
 		delete freeCursor;
 	} else maxCursorID = cursorID;	
 	
-	TuioCursor *tcur = new TuioCursor(currentFrameTime, sessionID, cursorID, x, y);
+	TuioCursor *tcur = new TuioCursor(currentFrameTime, _sessionID, cursorID, x, y);
 	cursorList.push_back(tcur);
 	updateCursor = true;
 

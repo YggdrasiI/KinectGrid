@@ -2,6 +2,9 @@
 #include <assert.h>
 #include "MyTuioServer.h"
 
+inline long tuioSessionId(cBlob* b){
+		return 1000*b->areaid+b->handid;
+}
 void MyTuioServer::send_blobs(std::vector<cBlob>& blobs){
 
 	currentTime = TuioTime::getSessionTime();
@@ -22,7 +25,7 @@ void MyTuioServer::send_blobs(std::vector<cBlob>& blobs){
 				{
 					printf("Add cursor\n");
 					assert( pb->cursor == NULL );
-					pb->cursor = addTuioCursor(pb->location.x,pb->location.y);
+					pb->cursor = addTuioCursor(pb->location.x,pb->location.y,tuioSessionId(pb));
 				}
 				break;
 			case BLOB_MOVE:
@@ -47,3 +50,6 @@ void MyTuioServer::send_blobs(std::vector<cBlob>& blobs){
 	std::list<TuioCursor*> cursorList = tuioServer->getTuioCursors();
 	*/
 }
+
+
+

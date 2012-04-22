@@ -172,6 +172,7 @@ namespace TUIO {
 		 * @return	reference to the created TuioCursor
 		 */
 		TuioCursor* addTuioCursor(float xp, float yp);
+		TuioCursor* addTuioCursor(float xp, float yp, long _sessionID);
 
 		/**
 		 * Updates the referenced TuioCursor based on the given arguments.

@@ -105,11 +105,17 @@ int main(int argc, char **argv) {
 
 		//get 8 bit depth image
 		if(withKinect){
+			FunctionMode& mode = settingMMTT->m_mode;
 
-			switch (settingMMTT->m_mode){
+			switch (mode){
+				case DEPTH_MASK_DETECTION:
+					{
+						mode = ia->depth_mask_detection(); 
+					}
+					break;
 				case HAND_DETECTION:
 					{
-						ia->analyse(); 
+						mode = ia->hand_detection(); 
 						//find blobs
 						//Mat foo = ia->m_areaMask(settingKinect->m_roi);
 						tracker.trackBlobs(ia->m_filteredMat(settingKinect->m_roi), ia->m_areaMask, true);
@@ -121,7 +127,8 @@ int main(int argc, char **argv) {
 				case AREA_DETECTION:
 				default:
 					{
-						ia->hand_detection();
+						mode = ia->area_detection(&tracker);
+						imshowNbr = SHOW_AREAS;
 					}
 					break;
 			}
