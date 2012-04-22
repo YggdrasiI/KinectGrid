@@ -24,15 +24,26 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 	 *  | 1 | |———|
 	 *  |___||_20_|
 	 */
-	m_areaMask(Rect(30,30,KRES_X/2-60,KRES_Y-60)) = Scalar(1);
-	m_areaMask(Rect(KRES_X/2+30,30,KRES_X/2-60,KRES_Y/2-30)) = Scalar(2);
-	m_areaMask(Rect(KRES_X/2+30,KRES_Y/2-30,KRES_X/2-60,KRES_Y/2-30)) = Scalar(20);
+	Rect a1 = Rect(30,30,KRES_X/2-60,KRES_Y-60);
+	m_areaMask(a1) = Scalar(1);
+	//m_areaMask(Rect(KRES_X/2+30,30,KRES_X/2-60,KRES_Y/2-30)) = Scalar(2);
+	//m_areaMask(Rect(KRES_X/2+30,KRES_Y/2-30,KRES_X/2-60,KRES_Y/2-30)) = Scalar(20);
 
 	/* for(int i=0; i<16; i++)
 		 for(int j=0; j<12; j++){
 		 m_areaMask( Rect(i*40,j*40,40,40 )) = Scalar(i>8?200:10);
 		 } */
 
+	int areaid = 1;
+	Area area;
+	area.rect = a1;
+	area.id = areaid;
+	area.color = Scalar( AREACOLORS[areaid%10][0], AREACOLORS[areaid%10][1], AREACOLORS[areaid%10][2]);
+	area.area = a1.width*a1.height;
+	m_area_detection_areas.push_back(area);
+
+	// set areas of Setting.
+	m_pSettingKinect->m_areas = m_area_detection_areas;
 }
 
 ImageAnalysis::~ImageAnalysis()
@@ -62,6 +73,7 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 		if( m_depthMaskCounter == 0 ){
 			//last step
 			addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
+			printf("Depth mask detection finished.\n");
 			return HAND_DETECTION;
 		}
 		return DEPTH_MASK_DETECTION;
@@ -74,6 +86,7 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 
 FunctionMode ImageAnalysis::hand_detection()
 {
+//	printf("hand detection\n");
 	if( m_depthMaskCounter < 0)
 		return depth_mask_detection();
 
@@ -87,10 +100,13 @@ FunctionMode ImageAnalysis::hand_detection()
 
 	//filter image
 	filter(dfRoi,dMRoi,80,fMRoi);
+
+	return HAND_DETECTION;
 }
 
 FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 {
+//	printf("area detection\n");
 	switch (m_area_detection_step) {
 	case 2:
 		{// Wait util no blob is detected.
@@ -160,7 +176,7 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 
 					int areaid = m_area_detection_areas.size()+1;
 					Area area;
-					area.dim = cc.rect;
+					area.rect = cc.rect;
 					area.id = areaid;
 					area.color = Scalar( AREACOLORS[areaid%10][0], AREACOLORS[areaid%10][1], AREACOLORS[areaid%10][2]);
 					area.area = cc.area;
