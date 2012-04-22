@@ -112,7 +112,7 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history)
 
 			//search next free id.
 			int next_handid = (last_handid+1) % MAXHANDS;//or = 0;
-			while( handids[last_handid]==true && next_handid!=last_handid ){
+			while( handids[next_handid]==true && next_handid!=last_handid ){
 					next_handid = (next_handid+1) % MAXHANDS;
 			} //if array full -> next_handid = last_handid
 

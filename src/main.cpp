@@ -153,8 +153,9 @@ int main(int argc, char **argv) {
 					cv::imshow("img",ia->m_depthMask(settingKinect->m_roi));
 					break;
 				case SHOW_FILTERED:
-				default:
 					cv::imshow("img",ia->m_filteredMat(settingKinect->m_roi));
+					break;
+				default:
 					break;
 			}
 

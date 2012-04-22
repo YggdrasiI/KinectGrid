@@ -25,7 +25,7 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 	 *  |___||_20_|
 	 */
 	//Rect a1 = Rect(30,30,KRES_X/2-60,KRES_Y-60);
-	Rect a1 = Rect(200,100,200,200);
+	Rect a1 = Rect(200,100,300,200);
 	int areaid = 1;
 	m_areaMask(a1) = Scalar(areaid);
 	//m_areaMask(Rect(KRES_X/2+30,30,KRES_X/2-60,KRES_Y/2-30)) = Scalar(2);
