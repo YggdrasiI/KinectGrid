@@ -19,7 +19,7 @@
 #include "MyTuioServer.h"
 
 // Selection of output image
-enum Show {SHOW_DEPTH=1,SHOW_MASK=2,SHOW_FILTERED=3,SHOW_AREAS=4};
+enum Show {SHOW_DEPTH=1,SHOW_MASK=2,SHOW_FILTERED=3,SHOW_AREAS=4,SHOW_FRONTMASK};
 
 int main(int argc, char **argv) {
 	bool die(false);
@@ -38,7 +38,6 @@ int main(int argc, char **argv) {
 	//JsonConfig settingMMTT("settingMMTT.json", &JsonConfig::loadMMTTlinuxSetting  );
 	SettingMMTT *settingMMTT = new SettingMMTT();
 	settingMMTT->init("settingMMTT.ini");
-	settingMMTT->m_mode = HAND_DETECTION;
 	
 	if(false){
 	char *conf = settingMMTT->getConfig();
@@ -106,12 +105,12 @@ int main(int argc, char **argv) {
 
 		//get 8 bit depth image
 		if(withKinect){
-			FunctionMode& mode = settingMMTT->m_mode;
+			FunctionMode mode = settingMMTT->getModeAndLock();
 
 			switch (mode){
 				case DEPTH_MASK_DETECTION:
 					{
-						mode = ia->depth_mask_detection(); 
+						 mode = ia->depth_mask_detection(); 
 					}
 					break;
 				case HAND_DETECTION:
@@ -135,6 +134,7 @@ int main(int argc, char **argv) {
 					}
 					break;
 			}
+			settingMMTT->unlockMode(mode);
 			/*
 				 _tmpThresh->origin = 1;
 				 _tmpThresh->imageData = (char*) depthf.data;
@@ -156,6 +156,9 @@ int main(int argc, char **argv) {
 					break;
 				case SHOW_FILTERED:
 					cv::imshow("img",ia->m_filteredMat(settingKinect->m_roi));
+					break;
+				case SHOW_FRONTMASK:
+					cv::imshow("img",ia->getFrontMask()(settingKinect->m_roi) );
 					break;
 				default:
 					break;

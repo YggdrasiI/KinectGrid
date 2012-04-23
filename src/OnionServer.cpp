@@ -187,10 +187,10 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 		case 3:{
 							int start = atoi( onion_request_get_queryd(req,"start","1") );
 							if( start == 1)
-								m_psettingMMTT->m_mode = AREA_DETECTION_START;
+								m_psettingMMTT->setMode(AREA_DETECTION_START);
 							else{
 								assert(false);
-								m_psettingMMTT->m_mode = HAND_DETECTION;
+								m_psettingMMTT->setMode(HAND_DETECTION);
 							}
 					 }
 			break;

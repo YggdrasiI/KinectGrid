@@ -34,7 +34,7 @@ static const int AREACOLORS[10][3] = {
 //
 
 /* store which changes need attention */
-enum Changes {NO=0,MASK=1,MOTOR=2,CONFIG=4,MARGIN=8,AREAS=16, ALL=1023};
+enum Changes {NO=0,MASK=1,MOTOR=2,CONFIG=4,MARGIN=8,AREAS=16,FRONT_MASK=32, ALL=1023};
 
 /*
  * List of possible "states" of the main program.

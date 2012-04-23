@@ -11,6 +11,7 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 	m_filteredMat  (Size(KRES_X,KRES_Y),CV_8UC1),
 	m_areaMask  (Size(KRES_X,KRES_Y),CV_8UC1), //mask of areas, ids=0,1,..., offcut=255
 //	m_areaCol  (Size(KRES_X,KRES_Y),CV_8UC3),
+	m_areaGrid  (Size(KRES_X,KRES_Y),CV_8UC1), //binary image of obstacles
 	m_area_detection_mask  (Size(KRES_X+2,KRES_Y+2),CV_8UC1),
   m_areaCol_ok(false),
 	m_area_detection_step(0),
@@ -19,6 +20,7 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 {
 	m_depthMask = Scalar(255);//temporary full mask
 	m_areaMask = Scalar(0);
+	m_areaGrid = Scalar(255);
 	/*	_____ _____
 	 *  |   | | 2 |
 	 *  | 1 | |———|
@@ -119,6 +121,10 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 	case 0:
 		{
 			printf("area detection 0\n");
+
+			// generate binary image for area detection
+			genFrontMask();
+
 			//2pixel wider and taller for floodfill
 			m_area_detection_mask = Scalar(0);
 			//reset area mask and set full roi to one big area
@@ -168,10 +174,10 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 					 * TODO: Limit floodFill to Roi.
 					 */
 					Rect cc;
-					floodFill(m_depthMask, m_area_detection_mask, cvPoint(
+					floodFill(m_areaGrid/*m_depthMask*/, m_area_detection_mask, cvPoint(
 								blobs[i].location.x+m_pSettingKinect->m_roi.x,
 								blobs[i].location.y+m_pSettingKinect->m_roi.y ),
-							Scalar(255), &cc, Scalar(200)/*low*/, Scalar(2)/*up*/, 4+FLOODFILL_MASK_ONLY);
+							Scalar(255), &cc, Scalar(/*20*/0)/*low*/, Scalar(0/*2*/)/*up*/, 4+FLOODFILL_MASK_ONLY);
 				
 					if( cc.width*cc.height < 800 ){
 						printf("Area %i to small.\n", cc.width*cc.height);
@@ -222,6 +228,19 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 
 //++++++++
 
+void ImageAnalysis::genFrontMask(){
+	m_areaGrid = Scalar(255);
+	Rect roi = m_pSettingKinect->m_roi;
+	Mat agRoi(m_areaGrid,roi);
+//	Mat newAreaGrid = Mat(Size(roi.width,roi.height), CV_8UC1);
+
+	m_pdevice->getDepth8UC1(agRoi, roi);
+	Mat Kernel(Size(3, 3), CV_8UC1); Kernel.setTo(Scalar(1));
+	dilate(agRoi, agRoi, Kernel); 
+	threshold(agRoi, agRoi,255-m_pSettingKinect->m_marginFront,255,THRESH_BINARY);
+  m_maskFront_ok = true;
+}
+
 void ImageAnalysis::genColoredAreas(){
 	m_areaCol = Scalar(0,0,0);
 	Mat col(Size(640,480),CV_8UC3);
@@ -257,6 +276,11 @@ Mat ImageAnalysis::getColoredAreas(){
 	addWeighted(ret,0.5f,m_areaCol,0.5f,0,ret);
 	return ret;
 }
+
+Mat ImageAnalysis::getFrontMask(){
+	if( !m_maskFront_ok ) genFrontMask();
+	return m_areaGrid;
+}
 /*
  * Reset internal counter of mask detection and clear mask.
  * New mask will generated.
@@ -267,6 +291,10 @@ void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 		m_depthMaskWithoutThresh = Scalar(0);
 		m_depthMask = Scalar(255);//temporary full mask
 		m_depthMaskCounter = -NMASKFRAMES;
+
+	}
+	if( changes & FRONT_MASK ){
+		m_maskFront_ok = false;
 	}
 	if( changes & MARGIN ){
 		printf("ImageAnalysis: Change thresh val\n");

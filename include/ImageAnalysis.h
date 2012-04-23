@@ -8,6 +8,7 @@
 #include "SettingKinect.h"
 #include "Tracker.h"
 #include "blob.h"
+#include "Mutex.h"
 
 // used in area detection.
 #define CV_FLOODFILL_MASK_ONLY   (1 << 17)
@@ -22,8 +23,10 @@ public:
 	FunctionMode area_detection(Tracker *tracker);
 
 	void resetMask(SettingKinect* pSettingKinect, int changes);
+	void genFrontMask();
 	void genColoredAreas();
 	Mat getColoredAreas();
+	Mat getFrontMask();
 public:
 	Mat m_depthf  ;
 	Mat m_filterMat;
@@ -31,8 +34,10 @@ public:
 	Mat m_depthMaskWithoutThresh;
 	Mat m_filteredMat;
 	Mat m_areaMask;
+	Mat m_areaGrid;
 	Mat m_areaCol;//colored representation.
 	bool m_areaCol_ok;
+	bool m_maskFront_ok;
 	int m_area_detection_step;
 private:
 	MyFreenectDevice* m_pdevice;
