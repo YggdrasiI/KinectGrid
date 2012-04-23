@@ -59,7 +59,7 @@ set(osc_SRCS
 )
 set(tuio_SRCS
 	MyTuioServer.cpp
-	../lib/TUIO/TuioServer.cpp
+	../lib/TUIO/TuioServer25D.cpp
 	../lib/TUIO/TuioTime.cpp
 	${osc_SRCS}
 	)

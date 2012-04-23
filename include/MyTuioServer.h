@@ -1,8 +1,8 @@
 #ifndef MYTUIOSERVER_H
 #define MYTUIOSERVER_H
 
-#include "TuioServer.h"
-#include "TuioCursor.h"
+#include "TuioServer25D.h"
+#include "TuioCursor25D.h"
 
 #include <stdlib.h>
 #include <vector>
@@ -12,14 +12,14 @@
 
 using namespace TUIO;
 
-class MyTuioServer: public TuioServer {
+class MyTuioServer: public TuioServer25D {
 	public:
-		MyTuioServer(const char *host, int port): TuioServer(host, port), verbose(false){
+		MyTuioServer(const char *host, int port): TuioServer25D(host, port), verbose(false){
 			verbose = true;
 			currentTime = TuioTime::getSessionTime();
 			//tuioServer->enablePeriodicMessages();
 		};
-		MyTuioServer(): TuioServer(), verbose(false){
+		MyTuioServer(): TuioServer25D(), verbose(false){
 			verbose = true;
 			currentTime = TuioTime::getSessionTime();
 			//tuioServer->enablePeriodicMessages();
@@ -27,11 +27,8 @@ class MyTuioServer: public TuioServer {
 		~MyTuioServer() { };
 		void send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& areas, cv::Rect& roi);
 
-		/* Overloading of addTuioCursor and updateTuioCursor */
-		using TuioServer::addTuioCursor;
-		using TuioServer::updateTuioCursor;
 private:
-		TuioCursor *cursor;
+		TuioCursor25D *cursor;
 		TuioTime currentTime;
 		bool verbose;
 
