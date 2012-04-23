@@ -38,7 +38,7 @@ private:
 	MyFreenectDevice* m_pdevice;
 	SettingKinect* m_pSettingKinect;
 	int m_depthMaskCounter;//use -depthMaskCounter Frames for mask generation
-	IplImage *m_parea_detection_mask;
+	Mat m_area_detection_mask;
 	std::vector<Area> m_area_detection_areas;
 };
 
