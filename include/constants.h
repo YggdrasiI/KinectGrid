@@ -40,7 +40,7 @@ enum Changes {NO=0,MASK=1,MOTOR=2,CONFIG=4,MARGIN=8,AREAS=16, ALL=1023};
  * List of possible "states" of the main program.
  * I.e. hand detection mode, area detection mode, ...
  */
-enum FunctionMode{ HAND_DETECTION, AREA_DETECTION, DEPTH_MASK_DETECTION };
+enum FunctionMode{ HAND_DETECTION, AREA_DETECTION, AREA_DETECTION_START, DEPTH_MASK_DETECTION };
 
 class Area{
 	public:

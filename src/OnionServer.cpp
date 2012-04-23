@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 #include <sys/types.h>
 #include <regex.h>
 #include "OnionServer.h"
@@ -183,6 +184,16 @@ int OnionServer::stop_server()
 int OnionServer::updateSetting(onion_request *req, onion_response *res){
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 	switch(actionid){
+		case 3:{
+							int start = atoi( onion_request_get_queryd(req,"start","1") );
+							if( start == 1)
+								m_psettingMMTT->m_mode = AREA_DETECTION_START;
+							else{
+								assert(false);
+								m_psettingMMTT->m_mode = HAND_DETECTION;
+							}
+					 }
+			break;
 		case 2:{
 						 const char* filename = onion_request_get_post(req,"filename");
 						 printf("Save new settingMMTT: %s\n",filename);

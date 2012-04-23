@@ -107,10 +107,11 @@ FunctionMode ImageAnalysis::hand_detection()
 
 FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 {
-//	printf("area detection\n");
 	switch (m_area_detection_step) {
 	case 2:
 		{// Wait util no blob is detected.
+			printf("area detection 2\n");
+			hand_detection();
 			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_roi), m_areaMask, true);
 			if( tracker->getBlobs().size() == 0 ){
 				m_area_detection_step = 1;
@@ -121,6 +122,7 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 		} break;
 	case 0:
 		{
+			printf("area detection 0\n");
 			//2pixel wider and taller for floodfill
 			if( m_parea_detection_mask == NULL){
 				m_parea_detection_mask = cvCreateImage( cvSize(KRES_X+2,KRES_Y+2), IPL_DEPTH_8U, 1 );
@@ -133,20 +135,32 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 			m_areaMask = Scalar(0);
 			/* Set value in Roi to MAXAREAS+1 because Tracker ignore blobs in area=0 */
 			m_areaMask(m_pSettingKinect->m_roi) = Scalar(MAXAREAS+1);
-			
 			m_area_detection_areas.clear();
-		}
+
+			genColoredAreas();
+			m_area_detection_step = 1;
+		}//no break!
 	case 1:
 	default:
 		{
+			printf("area detection 1\n");
 			//Mat& depth = m_depthMaskWithoutThresh;
+			hand_detection();
 			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_roi), m_areaMask, true);
 			std::vector<cBlob>& blobs = tracker->getBlobs();
+
 			for(int i=0;i<blobs.size(); i++){
+				if( blobs[i].event != BLOB_MOVE) continue;
 				if( blobs[i].areaid == 1 ){
-					//detection finshed.
+					/* detection finshed. */
 					m_area_detection_step = 0;
-					m_pSettingKinect->m_areas = m_area_detection_areas;//copy mat
+
+					//reset pixels with MAXAREAS+1 value
+					printf("Reset!!");
+					//threshold(m_areaMask, m_areaMask,MAXAREAS,0,THRESH_TOZERO_INV);
+					threshold(m_areaMask, m_areaMask,1,0,THRESH_TOZERO_INV);
+
+					m_pSettingKinect->m_areas = m_area_detection_areas;//copy vector 
 
 					//clear tmp IplImage
 					if( m_parea_detection_mask != NULL){
@@ -154,28 +168,40 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 						m_parea_detection_mask = NULL;
 					}
 
+					//clear blobs to begin fresh in hand detection.
+					blobs.clear();
 					return HAND_DETECTION;
 				}
 			}
 			for(int i=0;i<blobs.size(); i++){
+				if( blobs[i].event != BLOB_MOVE) continue;
 				if( blobs[i].areaid == MAXAREAS+1 ){
 					//found new blob without area
-
 					/* Flood fill of (old) depth image to detect area. use m_parea_detection_mask as mask
 					 * to avoid overlapping of areas. Flag CV_FLOODFILL_MASK_ONLY is set to avoid changes
 					 * in m_depthMask.
+					 * TODO: Looping of FloodFill with different low-high-values can improve results.
 					 */
-					CvMat foo = m_depthMask;//memory leak? No, it's no pointer.
+					CvMat foo = m_depthMask;
 					CvConnectedComp cc;
-					cvFloodFill( &foo, cvPoint(blobs[i].location.x,blobs[i].location.y) , Scalar(255),
-							Scalar(20), Scalar(4), &cc, 4+CV_FLOODFILL_MASK_ONLY, m_parea_detection_mask );
-
-					if( cc.area < 400 ){
-						printf("Area to small.\n");
+					cvFloodFill( &foo, cvPoint(
+								blobs[i].location.x+m_pSettingKinect->m_roi.x,
+								blobs[i].location.y+m_pSettingKinect->m_roi.y ),
+							Scalar(255),
+							Scalar(200), Scalar(2), &cc, 4+CV_FLOODFILL_MASK_ONLY, m_parea_detection_mask );
+				
+					if( cc.area < 800 ){
+						printf("Area %f to small.\n", cc.area);
+						return AREA_DETECTION;
+					}
+					if( cc.rect.width > 0.95*m_pSettingKinect->m_roi.width
+							&& cc.rect.height > 0.95*m_pSettingKinect->m_roi.height ){
+						printf("Area %f very big and ignored. Depth mask ok?\n", cc.area);
 						return AREA_DETECTION;
 					}
 
 					int areaid = m_area_detection_areas.size()+1;
+					printf("Create Area %i\n",areaid);
 					Area area;
 					area.rect = cc.rect;
 					area.id = areaid;
@@ -183,19 +209,32 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 					area.area = cc.area;
 
 					Mat tmp_mask = m_parea_detection_mask;//create mat header
-					Mat changes = (m_areaMask(cc.rect)==MAXAREAS+1);//cut of other areas
+//tmp_mask = tmp_mask>0;//test, should be redundant
+					Mat changeable = (m_areaMask(cc.rect)==MAXAREAS+1);//cut of other areas
 
 					//get new !=0 values of m_parea_detection_mask
-					changes.mul( tmp_mask(
+					changeable.mul( tmp_mask(
 								Rect(cc.rect.x+1,cc.rect.y+1,cc.rect.width,cc.rect.height)//shift by (1,1)
 								) );
 
-					changes *= areaid;
-					changes.copyTo( m_areaMask, changes );
+					changeable *= areaid;
+					Mat areaMaskDst = m_areaMask(cc.rect);
+					changeable.copyTo( areaMaskDst, changeable );
+m_areaMask(cc.rect ) = Scalar(areaid);
+
+					Mat bla(m_areaMask.size(),CV_8UC1);
+					bla = Scalar(255);
+					m_areaMask.copyTo(bla, m_areaMask<MAXAREAS);
+					bla *= 50;
+					cv::imshow("img", (tmp_mask*100)(m_pSettingKinect->m_roi) );
+					cvWaitKey(1000);
+					//update m_areaCol 
+					genColoredAreas();
 
 					m_area_detection_areas.push_back(area);
-
 					tmp_mask.release();
+
+
 					m_area_detection_step = 2;
 					break;
 				}
@@ -213,6 +252,12 @@ void ImageAnalysis::genColoredAreas(){
 	Mat col(Size(640,480),CV_8UC3);
 	int r,g,b;
 
+	Mat m = (m_areaMask==MAXAREAS+1);
+	r = 0; g = 255; b = 200;
+	col = Scalar(b,g,r);
+	col.copyTo(m_areaCol,m);
+
+	//for(int i=0; i<m_areas.size(); i++){
 	for(int i=0; i<MAXAREAS; i++){
 		Mat m = (m_areaMask==i+1);
 		r = AREACOLORS[i%10][0];
@@ -222,10 +267,9 @@ void ImageAnalysis::genColoredAreas(){
 		col.copyTo(m_areaCol,m);
 		m_areaCol_ok = true;
 	}
+
 }
 
-	//CvScalar color = CV_RGB(250,0,0);
-	//	cvFloodFill( out, seed_point, color, cvScalarAll(5.0), cvScalarAll(5.0), NULL, 4, NULL );
 
 Mat ImageAnalysis::getColoredAreas(){
 	if( !m_areaCol_ok ) genColoredAreas();

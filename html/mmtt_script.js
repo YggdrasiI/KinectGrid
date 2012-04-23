@@ -121,6 +121,10 @@ function saveConfig(){
 	send("json?actionid=2","filename="+filename);
 }
 
+function areaDetection(i){
+	send("json?actionid=3","start="+i);
+}
+
 function deepCopy(p,c) {
 	var c = c||{}; for (var i in p) {
 		if (typeof p[i] === 'object') {

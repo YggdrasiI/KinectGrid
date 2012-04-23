@@ -44,8 +44,10 @@ void MyTuioServer::send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& area
 			case BLOB_MOVE:
 			default:
 				{
-					assert( pb->cursor != NULL );
 					localCoords(pb,pa,&roi,&lx,&ly);
+					assert( pb->cursor != NULL );
+					/*if( pb->cursor == NULL )
+						pb->cursor = addTuioCursor(lx,ly,tuioSessionId(pb));*/
 					printf("Move cursor %i to %f %f \n", (int)tuioSessionId(pb),lx,ly );
 					updateTuioCursor(pb->cursor,lx,ly);
 				}

@@ -125,11 +125,13 @@ int main(int argc, char **argv) {
 						tuio.send_blobs(tracker.getBlobs(), settingKinect->m_areas, settingKinect->m_roi);
 					}
 					break;
+				case AREA_DETECTION_START:
+						ia->m_area_detection_step = 0;
+						imshowNbr = SHOW_AREAS;
 				case AREA_DETECTION:
 				default:
 					{
 						mode = ia->area_detection(&tracker);
-						//imshowNbr = SHOW_AREAS;
 					}
 					break;
 			}
