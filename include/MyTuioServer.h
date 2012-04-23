@@ -26,7 +26,11 @@ class MyTuioServer: public TuioServer {
 		};
 		~MyTuioServer() { };
 		void send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& areas, cv::Rect& roi);
-	private:
+
+		/* Overloading of addTuioCursor and updateTuioCursor */
+		using TuioServer::addTuioCursor;
+		using TuioServer::updateTuioCursor;
+private:
 		TuioCursor *cursor;
 		TuioTime currentTime;
 		bool verbose;

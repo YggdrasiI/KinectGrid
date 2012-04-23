@@ -8,10 +8,19 @@ inline long tuioSessionId(cBlob* b){
 
 static void localCoords(cBlob *pb, Area* pa, cv::Rect* roi, float *lx, float *ly){
 //	printf("Vars: (%f - (%i-%i))  / %i\n", pb->location.x, pa->rect.x, roi->x, pa->rect.width);
+	float x,y;
+	/*hflip coords. Where is the efficient position for flipping the whole input? convertTo? Is flip() fast?*/
+	/* Map on [-1,1] */
+	x = 1 - 2*(pb->location.x - pa->rect.x + roi->x ) / (float)pa->rect.width;
+	y = (pb->location.y - pa->rect.y + roi->y ) / (float)pa->rect.height;
 
-	/*hflip coords. Where is the efficient position for flipping the whole input? convertTo? flip() fast?*/
-	*lx = 1.0 - (pb->location.x - pa->rect.x + roi->x ) / (float)pa->rect.width;
-	*ly = (pb->location.y - pa->rect.y + roi->y ) / (float)pa->rect.height;
+  /* Gain distanace to origin */
+	if( x < 0) x = (x<0)?-1+(1+x)*(1+x):x = 1-(1-x)*(1-x);
+	if( y < 0) y = (y<0)?-1+(1+y)*(1+y):y = 1-(1-y)*(1-y);
+
+	/* Map to [0,1] */
+			*lx = (x+1)/2;
+			*ly = (y+1)/2;
 }
 void MyTuioServer::send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& areas, cv::Rect& roi){
 
@@ -66,6 +75,5 @@ void MyTuioServer::send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& area
 	std::list<TuioCursor*> cursorList = tuioServer->getTuioCursors();
 	*/
 }
-
 
 
