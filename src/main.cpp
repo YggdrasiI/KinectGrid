@@ -17,6 +17,7 @@
 #include "JsonConfig.h"
 #include "OnionServer.h"
 #include "MyTuioServer.h"
+#include "MyTuioServer25D.h"
 
 // Selection of output image
 enum Show {SHOW_DEPTH=1,SHOW_MASK=2,SHOW_FILTERED=3,SHOW_AREAS=4,SHOW_FRONTMASK};
@@ -60,7 +61,7 @@ int main(int argc, char **argv) {
 	OnionServer* onion = new OnionServer(settingMMTT, settingKinect); 
 	onion->start_server();
 
-	MyTuioServer tuio;
+	MyTuioServer25D tuio;
 
 	//saves settings
 	//settingMMTT->saveConfigFile("settingMMTT.json");

@@ -54,6 +54,7 @@ ImageAnalysis::~ImageAnalysis()
 }
 
 FunctionMode ImageAnalysis::depth_mask_detection(){
+	//printf("depth mask detection\n");
 	if( m_depthMaskCounter > 0){
 		//depth mask already detected. Reset m_depthMaskCounter and begin again.
 		m_depthMaskCounter = -NMASKFRAMES;
@@ -291,7 +292,6 @@ void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 		m_depthMaskWithoutThresh = Scalar(0);
 		m_depthMask = Scalar(255);//temporary full mask
 		m_depthMaskCounter = -NMASKFRAMES;
-
 	}
 	if( changes & FRONT_MASK ){
 		m_maskFront_ok = false;
@@ -299,5 +299,8 @@ void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 	if( changes & MARGIN ){
 		printf("ImageAnalysis: Change thresh val\n");
 			addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
+	}
+	if( changes & TUIO_PROTOCOL ){
+		//TODO
 	}
 }

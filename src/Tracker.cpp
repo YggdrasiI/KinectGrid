@@ -34,9 +34,10 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history)
 	double min_area = *m_pmin_area;
 	double max_area = *m_pmax_area;
 	double max_radius = *m_pmax_radius;
-	double x, y, min_x, min_y, max_x, max_y;
+	double x, y, z, min_x, min_y, max_x, max_y;
 	cBlob temp;
 	bool new_hand(true);
+	int mat_area(mat.size().width*mat.size().height);
 
 	Size s;	Point p;
 	mat.locateROI(s,p);
@@ -76,11 +77,20 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history)
 		max_x = MaxX(current_blob);
 		max_y = MaxY(current_blob);
 
+		if( (max_x-min_x)*(max_y-min_y) > 0.9*mat_area) continue;// fix blob detection issue?!
+
 		temp.location.x = temp.origin.x = x;
 		temp.location.y = temp.origin.y = y;
 		temp.min.x = min_x; temp.min.y = min_y;
 		temp.max.x = max_x; temp.max.y = max_y;
 		temp.event = BLOB_DOWN;
+
+		/*
+		Rect r(min_x+p.x,min_y+p.x, max_x-min_y, max_y-min_y);
+		z = mean( mat(r), mat(r) )[0];
+		printf("Mean depth of blob: %f",z);
+		temp.location.z = temp.origin.z = z;
+		*/
 
 		blobs.push_back(temp);
 	}
@@ -103,6 +113,7 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history)
 
 				blobs[i].handid = blobs_previous[j].handid;
 				blobs[i].cursor = blobs_previous[j].cursor;
+				blobs[i].cursor25D = blobs_previous[j].cursor25D;
 				new_hand = false;
 				break;
 			}
