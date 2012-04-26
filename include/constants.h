@@ -34,13 +34,17 @@ static const int AREACOLORS[10][3] = {
 //
 
 /* store which changes need attention */
-enum Changes {NO=0,MASK=1,MOTOR=2,CONFIG=4,MARGIN=8,AREAS=16,FRONT_MASK=32, ALL=1023};
+enum Changes {NO=0,MASK=1,MOTOR=2,
+	CONFIG=4,MARGIN=8,AREAS=16,
+	FRONT_MASK=32,TUIO_PROTOCOL=64,REPOKE=128,
+	ALL=1023};
 
 /*
  * List of possible "states" of the main program.
  * I.e. hand detection mode, area detection mode, ...
  */
-enum FunctionMode{ HAND_DETECTION, AREA_DETECTION, AREA_DETECTION_START, DEPTH_MASK_DETECTION };
+enum FunctionMode{ HAND_DETECTION, AREA_DETECTION, AREA_DETECTION_START,
+	DEPTH_MASK_DETECTION, REPOKE_DETECTION };
 
 class Area{
 	public:
@@ -48,6 +52,7 @@ class Area{
 		int id;
 		cv::Scalar color;
 		double area;//Flaecheninhalt
+		double repoke_x, repoke_y;
 };
 
 

@@ -38,13 +38,32 @@ function myField(myoptions){
 	return ret;
 }
 
+function myCheckField(myoptions){
+	ret = function(options) {
+		// Return a new checkfield
+		ret = $("<p>");
+		inputfield = $('<input type="checkbox" id="'+options.id+'" value="1234" '+(options.val==1?'checked ':'')+'/>');//.dform('attr', options)
+		inputfield.click( function(event){ myoptions.change(options.id,this.checked); });
+		propName = $('<span>'+options.id+': </span>');
+		propName.addClass("propName");
+
+		ret.append( inputfield ); 
+		ret.prepend(propName);
+		return  ret;
+	}
+	return ret;
+}
+
 intoptions = {}
 intoptions.change = changeInt;
 doubleoptions = {}
 doubleoptions.change = changeDouble;
+checkoptions = {}
+checkoptions.change = changeCheckbox;
 
 $.dform.addType("doubleField", myField(doubleoptions) );
 $.dform.addType("intField", myField(intoptions) );
+$.dform.addType("checkbox2", myCheckField(checkoptions) );
 
 $.dform.subscribe({
 	"val" : function (options) {
@@ -90,6 +109,17 @@ function changeInt(id,min,max,diff){
 	send("json?actionid=0","settingKinect="+JSON.stringify(json_kinect));
 }
 
+function changeCheckbox(id,checked){
+	//update displayed value ...
+	//... not ness. for checkbox.
+	
+	//modifyJson obj.
+	modifyJson(id,checked?1:0);
+
+	//send altered obj. to server
+	send("json?actionid=0","settingKinect="+JSON.stringify(json_kinect));
+}
+
 //modifiy children of html node (no rekursion implemented)
 function modifyJson(id,val){
 	$.each(	json_kinect.html, function(index,v){
@@ -123,6 +153,10 @@ function saveConfig(){
 
 function areaDetection(i){
 	send("json?actionid=3","start="+i);
+}
+
+function repoke(){
+	send("json?actionid=4","");
 }
 
 function deepCopy(p,c) {

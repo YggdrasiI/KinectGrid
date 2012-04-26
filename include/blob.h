@@ -1,6 +1,7 @@
 #ifndef BLOB_H
 #define BLOB_H
 
+#include "TuioCursor.h"
 #include "TuioCursor25D.h"
 
 enum { BLOB_NULL, BLOB_DOWN, BLOB_MOVE, BLOB_UP }; // event types
@@ -22,7 +23,8 @@ class cBlob {
 	bool tracked;		// a flag to indicate this blob has been processed
 	int handid; // associate id for tuio processing
 	int areaid; 
-	TUIO::TuioCursor25D *cursor;
+	TUIO::TuioCursor *cursor;
+	TUIO::TuioCursor25D *cursor25D;
 };
 
 #endif

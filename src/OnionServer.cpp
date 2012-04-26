@@ -184,7 +184,12 @@ int OnionServer::stop_server()
 int OnionServer::updateSetting(onion_request *req, onion_response *res){
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 	switch(actionid){
-		case 3:{
+		case 4:{ //repoke
+						 printf("Repoke\n");
+								m_psettingMMTT->setMode(REPOKE_DETECTION);
+					 }
+					 break;
+		case 3:{ // area detection
 							int start = atoi( onion_request_get_queryd(req,"start","1") );
 							if( start == 1)
 								m_psettingMMTT->setMode(AREA_DETECTION_START);

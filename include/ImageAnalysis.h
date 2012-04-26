@@ -27,6 +27,10 @@ public:
 	void genColoredAreas();
 	Mat getColoredAreas();
 	Mat getFrontMask();
+private:
+	void repoke_init();
+	bool repoke_step(Area& area);
+	void repoke_finish();
 public:
 	Mat m_depthf  ;
 	Mat m_filterMat;

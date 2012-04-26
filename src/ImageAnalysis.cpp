@@ -122,18 +122,7 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 	case 0:
 		{
 			printf("area detection 0\n");
-
-			// generate binary image for area detection
-			genFrontMask();
-
-			//2pixel wider and taller for floodfill
-			m_area_detection_mask = Scalar(0);
-			//reset area mask and set full roi to one big area
-			m_areaMask = Scalar(0);
-			/* Set value in Roi to MAXAREAS+1. (Tracker ignore blobs in area=0) */
-			m_areaMask(m_pSettingKinect->m_roi) = Scalar(MAXAREAS+1);
-			m_area_detection_areas.clear();
-
+			repoke_init();
 			genColoredAreas();
 			m_area_detection_step = 1;
 		}//no break!
@@ -153,12 +142,7 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 					m_area_detection_step = 0;
 
 					//reset pixels with MAXAREAS+1 value
-					printf("Reset!!");
-					threshold(m_areaMask, m_areaMask,MAXAREAS,0,THRESH_TOZERO_INV);
-
-					m_pSettingKinect->m_areas = m_area_detection_areas;//copy vector 
-
-					genColoredAreas();
+					repoke_finish();
 					//clear blobs to begin fresh in hand detection.
 					blobs.clear();
 					return HAND_DETECTION;
@@ -168,54 +152,13 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 				if( blobs[i].event != BLOB_MOVE) continue;
 				if( blobs[i].areaid == MAXAREAS+1 ){
 					//found new blob without area
-					/* Flood fill of (old) depth image to detect area. use m_area_detection_mask as mask
-					 * to avoid overlapping of areas. Flag CV_FLOODFILL_MASK_ONLY is set to avoid changes
-					 * in m_depthMask.
-					 * TODO: Looping of FloodFill with different low-high-values can improve results.
-					 * TODO: Limit floodFill to Roi.
-					 */
-					Rect cc;
-					floodFill(m_areaGrid/*m_depthMask*/, m_area_detection_mask, cvPoint(
-								blobs[i].location.x+m_pSettingKinect->m_roi.x,
-								blobs[i].location.y+m_pSettingKinect->m_roi.y ),
-							Scalar(255), &cc, Scalar(/*20*/0)/*low*/, Scalar(0/*2*/)/*up*/, 4+FLOODFILL_MASK_ONLY);
-				
-					if( cc.width*cc.height < 800 ){
-						printf("Area %i to small.\n", cc.width*cc.height);
-						return AREA_DETECTION;
-					}
-					if( cc.width > 0.95*m_pSettingKinect->m_roi.width
-							&& cc.height > 0.95*m_pSettingKinect->m_roi.height ){
-						printf("Area %i very big and ignored. Depth mask ok?\n", cc.width*cc.height);
-						return AREA_DETECTION;
-					}
-
-					int areaid = m_area_detection_areas.size()+1;
-					printf("Create Area %i\n",areaid);
 					Area area;
-					area.rect = cc;
-					area.id = areaid;
-					area.color = Scalar( AREACOLORS[areaid%10][0], AREACOLORS[areaid%10][1], AREACOLORS[areaid%10][2]);
-					area.area = cc.width*cc.height;
+					area.id = m_area_detection_areas.size()+1;
+					area.repoke_x = blobs[i].location.x+m_pSettingKinect->m_roi.x;
+					area.repoke_y = blobs[i].location.y+m_pSettingKinect->m_roi.y;
 
-					Mat changeable = (m_areaMask(cc)==MAXAREAS+1);//cut of other areas
-
-					//get new !=0 values of m_area_detection_mask
-					changeable = min(changeable, m_area_detection_mask(
-								Rect(cc.x+1,cc.y+1,cc.width,cc.height)//shift by (1,1)
-								 ));
-
-					changeable *= areaid;
-					Mat areaMaskDst = m_areaMask(cc);
-					changeable.copyTo( areaMaskDst, changeable );
-//m_areaMask(cc ) = Scalar(areaid);
-
-					cv::imshow("img", (m_area_detection_mask*100)(m_pSettingKinect->m_roi) );
-					cvWaitKey(1000);
-					//update m_areaCol 
-					genColoredAreas();
-
-					m_area_detection_areas.push_back(area);
+					if( ! repoke_step(area) )
+						return AREA_DETECTION;
 
 					m_area_detection_step = 2;
 					break;
@@ -226,7 +169,6 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 
 	return AREA_DETECTION;
 }
-
 //++++++++
 
 void ImageAnalysis::genFrontMask(){
@@ -301,6 +243,82 @@ void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 			addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
 	}
 	if( changes & TUIO_PROTOCOL ){
-		//TODO
+		//TODO, but not here...
 	}
+	if( changes & REPOKE ){
+		std::vector<Area>& areas = m_pSettingKinect->m_areas;
+		if( areas.size() > 0 ){
+			repoke_init();
+			for(int i=0; i<areas.size(); i++){
+				repoke_step( areas[i] );
+			}
+			repoke_finish();
+		}
+
+	}
+}
+
+void ImageAnalysis::repoke_init(){
+			// generate binary image for area detection
+			genFrontMask();
+
+			//2pixel wider and taller for floodfill
+			m_area_detection_mask = Scalar(0);
+			//reset area mask and set full roi to one big area
+			m_areaMask = Scalar(0);
+			/* Set value in Roi to MAXAREAS+1. (Tracker ignore blobs in area=0) */
+			m_areaMask(m_pSettingKinect->m_roi) = Scalar(MAXAREAS+1);
+			m_area_detection_areas.clear();
+
+			genColoredAreas();
+}
+
+/* Set area.id before you call this method */
+bool ImageAnalysis::repoke_step(Area& area){
+	/* Flood fill of (old) depth image to detect area. use m_area_detection_mask as mask
+	 * to avoid overlapping of areas. Flag CV_FLOODFILL_MASK_ONLY is set to avoid changes
+	 * in m_depthMask.
+	 * TODO: Looping of FloodFill with different low-high-values can improve results.
+	 * TODO: Limit floodFill to Roi.
+	 */
+	Rect cc;
+	floodFill(m_areaGrid/*m_depthMask*/, m_area_detection_mask, cvPoint(area.repoke_x, area.repoke_y),
+			Scalar(255), &cc, Scalar(0)/*low*/, Scalar(0)/*up*/, 4+FLOODFILL_MASK_ONLY);
+
+	area.rect = cc;
+	area.color = Scalar( AREACOLORS[area.id%10][0], AREACOLORS[area.id%10][1], AREACOLORS[area.id%10][2]);
+	area.area = cc.width*cc.height;
+	
+	if( area.area < 800.0 ){
+		printf("Area %i to small.\n", area.id);
+		return false;
+	}
+	if( area.area > 0.95*m_pSettingKinect->m_roi.width * m_pSettingKinect->m_roi.height ){
+		printf("Area %i very big and ignored. Depth mask ok?\n", area.id );
+		return false;
+	}
+
+	printf("Add Area %i\n",area.id);
+	m_area_detection_areas.push_back(area);
+
+	Mat changeable = (m_areaMask(cc)==MAXAREAS+1);//cut of other areas
+
+	//get new !=0 values of m_area_detection_mask
+	changeable = min(changeable, m_area_detection_mask(
+				Rect(cc.x+1,cc.y+1,cc.width,cc.height)//shift by (1,1)
+				));
+
+	changeable *= area.id;
+	Mat areaMaskDst = m_areaMask(cc);
+	changeable.copyTo( areaMaskDst, changeable );
+	genColoredAreas();
+}
+
+void ImageAnalysis::repoke_finish(){
+					//reset pixels with MAXAREAS+1 value
+					printf("Reset!!");
+					threshold(m_areaMask, m_areaMask,MAXAREAS,0,THRESH_TOZERO_INV);
+
+					m_pSettingKinect->m_areas.clear();//überflüssig
+					m_pSettingKinect->m_areas = m_area_detection_areas;//copy vector 
 }

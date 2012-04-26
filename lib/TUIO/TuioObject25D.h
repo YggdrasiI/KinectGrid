@@ -19,8 +19,8 @@
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef INCLUDED_TUIOOBJECT_H
-#define INCLUDED_TUIOOBJECT_H
+#ifndef INCLUDED_TUIOOBJECT25D_H
+#define INCLUDED_TUIOOBJECT25D_H
 
 #include <math.h>
 #include "TuioContainer25D.h"

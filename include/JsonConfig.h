@@ -143,4 +143,20 @@ static cJSON* jsonIntField(const char* id, int val, int min, int max, int diff){
 	return df;
 }
 
+static cJSON* jsonCheckbox(const char* id, bool checked){
+	cJSON* df = cJSON_CreateObject();
+	cJSON_AddStringToObject(df, "type", "checkbox2");
+	cJSON_AddStringToObject(df, "id", id);
+	cJSON_AddNumberToObject(df, "val", checked?1:0 );
+
+	return df;
+}
+
+static cJSON* jsonArea(int id, float x, float y){
+	cJSON* df = cJSON_CreateObject();
+	cJSON_AddNumberToObject(df, "id", id );
+	cJSON_AddNumberToObject(df, "x", x );
+	cJSON_AddNumberToObject(df, "y", y );
+	return df;
+}
 #endif

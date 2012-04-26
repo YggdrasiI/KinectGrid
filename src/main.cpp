@@ -19,6 +19,8 @@
 #include "MyTuioServer.h"
 #include "MyTuioServer25D.h"
 
+#include <locale.h>
+
 // Selection of output image
 enum Show {SHOW_DEPTH=1,SHOW_MASK=2,SHOW_FILTERED=3,SHOW_AREAS=4,SHOW_FRONTMASK};
 
@@ -34,6 +36,7 @@ int main(int argc, char **argv) {
 		int wk = atoi(argv[1]);
 		if(wk==0) withKinect=false;
 	}
+
 
 	//Load & Create settings
 	//JsonConfig settingMMTT("settingMMTT.json", &JsonConfig::loadMMTTlinuxSetting  );
@@ -61,7 +64,7 @@ int main(int argc, char **argv) {
 	OnionServer* onion = new OnionServer(settingMMTT, settingKinect); 
 	onion->start_server();
 
-	MyTuioServer25D tuio;
+	MyTuioServer25D tuio("127.0.0.1",3335);
 
 	//saves settings
 	//settingMMTT->saveConfigFile("settingMMTT.json");
@@ -98,6 +101,9 @@ int main(int argc, char **argv) {
 		namedWindow("img",CV_WINDOW_AUTOSIZE);
 	}
 
+	/* Local needs to be set to avoid errors with printf + float values.
+	 * Gtk:Window changes locale...*/
+	setlocale(LC_NUMERIC, "C");
 
 	while (!die) {
 		//device.getVideo(rgbMat);
@@ -109,6 +115,12 @@ int main(int argc, char **argv) {
 			FunctionMode mode = settingMMTT->getModeAndLock();
 
 			switch (mode){
+				case REPOKE_DETECTION:
+					{
+						ia->resetMask(settingKinect, REPOKE);
+						mode = HAND_DETECTION;
+					}
+					break;
 				case DEPTH_MASK_DETECTION:
 					{
 						 mode = ia->depth_mask_detection(); 
