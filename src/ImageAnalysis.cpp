@@ -21,32 +21,6 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 	m_depthMask = Scalar(255);//temporary full mask
 	m_areaMask = Scalar(0);
 	m_areaGrid = Scalar(255);
-	/*	_____ _____
-	 *  |   | | 2 |
-	 *  | 1 | |———|
-	 *  |___||_20_|
-	 */
-	//Rect a1 = Rect(30,30,KRES_X/2-60,KRES_Y-60);
-	Rect a1 = Rect(200,100,300,200);
-	int areaid = 1;
-	m_areaMask(a1) = Scalar(areaid);
-	//m_areaMask(Rect(KRES_X/2+30,30,KRES_X/2-60,KRES_Y/2-30)) = Scalar(2);
-	//m_areaMask(Rect(KRES_X/2+30,KRES_Y/2-30,KRES_X/2-60,KRES_Y/2-30)) = Scalar(20);
-
-	/* for(int i=0; i<16; i++)
-		 for(int j=0; j<12; j++){
-		 m_areaMask( Rect(i*40,j*40,40,40 )) = Scalar(i>8?200:10);
-		 } */
-
-	Area area;
-	area.rect = a1;
-	area.id = areaid;
-	area.color = Scalar( AREACOLORS[areaid%10][0], AREACOLORS[areaid%10][1], AREACOLORS[areaid%10][2]);
-	area.area = a1.width*a1.height;
-	m_area_detection_areas.push_back(area);
-
-	// set areas of Setting.
-	m_pSettingKinect->m_areas = m_area_detection_areas;
 }
 
 ImageAnalysis::~ImageAnalysis()
@@ -250,6 +224,7 @@ void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 		if( areas.size() > 0 ){
 			repoke_init();
 			for(int i=0; i<areas.size(); i++){
+				printf("Repoke of area %i. Midpoint: %f %f", areas[i].id, areas[i].repoke_x, areas[i].repoke_y );
 				repoke_step( areas[i] );
 			}
 			repoke_finish();
@@ -312,13 +287,18 @@ bool ImageAnalysis::repoke_step(Area& area){
 	Mat areaMaskDst = m_areaMask(cc);
 	changeable.copyTo( areaMaskDst, changeable );
 	genColoredAreas();
+
+	return true;
 }
 
 void ImageAnalysis::repoke_finish(){
-					//reset pixels with MAXAREAS+1 value
-					printf("Reset!!");
-					threshold(m_areaMask, m_areaMask,MAXAREAS,0,THRESH_TOZERO_INV);
+	//reset pixels with MAXAREAS+1 value
+	printf("Reset!!\n");
+	threshold(m_areaMask, m_areaMask,MAXAREAS,0,THRESH_TOZERO_INV);
+	genColoredAreas();
 
-					m_pSettingKinect->m_areas.clear();//überflüssig
-					m_pSettingKinect->m_areas = m_area_detection_areas;//copy vector 
+	//set m_areas and update jSON description of m_areas.
+	m_pSettingKinect->setAreas(m_area_detection_areas);
+	//m_pSettingKinect->m_areas.clear();//überflüssig
+	//m_pSettingKinect->m_areas = m_area_detection_areas;//copy vector 
 }

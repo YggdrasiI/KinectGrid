@@ -156,7 +156,7 @@ function areaDetection(i){
 }
 
 function repoke(){
-	send("json?actionid=4","");
+	send("json?actionid=4","x=1");
 }
 
 function deepCopy(p,c) {

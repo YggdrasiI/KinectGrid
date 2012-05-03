@@ -117,7 +117,7 @@ void TuioServer25D::sendFullMessages() {
 	(*fullPacket) << osc::BeginBundleImmediate;
 	
 	// add the object alive message
-	(*fullPacket) << osc::BeginMessage( "/tuio/2Dobj") << "alive";
+	(*fullPacket) << osc::BeginMessage( "/tuio/25Dobj") << "alive";
 	for (std::list<TuioObject25D*>::iterator tuioObject = objectList.begin(); tuioObject!=objectList.end(); tuioObject++)
 		(*fullPacket) << (int32)((*tuioObject)->getSessionID());	
 	(*fullPacket) << osc::EndMessage;	
@@ -127,7 +127,7 @@ void TuioServer25D::sendFullMessages() {
 		// start a new packet if we exceed the packet capacity
 		if ((fullPacket->Capacity()-fullPacket->Size())<OBJ_MESSAGE_SIZE) {
 			// add the immediate fseq message and send the object packet
-			(*fullPacket) << osc::BeginMessage( "/tuio/2Dobj") << "fseq" << -1 << osc::EndMessage;
+			(*fullPacket) << osc::BeginMessage( "/tuio/25Dobj") << "fseq" << -1 << osc::EndMessage;
 			(*fullPacket) << osc::EndBundle;
 			socket->Send( fullPacket->Data(), fullPacket->Size() );
 			
@@ -136,21 +136,21 @@ void TuioServer25D::sendFullMessages() {
 			(*fullPacket) << osc::BeginBundleImmediate;
 			
 			// add the object alive message
-			(*fullPacket) << osc::BeginMessage( "/tuio/2Dobj") << "alive";
+			(*fullPacket) << osc::BeginMessage( "/tuio/25Dobj") << "alive";
 			for (std::list<TuioObject25D*>::iterator tuioObject = objectList.begin(); tuioObject!=objectList.end(); tuioObject++)
 				(*fullPacket) << (int32)((*tuioObject)->getSessionID());	
 			(*fullPacket) << osc::EndMessage;	
 		}
 
 		// add the actual object set message
-		(*fullPacket) << osc::BeginMessage( "/tuio/2Dobj") << "set";
+		(*fullPacket) << osc::BeginMessage( "/tuio/25Dobj") << "set";
 		(*fullPacket) << (int32)((*tuioObject)->getSessionID()) << (*tuioObject)->getSymbolID() << (*tuioObject)->getX() << (*tuioObject)->getY() << (*tuioObject)->getZ() << (*tuioObject)->getAngle();
 		(*fullPacket) << (*tuioObject)->getXSpeed() << (*tuioObject)->getYSpeed() << (*tuioObject)->getZSpeed() << (*tuioObject)->getRotationSpeed() << (*tuioObject)->getMotionAccel() << (*tuioObject)->getRotationAccel();	
 		(*fullPacket) << osc::EndMessage;
 		
 	}
 	// add the immediate fseq message and send the object packet
-	(*fullPacket) << osc::BeginMessage( "/tuio/2Dobj") << "fseq" << -1 << osc::EndMessage;
+	(*fullPacket) << osc::BeginMessage( "/tuio/25Dobj") << "fseq" << -1 << osc::EndMessage;
 	(*fullPacket) << osc::EndBundle;
 	socket->Send( fullPacket->Data(), fullPacket->Size() );
 }
@@ -479,8 +479,8 @@ void TuioServer25D::sendCursorBundle(long fseq) {
 void TuioServer25D::sendEmptyObjectBundle() {
 	oscPacket->Clear();	
 	(*oscPacket) << osc::BeginBundleImmediate;
-	(*oscPacket) << osc::BeginMessage( "/tuio/2Dobj") << "alive" << osc::EndMessage;	
-	(*oscPacket) << osc::BeginMessage( "/tuio/2Dobj") << "fseq" << -1 << osc::EndMessage;
+	(*oscPacket) << osc::BeginMessage( "/tuio/25Dobj") << "alive" << osc::EndMessage;	
+	(*oscPacket) << osc::BeginMessage( "/tuio/25Dobj") << "fseq" << -1 << osc::EndMessage;
 	(*oscPacket) << osc::EndBundle;
 	socket->Send( oscPacket->Data(), oscPacket->Size() );
 }
@@ -489,7 +489,7 @@ void TuioServer25D::startObjectBundle() {
 	oscPacket->Clear();	
 	(*oscPacket) << osc::BeginBundleImmediate;
 	
-	(*oscPacket) << osc::BeginMessage( "/tuio/2Dobj") << "alive";
+	(*oscPacket) << osc::BeginMessage( "/tuio/25Dobj") << "alive";
 	for (std::list<TuioObject25D*>::iterator tuioObject = objectList.begin(); tuioObject!=objectList.end(); tuioObject++) {
 		(*oscPacket) << (int32)((*tuioObject)->getSessionID());	
 	}
@@ -497,14 +497,14 @@ void TuioServer25D::startObjectBundle() {
 }
 
 void TuioServer25D::addObjectMessage(TuioObject25D *tobj) {
-	(*oscPacket) << osc::BeginMessage( "/tuio/2Dobj") << "set";
+	(*oscPacket) << osc::BeginMessage( "/tuio/25Dobj") << "set";
 	(*oscPacket) << (int32)(tobj->getSessionID()) << tobj->getSymbolID() << tobj->getX() << tobj->getY() << tobj->getZ() << tobj->getAngle();
 	(*oscPacket) << tobj->getXSpeed() << tobj->getYSpeed() << tobj->getZSpeed() << tobj->getRotationSpeed() << tobj->getMotionAccel() << tobj->getRotationAccel();	
 	(*oscPacket) << osc::EndMessage;
 }
 
 void TuioServer25D::sendObjectBundle(long fseq) {
-	(*oscPacket) << osc::BeginMessage( "/tuio/2Dobj") << "fseq" << (int32)fseq << osc::EndMessage;
+	(*oscPacket) << osc::BeginMessage( "/tuio/25Dobj") << "fseq" << (int32)fseq << osc::EndMessage;
 	(*oscPacket) << osc::EndBundle;
 	socket->Send( oscPacket->Data(), oscPacket->Size() );
 }
