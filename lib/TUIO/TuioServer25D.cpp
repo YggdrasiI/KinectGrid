@@ -73,7 +73,7 @@ void TuioServer25D::sendFullMessages() {
 	(*fullPacket) << osc::BeginBundleImmediate;
 	
 	// add the cursor alive message
-	(*fullPacket) << osc::BeginMessage( "/tuio/2Dcur") << "alive";
+	(*fullPacket) << osc::BeginMessage( "/tuio/25Dblb") << "alive";
 	for (std::list<TuioCursor25D*>::iterator tuioCursor = cursorList.begin(); tuioCursor!=cursorList.end(); tuioCursor++)
 		(*fullPacket) << (int32)((*tuioCursor)->getSessionID());	
 	(*fullPacket) << osc::EndMessage;	
@@ -85,7 +85,7 @@ void TuioServer25D::sendFullMessages() {
 		if ((fullPacket->Capacity()-fullPacket->Size())<CUR_MESSAGE_SIZE) {
 			
 			// add the immediate fseq message and send the cursor packet
-			(*fullPacket) << osc::BeginMessage( "/tuio/2Dcur") << "fseq" << -1 << osc::EndMessage;
+			(*fullPacket) << osc::BeginMessage( "/tuio/25Dblb") << "fseq" << -1 << osc::EndMessage;
 			(*fullPacket) << osc::EndBundle;
 			socket->Send( fullPacket->Data(), fullPacket->Size() );
 
@@ -94,21 +94,21 @@ void TuioServer25D::sendFullMessages() {
 			(*fullPacket) << osc::BeginBundleImmediate;
 			
 			// add the cursor alive message
-			(*fullPacket) << osc::BeginMessage( "/tuio/2Dcur") << "alive";
+			(*fullPacket) << osc::BeginMessage( "/tuio/25Dblb") << "alive";
 			for (std::list<TuioCursor25D*>::iterator tuioCursor = cursorList.begin(); tuioCursor!=cursorList.end(); tuioCursor++)
 				(*fullPacket) << (int32)((*tuioCursor)->getSessionID());	
 			(*fullPacket) << osc::EndMessage;				
 		}
 
 		// add the actual cursor set message
-		(*fullPacket) << osc::BeginMessage( "/tuio/2Dcur") << "set";
+		(*fullPacket) << osc::BeginMessage( "/tuio/25Dblb") << "set";
 		(*fullPacket) << (int32)((*tuioCursor)->getSessionID()) << (*tuioCursor)->getX() << (*tuioCursor)->getY() << (*tuioCursor)->getZ();
 		(*fullPacket) << (*tuioCursor)->getXSpeed() << (*tuioCursor)->getYSpeed() << (*tuioCursor)->getZSpeed() <<(*tuioCursor)->getMotionAccel();	
 		(*fullPacket) << osc::EndMessage;	
 	}
 	
 	// add the immediate fseq message and send the cursor packet
-	(*fullPacket) << osc::BeginMessage( "/tuio/2Dcur") << "fseq" << -1 << osc::EndMessage;
+	(*fullPacket) << osc::BeginMessage( "/tuio/25Dblb") << "fseq" << -1 << osc::EndMessage;
 	(*fullPacket) << osc::EndBundle;
 	socket->Send( fullPacket->Data(), fullPacket->Size() );
 	
@@ -445,8 +445,8 @@ void TuioServer25D::commitFrame() {
 void TuioServer25D::sendEmptyCursorBundle() {
 	oscPacket->Clear();	
 	(*oscPacket) << osc::BeginBundleImmediate;
-	(*oscPacket) << osc::BeginMessage( "/tuio/2Dcur") << "alive" << osc::EndMessage;	
-	(*oscPacket) << osc::BeginMessage( "/tuio/2Dcur") << "fseq" << -1 << osc::EndMessage;
+	(*oscPacket) << osc::BeginMessage( "/tuio/25Dblb") << "alive" << osc::EndMessage;	
+	(*oscPacket) << osc::BeginMessage( "/tuio/25Dblb") << "fseq" << -1 << osc::EndMessage;
 	(*oscPacket) << osc::EndBundle;
 	socket->Send( oscPacket->Data(), oscPacket->Size() );
 }
@@ -455,7 +455,7 @@ void TuioServer25D::startCursorBundle() {
 	oscPacket->Clear();	
 	(*oscPacket) << osc::BeginBundleImmediate;
 	
-	(*oscPacket) << osc::BeginMessage( "/tuio/2Dcur") << "alive";
+	(*oscPacket) << osc::BeginMessage( "/tuio/25Dblb") << "alive";
 	for (std::list<TuioCursor25D*>::iterator tuioCursor = cursorList.begin(); tuioCursor!=cursorList.end(); tuioCursor++) {
 		(*oscPacket) << (int32)((*tuioCursor)->getSessionID());	
 	}
@@ -464,14 +464,14 @@ void TuioServer25D::startCursorBundle() {
 
 void TuioServer25D::addCursorMessage(TuioCursor25D *tcur) {
 
-	 (*oscPacket) << osc::BeginMessage( "/tuio/2Dcur") << "set";
+	 (*oscPacket) << osc::BeginMessage( "/tuio/25Dblb") << "set";
 	 (*oscPacket) << (int32)(tcur->getSessionID()) << tcur->getX() << tcur->getY() << tcur->getZ();
 	 (*oscPacket) << tcur->getXSpeed() << tcur->getYSpeed() << tcur->getZSpeed() << tcur->getMotionAccel();	
 	 (*oscPacket) << osc::EndMessage;
 }
 
 void TuioServer25D::sendCursorBundle(long fseq) {
-	(*oscPacket) << osc::BeginMessage( "/tuio/2Dcur") << "fseq" << (int32)fseq << osc::EndMessage;
+	(*oscPacket) << osc::BeginMessage( "/tuio/25Dblb") << "fseq" << (int32)fseq << osc::EndMessage;
 	(*oscPacket) << osc::EndBundle;
 	socket->Send( oscPacket->Data(), oscPacket->Size() );
 }
