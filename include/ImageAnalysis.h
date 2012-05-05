@@ -86,14 +86,9 @@ static void filter(Mat& src, Mat& mask, int nthresh, Mat& dst){
 	Mat tmp(src.size(), src.type());
 	blur(src, tmp, Size(3,3));
 
-	dst = mask < tmp ;
-	tmp.copyTo(dst, dst);
-	/* this threshold can be integrated in the above mask.
-	 * Disadvantage: No adaptive change of this barier possible...
-	//threshold(dst, dst, nthresh, 255, THRESH_BINARY);
-	threshold(dst, dst, nthresh, 255, THRESH_TOZERO);
-	//adaptiveThreshold(dst, dst, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 3, nthresh);
-	*/
+	dst = mask < tmp ;//0-1-image
+	tmp.copyTo(dst, dst);// 0-'blob-depth'-image
+	
 }
 
 

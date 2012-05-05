@@ -85,7 +85,7 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 		{// Wait util no blob is detected.
 			printf("area detection 2\n");
 			hand_detection();
-			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_roi), m_areaMask, true);
+			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_roi), m_areaMask, true, NULL);
 			if( tracker->getBlobs().size() == 0 ){
 				m_area_detection_step = 1;
 			}
@@ -106,7 +106,7 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 			printf("area detection 1\n");
 			//Mat& depth = m_depthMaskWithoutThresh;
 			hand_detection();
-			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_roi), m_areaMask, true);
+			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_roi), m_areaMask, true, NULL);
 			std::vector<cBlob>& blobs = tracker->getBlobs();
 
 			for(int i=0;i<blobs.size(); i++){
@@ -146,15 +146,25 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 //++++++++
 
 void ImageAnalysis::genFrontMask(){
-	m_areaGrid = Scalar(255);
+	m_areaGrid = Scalar(255/*0*/);
 	Rect roi = m_pSettingKinect->m_roi;
 	Mat agRoi(m_areaGrid,roi);
+	Mat dfRoi(m_depthf,roi);
+	Mat tmp(dfRoi.size(),dfRoi.type());
 //	Mat newAreaGrid = Mat(Size(roi.width,roi.height), CV_8UC1);
+	int nFrames = 10;
+	for(int i=0;i<nFrames; i++){
+		m_pdevice->getDepth8UC1(dfRoi, roi);
+		Mat Kernel(Size(3, 3), CV_8UC1); Kernel.setTo(Scalar(1));
+		dilate(dfRoi, tmp, Kernel); 
+		//threshold(dfRoi, dfRoi,255-m_pSettingKinect->m_marginFront,255,THRESH_BINARY);
+		//agRoi = min/*max*/(agRoi,dfRoi);
+		threshold(tmp, tmp,255-m_pSettingKinect->m_marginFront,1,THRESH_BINARY_INV);
+		agRoi -= tmp;
+	}
+	/* convert agRoi back to 0-255-Img */
+	threshold(agRoi, agRoi,255-(nFrames/2+1),255,THRESH_BINARY);
 
-	m_pdevice->getDepth8UC1(agRoi, roi);
-	Mat Kernel(Size(3, 3), CV_8UC1); Kernel.setTo(Scalar(1));
-	dilate(agRoi, agRoi, Kernel); 
-	threshold(agRoi, agRoi,255-m_pSettingKinect->m_marginFront,255,THRESH_BINARY);
   m_maskFront_ok = true;
 }
 
@@ -273,21 +283,38 @@ bool ImageAnalysis::repoke_step(Area& area){
 		return false;
 	}
 
-	printf("Add Area %i\n",area.id);
-	m_area_detection_areas.push_back(area);
+	/* cc2=cc+Border. cc2 is used to left space for some border detection in (2) */
+	int l = max(cc.x-2,0); int t = max(cc.y-2,0);
+	int r = min(cc.x+cc.width+2,KRES_X); int b = min(cc.y+cc.height+2,KRES_Y);
+	Rect cc2(l,t,r-l,b-t);
 
-	Mat changeable = (m_areaMask(cc)==MAXAREAS+1);//cut of other areas
-
+	//Mat changeable = (m_areaMask(cc)==MAXAREAS+1);//cut of other areas
+	Mat changeable = (m_areaMask(cc2)==MAXAREAS+1);//cut of other areas
 	//get new !=0 values of m_area_detection_mask
 	changeable = min(changeable, m_area_detection_mask(
-				Rect(cc.x+1,cc.y+1,cc.width,cc.height)//shift by (1,1)
+				//Rect(cc.x+1,cc.y+1,cc.width,cc.height)//shift by (1,1)
+				Rect(cc2.x+1,cc2.y+1,cc2.width,cc2.height)//shift by (1,1)
 				));
 
 	changeable *= area.id;
-	Mat areaMaskDst = m_areaMask(cc);
+	//Mat areaMaskDst = m_areaMask(cc);
+	Mat areaMaskDst = m_areaMask(cc2);
 	changeable.copyTo( areaMaskDst, changeable );
 	genColoredAreas();
 
+	/* (2) Find depth information of the obstacle. Simply search minimal depth along the border of the area.
+	*/
+	Mat border(changeable.size(),changeable.type());
+	Mat Kernel(Size(3, 3), CV_8UC1); Kernel.setTo(Scalar(1));
+	dilate(changeable, border , Kernel);
+	border = border - changeable ;
+	//Scalar avg = mean( m_depthf(area.rect), border(area.rect) );
+	Scalar avg = mean( m_depthMask(cc2)/*m_depthf*/, border );
+	printf("Avarage depth of area border: %f\n", avg[0] );
+	area.depth = (int)avg[0];
+
+	printf("Add Area %i\n",area.id);
+	m_area_detection_areas.push_back(area);
 	return true;
 }
 

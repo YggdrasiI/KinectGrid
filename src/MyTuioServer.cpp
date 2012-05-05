@@ -38,27 +38,34 @@ void MyTuioServer::send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& area
 			case BLOB_UP:
 				{
 					printf("Remove cursor\n");
-					assert( pb->cursor != NULL );
+					//assert( pb->cursor != NULL );
+					if( pb->cursor == NULL ) break;
 					removeTuioCursor(pb->cursor);
 				}
 				break;
 			case BLOB_DOWN:
 				{
-					printf("Add cursor %i \n", (int)tuioSessionId(pb));
-					assert( pb->cursor == NULL );
+					//assert( pb->cursor == NULL );
 					localCoords(pb,pa,&roi,&lx,&ly);
-					pb->cursor = addTuioCursor(lx,ly,tuioSessionId(pb));
+					if( pb->cursor == NULL ){
+						pb->cursor = addTuioCursor(lx,ly,tuioSessionId(pb));
+						printf("Add cursor %i \n", (int)tuioSessionId(pb));
+					}else{
+						updateTuioCursor(pb->cursor,lx,ly);
+					}
 				}
 				break;
 			case BLOB_MOVE:
 			default:
 				{
 					localCoords(pb,pa,&roi,&lx,&ly);
-					assert( pb->cursor != NULL );
-					/*if( pb->cursor == NULL )
-						pb->cursor = addTuioCursor(lx,ly,tuioSessionId(pb));*/
-					printf("Move cursor %i to %f %f \n", (int)tuioSessionId(pb),lx,ly );
-					updateTuioCursor(pb->cursor,lx,ly);
+					//assert( pb->cursor != NULL );
+					if( pb->cursor == NULL ){
+						pb->cursor = addTuioCursor(lx,ly,tuioSessionId(pb));
+					}else{
+						printf("Move cursor %i to %f %f \n", (int)tuioSessionId(pb),lx,ly );
+						updateTuioCursor(pb->cursor,lx,ly);
+					}
 				}
 				break;
 		}

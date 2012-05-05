@@ -29,7 +29,7 @@ Tracker::~Tracker()
 {
 }
 
-void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history)
+void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std::vector<Area> *pareas)
 {
 	double min_area = *m_pmin_area;
 	double max_area = *m_pmax_area;
@@ -83,14 +83,18 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history)
 		temp.location.y = temp.origin.y = y;
 		temp.min.x = min_x; temp.min.y = min_y;
 		temp.max.x = max_x; temp.max.y = max_y;
-		temp.event = BLOB_DOWN;
 
-		/*
-		Rect r(min_x+p.x,min_y+p.x, max_x-min_y, max_y-min_y);
+		//Rect r(min_x+p.x,min_y+p.x, max_x-min_y, max_y-min_y);
+		Rect r(min_x,min_y, max_x-min_x, max_y-min_y);//width, height +1?!
 		z = mean( mat(r), mat(r) )[0];
-		printf("Mean depth of blob: %f",z);
+		//printf("Mean depth of blob: %f\n",z);
 		temp.location.z = temp.origin.z = z;
-		*/
+
+		/* Compare depth of hand with depth of area and throw blob away if hand to far away. */
+		if( pareas != NULL &&  (*pareas)[temp.areaid-1].depth - z < 0 ){
+			printf("Hand not reached area depth.\n");
+			continue ;
+		}
 
 		blobs.push_back(temp);
 	}
@@ -127,7 +131,11 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history)
 					next_handid = (next_handid+1) % MAXHANDS;
 			} //if array full -> next_handid = last_handid
 
+			blobs[i].event = BLOB_DOWN;
 			blobs[i].handid = next_handid;
+			blobs[i].cursor = NULL;
+			blobs[i].cursor25D = NULL;
+
 			handids[next_handid] = true;
 			last_handid = next_handid;
 		}

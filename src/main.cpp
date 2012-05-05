@@ -64,7 +64,12 @@ int main(int argc, char **argv) {
 	OnionServer* onion = new OnionServer(settingMMTT, settingKinect); 
 	onion->start_server();
 
-	MyTuioServer25D tuio("127.0.0.1",3335);
+	MyTuioServer tuio(
+			settingMMTT->getString("tuio2Dcur_host"),
+			(int) settingMMTT->getNumber("tuio2Dcur_port"));
+	MyTuioServer25D tuio2(
+			settingMMTT->getString("tuio25Dblb_host"),
+			(int) settingMMTT->getNumber("tuio25Dblb_port"));
 
 	//saves settings
 	//settingMMTT->saveConfigFile("settingMMTT.json");
@@ -131,10 +136,13 @@ int main(int argc, char **argv) {
 						mode = ia->hand_detection(); 
 						//find blobs
 						//Mat foo = ia->m_areaMask(settingKinect->m_roi);
-						tracker.trackBlobs(ia->m_filteredMat(settingKinect->m_roi), ia->m_areaMask, true);
+						tracker.trackBlobs(ia->m_filteredMat(settingKinect->m_roi), ia->m_areaMask, true, &settingKinect->m_areas);
 
 						//send tuio
-						tuio.send_blobs(tracker.getBlobs(), settingKinect->m_areas, settingKinect->m_roi);
+						if( settingKinect->m_tuioProtocols[0] )
+							tuio.send_blobs(tracker.getBlobs(), settingKinect->m_areas, settingKinect->m_roi);
+						if( settingKinect->m_tuioProtocols[1] )
+							tuio2.send_blobs(tracker.getBlobs(), settingKinect->m_areas, settingKinect->m_roi);
 					}
 					break;
 				case AREA_DETECTION_START:

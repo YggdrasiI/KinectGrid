@@ -53,6 +53,7 @@ class Area{
 		cv::Scalar color;
 		double area;//Flaecheninhalt
 		double repoke_x, repoke_y;
+		int depth;// avarage depth of area ∈[0,255]
 };
 
 

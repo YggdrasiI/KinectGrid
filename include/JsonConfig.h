@@ -71,10 +71,6 @@ class JsonConfig{
 			}*/
 			return;
 		}
-		/* Access to string child nodes of root node.*/
-		const char* getString(const char* string)const{
-			return getString(m_pjson_root, string);
-		}
 
 		static const char* getString(cJSON* r, const char* string){
 			cJSON* obj = 	cJSON_GetObjectItem(r,string);
@@ -86,6 +82,7 @@ class JsonConfig{
 				return notfound;
 			}
 		}; 
+
 		static double getNumber(cJSON* r, const char* string){
 			cJSON* obj = 	cJSON_GetObjectItem(r,string);
 			if( obj != NULL && obj->type == cJSON_Number)
@@ -112,6 +109,16 @@ class JsonConfig{
 			return min(max(getNumber(odf,"min"),getNumber(ndf,"val")),getNumber(odf,"max"));
 		}
 		inline int intFieldValue(cJSON* ndf, cJSON* odf){return (int)doubleFieldValue(ndf,odf); }
+
+		/* Access to string child nodes of root node.*/
+		const char* getString(const char* string)const{
+			return getString(m_pjson_root, string);
+		}
+
+		/* Access to number child nodes of root node.*/
+		const double getNumber(const char* string){
+			return getNumber(m_pjson_root, string);
+		}
 
 };
 /* End JsonConfig class */

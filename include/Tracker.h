@@ -53,7 +53,7 @@ class Tracker {
 	Tracker(double min_area, double max_area, double max_radius);
 	~Tracker();
 	
-	void trackBlobs(const Mat &mat, const Mat &areas, bool history);
+	void trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std::vector<Area> *pareas);
 	std::vector<cBlob>& getBlobs();
 };
 
