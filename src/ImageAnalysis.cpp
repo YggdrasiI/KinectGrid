@@ -155,15 +155,17 @@ void ImageAnalysis::genFrontMask(){
 	int nFrames = 10;
 	for(int i=0;i<nFrames; i++){
 		m_pdevice->getDepth8UC1(dfRoi, roi);
-		Mat Kernel(Size(3, 3), CV_8UC1); Kernel.setTo(Scalar(1));
+		Mat Kernel(Size(7, 7), CV_8UC1); Kernel.setTo(Scalar(1));
+		Mat Kernel2(Size(5, 5), CV_8UC1); Kernel.setTo(Scalar(1));
 		dilate(dfRoi, tmp, Kernel); 
+		erode(tmp, tmp, Kernel2); 
 		//threshold(dfRoi, dfRoi,255-m_pSettingKinect->m_marginFront,255,THRESH_BINARY);
 		//agRoi = min/*max*/(agRoi,dfRoi);
 		threshold(tmp, tmp,255-m_pSettingKinect->m_marginFront,1,THRESH_BINARY_INV);
 		agRoi -= tmp;
 	}
 	/* convert agRoi back to 0-255-Img */
-	threshold(agRoi, agRoi,255-(nFrames/2+1),255,THRESH_BINARY);
+	threshold(agRoi, agRoi,255-(2*nFrames/3+1),255,THRESH_BINARY);
 
   m_maskFront_ok = true;
 }
@@ -245,7 +247,7 @@ void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 
 void ImageAnalysis::repoke_init(){
 			// generate binary image for area detection
-			genFrontMask();
+			//genFrontMask();
 
 			//2pixel wider and taller for floodfill
 			m_area_detection_mask = Scalar(0);

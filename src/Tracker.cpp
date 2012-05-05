@@ -34,7 +34,8 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std:
 	double min_area = *m_pmin_area;
 	double max_area = *m_pmax_area;
 	double max_radius = *m_pmax_radius;
-	double x, y, z, min_x, min_y, max_x, max_y;
+	double x, y, min_x, min_y, max_x, max_y;
+	double min_depth,max_depth;
 	cBlob temp;
 	bool new_hand(true);
 	int mat_area(mat.size().width*mat.size().height);
@@ -86,15 +87,17 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std:
 
 		//Rect r(min_x+p.x,min_y+p.x, max_x-min_y, max_y-min_y);
 		Rect r(min_x,min_y, max_x-min_x, max_y-min_y);//width, height +1?!
-		z = mean( mat(r), mat(r) )[0];
-		//printf("Mean depth of blob: %f\n",z);
-		temp.location.z = temp.origin.z = z;
+		//z = mean( mat(r), mat(r) )[0];/* mean is not good. The blob can include many pixel behind the frame depth*/
+		//minMaxLoc require filtered images…
+		minMaxLoc( mat(r), &min_depth, &max_depth, NULL, NULL, mat(r) );
+		temp.location.z = temp.origin.z = max_depth;
 
 		/* Compare depth of hand with depth of area and throw blob away if hand to far away. */
-		if( pareas != NULL &&  (*pareas)[temp.areaid-1].depth - z < 0 ){
+		if( pareas != NULL && max_depth - (*pareas)[temp.areaid-1].depth < 0 ){
 			printf("Hand not reached area depth.\n");
 			continue ;
 		}
+		//if( pareas != NULL ) printf("Compared depth of area/blob: %i %f\n",(*pareas)[temp.areaid-1].depth ,max_depth);
 
 		blobs.push_back(temp);
 	}
@@ -104,6 +107,7 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std:
 
 	// main tracking loop -- O(n^2) -- simply looks for a blob in the previous frame within a specified radius
 	for (int i = 0; i < blobs.size(); i++) {
+		cBlob &blobi = blobs[i];
 		new_hand = true;
 		for (int j = 0; j < blobs_previous.size(); j++) {
 			if (blobs_previous[j].tracked) continue;
@@ -114,6 +118,7 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std:
 				blobs[i].event = BLOB_MOVE;
 				blobs[i].origin.x = history ? blobs_previous[j].origin.x : blobs_previous[j].location.x;
 				blobs[i].origin.y = history ? blobs_previous[j].origin.y : blobs_previous[j].location.y;
+				blobs[i].origin.z = history ? blobs_previous[j].origin.z : blobs_previous[j].location.z;
 
 				blobs[i].handid = blobs_previous[j].handid;
 				blobs[i].cursor = blobs_previous[j].cursor;
