@@ -47,6 +47,10 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 		if( m_depthMaskCounter == 0 ){
 			//last step
 			addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
+			if( m_pSettingKinect->m_areaThresh ){
+				//add local thresh val for every detected area
+				addAreaThresh(/*m_depthMask,*/ m_pSettingKinect->m_areas, m_areaMask, m_depthMask);
+			}
 			printf("Depth mask detection finished.\n");
 			return HAND_DETECTION;
 		}
@@ -155,8 +159,8 @@ void ImageAnalysis::genFrontMask(){
 	int nFrames = 10;
 	for(int i=0;i<nFrames; i++){
 		m_pdevice->getDepth8UC1(dfRoi, roi);
-		Mat Kernel(Size(7, 7), CV_8UC1); Kernel.setTo(Scalar(1));
-		Mat Kernel2(Size(5, 5), CV_8UC1); Kernel.setTo(Scalar(1));
+		Mat Kernel(Size(9, 9), CV_8UC1); Kernel.setTo(Scalar(1));
+		Mat Kernel2(Size(7, 7), CV_8UC1); Kernel2.setTo(Scalar(1));
 		dilate(dfRoi, tmp, Kernel); 
 		erode(tmp, tmp, Kernel2); 
 		//threshold(dfRoi, dfRoi,255-m_pSettingKinect->m_marginFront,255,THRESH_BINARY);
@@ -206,7 +210,7 @@ Mat ImageAnalysis::getColoredAreas(){
 	return ret;
 }
 
-Mat ImageAnalysis::getFrontMask(){
+Mat& ImageAnalysis::getFrontMask(){
 	if( !m_maskFront_ok ) genFrontMask();
 	return m_areaGrid;
 }
@@ -326,8 +330,27 @@ void ImageAnalysis::repoke_finish(){
 	threshold(m_areaMask, m_areaMask,MAXAREAS,0,THRESH_TOZERO_INV);
 	genColoredAreas();
 
+	//update depthMask, if depthMask depends from areaMask
+	if( m_pSettingKinect->m_areaThresh ){
+		addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
+		addAreaThresh(m_pSettingKinect->m_areas, m_areaMask, m_depthMask);
+	}
+
 	//set m_areas and update jSON description of m_areas.
 	m_pSettingKinect->setAreas(m_area_detection_areas);
 	//m_pSettingKinect->m_areas.clear();//überflüssig
 	//m_pSettingKinect->m_areas = m_area_detection_areas;//copy vector 
+}
+/*
+ * Set for each area the pixels to area.depth. Position of areas will extract from areaMask.
+ * Function should not called frequently.
+ * */
+void ImageAnalysis::addAreaThresh(/*Mat& src,*/ std::vector<Area> areas, Mat& areaMask,  Mat& dst){
+	Mat v(dst.size(),dst.type());
+	for( int i=0; i<areas.size(); i++){
+		printf("Depth of area %i: %i\n",i+1,areas[i].depth);
+		v = Scalar(areas[i].depth-4);
+		Mat a = (areaMask == areas[i].id);
+		v.copyTo(dst,a);
+	}
 }

@@ -26,11 +26,12 @@ public:
 	void genFrontMask();
 	void genColoredAreas();
 	Mat getColoredAreas();
-	Mat getFrontMask();
+	Mat &getFrontMask();
 private:
 	void repoke_init();
 	bool repoke_step(Area& area);
 	void repoke_finish();
+	void addAreaThresh(/*Mat& src,*/ std::vector<Area> areas, Mat& areaMask,  Mat& dst);
 public:
 	Mat m_depthf  ;
 	Mat m_filterMat;

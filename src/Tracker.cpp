@@ -36,6 +36,7 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std:
 	double max_radius = *m_pmax_radius;
 	double x, y, min_x, min_y, max_x, max_y;
 	double min_depth,max_depth;
+	Scalar sdepth, sstddev;
 	cBlob temp;
 	bool new_hand(true);
 	int mat_area(mat.size().width*mat.size().height);
@@ -86,18 +87,44 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std:
 		temp.max.x = max_x; temp.max.y = max_y;
 
 		//Rect r(min_x+p.x,min_y+p.x, max_x-min_y, max_y-min_y);
-		Rect r(min_x,min_y, max_x-min_x, max_y-min_y);//width, height +1?!
+		//Rect r(min_x,min_y, max_x-min_x, max_y-min_y);//width, height +1?!
+		Rect r( x, y, 7, 7);
+
+
 		//z = mean( mat(r), mat(r) )[0];/* mean is not good. The blob can include many pixel behind the frame depth*/
-		//minMaxLoc require filtered images…
-		minMaxLoc( mat(r), &min_depth, &max_depth, NULL, NULL, mat(r) );
-		temp.location.z = temp.origin.z = max_depth;
+
+		/* Depth detection. The measurement method is flexible. */
+		if( m_pSettingKinect->m_areaThresh ){
+			/* Mean is ok, because all pixels of the blob are in front of the frame. */
+			max_depth = mean( mat(r), mat(r) )[0]+4;/*correct blur(1) and area thresh shift (3)*/
+			//meanStdDev( mat(r), sdepth, sstddev, mat(r) );
+			//max_depth = sdepth[0]+3*sstddev[0];
+			//minMaxLoc( mat(r), &min_depth, &max_depth, NULL, NULL, mat(r) );
+
+		}else	if( pareas != NULL){
+			/* Remove values behind the area depth and count mean of rest.
+				This is problematic/choppy if to many pixels are removed.
+			*/
+			max_depth = max( (*pareas)[temp.areaid-1].depth-22, 
+					mean( mat(r), mat(r)>(*pareas)[temp.areaid-1].depth-2 )[0] + 1);
+
+		}else{
+			/* Very few information. Use maximum of blob. (Choppy).
+			 * Can be improved, if mean of i.e. 10 biggest values is used
+			 * minMaxLoc require filtered/blured images.
+			 * */
+			//max_depth = 0;
+			minMaxLoc( mat(r), &min_depth, &max_depth, NULL, NULL, mat(r) );
+		}
+		printf("Compared depth of area/blob: %i %f\n",(*pareas)[temp.areaid-1].depth ,max_depth);
 
 		/* Compare depth of hand with depth of area and throw blob away if hand to far away. */
-		if( pareas != NULL && max_depth - (*pareas)[temp.areaid-1].depth < 0 ){
+		if( max_depth - (*pareas)[temp.areaid-1].depth < -1 ){
 			printf("Hand not reached area depth.\n");
 			continue ;
 		}
-		//if( pareas != NULL ) printf("Compared depth of area/blob: %i %f\n",(*pareas)[temp.areaid-1].depth ,max_depth);
+
+		temp.location.z = temp.origin.z = max_depth;
 
 		blobs.push_back(temp);
 	}
