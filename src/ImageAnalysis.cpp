@@ -39,7 +39,8 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 	}
 	if( m_depthMaskCounter < 0){
 		// Use (fullsize) eary frames to generate mask
-		m_pdevice->getDepth8UC1(m_depthf, Rect(0,0,KRES_X,KRES_Y));
+		m_pdevice->getDepth8UC1(m_depthf, Rect(0,0,KRES_X,KRES_Y),
+				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth);
 		if( m_depthMaskCounter > 2-NMASKFRAMES)//depratecd error handling for first frames of device.
 			createMask(m_depthf,m_depthMaskWithoutThresh,/*m_pSettingKinect->m_marginBack,*/m_depthMaskWithoutThresh);
 		m_depthMaskCounter++;
@@ -74,7 +75,8 @@ FunctionMode ImageAnalysis::hand_detection()
 	Mat fMRoi(m_filteredMat,roi);
 
 	// Analyse Roi of depth frame
-	m_pdevice->getDepth8UC1(dfRoi, roi);
+	m_pdevice->getDepth8UC1(dfRoi, roi,
+				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth);
 
 	//filter image
 	filter(dfRoi,dMRoi,80,fMRoi);
@@ -158,7 +160,8 @@ void ImageAnalysis::genFrontMask(){
 //	Mat newAreaGrid = Mat(Size(roi.width,roi.height), CV_8UC1);
 	int nFrames = 10;
 	for(int i=0;i<nFrames; i++){
-		m_pdevice->getDepth8UC1(dfRoi, roi);
+		m_pdevice->getDepth8UC1(dfRoi, roi,
+				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth);
 		Mat Kernel(Size(9, 9), CV_8UC1); Kernel.setTo(Scalar(1));
 		Mat Kernel2(Size(7, 7), CV_8UC1); Kernel2.setTo(Scalar(1));
 		dilate(dfRoi, tmp, Kernel); 

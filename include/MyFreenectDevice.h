@@ -34,6 +34,7 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
  Convert depth direct to U8C1 to avoid copy and convert later.
 */
 	bool getDepth8UC1(Mat& output, Rect roi); 
+	bool getDepth8UC1(Mat& output, Rect roi, int m, int M); 
 //	void setSettingKinect(SettingKinect* sk);
 
 	/* propagate setting changes */

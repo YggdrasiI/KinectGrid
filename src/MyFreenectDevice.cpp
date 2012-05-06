@@ -73,7 +73,8 @@ bool MyFreenectDevice::getDepth8UC1(Mat& output, Rect roi)
 	if(m_new_depth_frame) {
 		//printf("Dim of roiMat: %i %i\n", output.size().width, output.size().height);
 		//m_depthMat.convertTo(output, CV_8UC1, -255.0/2048.0, 255.0);//Invert colors!
-		m_depthMat(roi).convertTo(output, CV_8UC1, -255.0/2048.0, 255.0);//Invert colors!
+		//m_depthMat(roi).convertTo(output, CV_8UC1, -255.0/2048.0, 255.0);//Invert colors!
+		m_depthMat(roi).convertTo(output, CV_8UC1, -255.0/1024.0, 255+127.0);//Invert colors!
 		m_new_depth_frame = false;
 		m_depth_mutex.unlock();
 		return true;
@@ -83,6 +84,30 @@ bool MyFreenectDevice::getDepth8UC1(Mat& output, Rect roi)
 	}
 }
 
+/*
+ Convert depth to U8C1 to avoid copy and convert later.
+ Here, two affine functions are combined.
+ • f(x) := a*x + b map the depth to [0,255] intervall,
+    (a,b)=(255/2048,0) or (-255/2048,255).
+ • g(y) := 255/(M-m) (y - m) map [m,M] on [0,255].
+ => The depth resolution will increased in the relevant intervall.
+*/
+bool MyFreenectDevice::getDepth8UC1(Mat& output, Rect roi, int m, int M) 
+{
+	float a2 = -255.0*255.0/2048.0/(M-m);	
+	float b2 = (255.0-m)*255.0/(M-m);	
+	printf("getDepth constants: %f, %f\n",a2,b2);
+	m_depth_mutex.lock();
+	if(m_new_depth_frame) {
+		m_depthMat(roi).convertTo(output, CV_8UC1, a2, b2);//Invert colors!
+		m_new_depth_frame = false;
+		m_depth_mutex.unlock();
+		return true;
+	} else {
+		m_depth_mutex.unlock();
+		return false;
+	}
+}
 
 bool MyFreenectDevice::getDepth(Mat& output)
 {
