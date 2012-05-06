@@ -32,5 +32,40 @@
 	</div>
 <h1>Variables</h1>
 <div id="settingKinectForm"> </div>
-
+<h1>Calibration</h1>
+Attention: The depth values are inverted: 255=close points, 0=distant points.
+<ul>
+	<li>Set Depth Range
+	<ul>
+		<li>Select raw depth view (press '1')</li>
+		<li>Lower <i>maxDepth</i> till first obstacles are light grey.</li>
+		<li>Raise <i>minDepth</i> till background nearly black.</li>
+	</ul>
+	</li>
+	<li>Use <i>margin[Left|Top|Right|Bottom]</i> to crop image.
+	</li>
+	<li>Select front mask image
+	<ul>
+		<li>Select front mask view (press '5')</li>
+		<li>Raise <i>marginFront</i> till the frame is white and all other parts still black.</li>
+	</ul>
+	This image will used to find the areas. Ensure that the areas are full enclosed.
+	</li>
+	<li>Use <i>marginBack</i> to set background threshold (depth mask) for blob detection.<br> Press '2' to show the depth mask. The global threshold will increased in two cases:
+	<ol>
+		<li>During the depth mask detection are all values greater as <i>255-marginBack</i> increase the depth mask. Do not block the areas during the depth mask detection!</li>
+		<li>If <i>areaThresh=1</i>, depth mask is set to frame depth inside of areas.</li>
+	</ol>
+	</li>
+	<li>Save Configuration :-)</li>
+</ul>
+<h1>Area Detection</h1>
+If calibration is finished (check front mask!) you can start the area detection. Push Hand in first area and check the output. Select more areas and finish area detection with an other push in area 1.
+<h1>Repoke</h1>
+Use this option to repeat the area detection.
+<h1>Variables Description</h1>
+minBlobArea, maxBlobArea: Filter small and tall blobs out.<br>
+TUIO_2Dcur : Send tuio messages in 2Dcur format<br>
+TUIO_25Dblb : Send tuio messages in 25Dblb format (like Space Palette).<br>
+areaThresh : Use depth of the frame to filter hand movement behind the frame.<br>
 </body>
