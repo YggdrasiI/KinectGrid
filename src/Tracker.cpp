@@ -116,11 +116,11 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std:
 			//max_depth = 0;
 			minMaxLoc( mat(r), &min_depth, &max_depth, NULL, NULL, mat(r) );
 		}
-		printf("Compared depth of area/blob: %i %f\n",(*pareas)[temp.areaid-1].depth ,max_depth);
+		//printf("Compared depth of area/blob: %i %f\n",(*pareas)[temp.areaid-1].depth ,max_depth);
 
 		/* Compare depth of hand with depth of area and throw blob away if hand to far away. */
-		if( max_depth - (*pareas)[temp.areaid-1].depth < -1 ){
-			printf("Hand not reached area depth.\n");
+		if(pareas != NULL && max_depth - (*pareas)[temp.areaid-1].depth < -1 ){
+			//printf("Hand not reached area depth.\n");
 			continue ;
 		}
 

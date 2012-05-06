@@ -96,7 +96,7 @@ bool MyFreenectDevice::getDepth8UC1(Mat& output, Rect roi, int m, int M)
 {
 	float a2 = -255.0*255.0/2048.0/(M-m);	
 	float b2 = (255.0-m)*255.0/(M-m);	
-	printf("getDepth constants: %f, %f\n",a2,b2);
+//	printf("getDepth constants: %f, %f\n",a2,b2);
 	m_depth_mutex.lock();
 	if(m_new_depth_frame) {
 		m_depthMat(roi).convertTo(output, CV_8UC1, a2, b2);//Invert colors!

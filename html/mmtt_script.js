@@ -159,6 +159,9 @@ function repoke(){
 	send("json?actionid=4","x=1");
 }
 
+function setView(i){
+	send("json?actionid=5","view="+i);
+}
 function deepCopy(p,c) {
 	var c = c||{}; for (var i in p) {
 		if (typeof p[i] === 'object') {

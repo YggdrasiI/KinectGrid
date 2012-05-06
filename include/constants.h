@@ -44,6 +44,7 @@ enum Changes {NO=0,MASK=1,MOTOR=2,
  * I.e. hand detection mode, area detection mode, ...
  */
 enum FunctionMode{ HAND_DETECTION, AREA_DETECTION, AREA_DETECTION_START,
+	AREA_DETECTION_END,
 	DEPTH_MASK_DETECTION, REPOKE_DETECTION };
 
 class Area{

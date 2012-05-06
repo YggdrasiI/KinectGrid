@@ -159,11 +159,12 @@ static cJSON* jsonCheckbox(const char* id, bool checked){
 	return df;
 }
 
-static cJSON* jsonArea(int id, float x, float y){
+static cJSON* jsonArea(int id, float x, float y, float depth){
 	cJSON* df = cJSON_CreateObject();
 	cJSON_AddNumberToObject(df, "id", id );
 	cJSON_AddNumberToObject(df, "x", x );
 	cJSON_AddNumberToObject(df, "y", y );
+	cJSON_AddNumberToObject(df, "depth", depth );
 	return df;
 }
 #endif

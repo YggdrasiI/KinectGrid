@@ -184,6 +184,12 @@ int OnionServer::stop_server()
 int OnionServer::updateSetting(onion_request *req, onion_response *res){
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 	switch(actionid){
+		case 5:{ //select view
+							//m_view = atoi( onion_request_get_queryd(req,"view","-1") );
+							m_view = atoi( onion_request_get_post(req,"view") );
+						 printf("Set view to %i.\n",m_view);
+					 }
+					 break;
 		case 4:{ //repoke
 						 printf("Repoke\n");
 								m_psettingMMTT->setMode(REPOKE_DETECTION);
@@ -194,8 +200,7 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 							if( start == 1)
 								m_psettingMMTT->setMode(AREA_DETECTION_START);
 							else{
-								assert(false);
-								m_psettingMMTT->setMode(HAND_DETECTION);
+								m_psettingMMTT->setMode(AREA_DETECTION_END);
 							}
 					 }
 			break;

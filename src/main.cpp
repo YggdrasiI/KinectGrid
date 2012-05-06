@@ -145,6 +145,10 @@ int main(int argc, char **argv) {
 							tuio2.send_blobs(tracker.getBlobs(), settingKinect->m_areas, settingKinect->m_roi);
 					}
 					break;
+				case AREA_DETECTION_END:
+						ia->m_area_detection_step = 3;
+						mode = ia->area_detection(&tracker);
+						break;
 				case AREA_DETECTION_START:
 						ia->m_area_detection_step = 0;
 						imshowNbr = SHOW_AREAS;
@@ -164,6 +168,9 @@ int main(int argc, char **argv) {
 				 _newblobresult->Filter( *_newblobresult, B_EXCLUDE, CBlobGetArea(), B_GREATER, val_blob_maxsize.internal_value );
 				 _newblobresult->Filter( *_newblobresult, B_EXCLUDE, CBlobGetArea(), B_LESS, val_blob_minsize.internal_value );
 				 */
+
+			//check if webserver get new viewnumber
+			imshowNbr = onion->getView(imshowNbr);
 
 			switch (imshowNbr){
 				case SHOW_DEPTH:

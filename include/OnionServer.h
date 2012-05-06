@@ -34,10 +34,12 @@ class OnionServer{
 	private:
 		SettingMMTT* m_psettingMMTT;
 		SettingKinect* m_psettingKinect;
+		int m_view;
 	public:
 		OnionServer(SettingMMTT* psettingMMTT, SettingKinect* psettingKinect):
 			m_ponion( onion_new(O_THREADED) ),
 			m_pthread(),
+			m_view(-1),
 			m_psettingMMTT(psettingMMTT),
 			m_psettingKinect(psettingKinect)
 		{
@@ -51,6 +53,13 @@ class OnionServer{
 		int start_server();
 		int stop_server();
 		int updateSetting(onion_request *req, onion_response *res);
+		/* returns selected view if webserver get new view number. Otherwiese in will reflected*/
+		int getView(int in){
+			if(m_view < 0) return in;
+			int ret = m_view;
+			m_view = -1;
+			return ret;
+		};
 
 };
 

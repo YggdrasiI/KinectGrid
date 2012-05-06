@@ -96,8 +96,11 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 				m_area_detection_step = 1;
 			}
 		} break;
-	case 3:
+	case 3://for AREA_DETECTION_END
 		{
+			m_area_detection_step = 1;
+			repoke_finish();
+			return HAND_DETECTION;
 		} break;
 	case 0:
 		{
@@ -329,7 +332,7 @@ bool ImageAnalysis::repoke_step(Area& area){
 
 void ImageAnalysis::repoke_finish(){
 	//reset pixels with MAXAREAS+1 value
-	printf("Reset!!\n");
+	//printf("Reset!!\n");
 	threshold(m_areaMask, m_areaMask,MAXAREAS,0,THRESH_TOZERO_INV);
 	genColoredAreas();
 
