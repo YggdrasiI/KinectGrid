@@ -88,7 +88,7 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std:
 
 		//Rect r(min_x+p.x,min_y+p.x, max_x-min_y, max_y-min_y);
 		//Rect r(min_x,min_y, max_x-min_x, max_y-min_y);//width, height +1?!
-		Rect r( x, y, 7, 7);
+		Rect r( x-3, y-3, min(7,max_x-min_x), min(7, max_y-min_y));
 
 
 		//z = mean( mat(r), mat(r) )[0];/* mean is not good. The blob can include many pixel behind the frame depth*/

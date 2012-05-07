@@ -12,7 +12,7 @@ static void localCoords(cBlob *pb, Area* pa, cv::Rect* roi, float *lx, float *ly
 	/*hflip coords. Where is the efficient position for flipping the whole input? convertTo? Is flip() fast?*/
 	/* Map on [-1,1] */
 	x = 1 - 2*(pb->location.x - pa->rect.x + roi->x ) / (float)pa->rect.width;
-	y = (pb->location.y - pa->rect.y + roi->y ) / (float)pa->rect.height;
+	y = 1 - 2*(pb->location.y - pa->rect.y + roi->y ) / (float)pa->rect.height;
 
   /* Gain distanace to origin */
 	if( x < 0) x = (x<0)?-1+(1+x)*(1+x):x = 1-(1-x)*(1-x);
