@@ -256,8 +256,8 @@ void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 }
 
 void ImageAnalysis::repoke_init(){
-			// generate binary image for area detection
-			//genFrontMask();
+			// generate binary image for area detection, if not set
+			getFrontMask();
 
 			//2pixel wider and taller for floodfill
 			m_area_detection_mask = Scalar(0);

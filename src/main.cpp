@@ -20,6 +20,7 @@
 #include "MyTuioServer25D.h"
 
 #include <locale.h>
+#include <time.h>
 
 // Selection of output image
 enum Show {SHOW_DEPTH=1,SHOW_MASK=2,SHOW_FILTERED=3,SHOW_AREAS=4,SHOW_FRONTMASK};
@@ -37,6 +38,7 @@ int main(int argc, char **argv) {
 		if(wk==0) withKinect=false;
 	}
 
+	time_t last_blob_detection = time(NULL);
 
 	//Load & Create settings
 	//JsonConfig settingMMTT("settingMMTT.json", &JsonConfig::loadMMTTlinuxSetting  );
@@ -190,6 +192,16 @@ int main(int argc, char **argv) {
 					break;
 				default:
 					break;
+			}
+
+
+			//if mode is HAND_DETECTION and long time no blob was detected, sleep.
+			if( mode == HAND_DETECTION ){
+				if( tracker.getBlobs().size() < 1 ){
+					if( last_blob_detection - time(NULL) > 10 ) cvWaitKey(1000);
+				}else{
+					last_blob_detection = time(NULL);
+				}
 			}
 
 		}else{

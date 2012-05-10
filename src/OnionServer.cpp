@@ -145,6 +145,20 @@ if( data != NULL){
 return mmtt_settings_js_template(d, req, res);
 }
 
+/*
+ Replace some template variables (filename of last config) call index_html_template
+*/
+int index_html(void *data, onion_request *req, onion_response *res, void* foo, void* datafree)
+{
+ //	printf("Pointer in callback: %p %p %p)\n",data,p,datafree);
+onion_dict *d=onion_dict_new();
+if( data != NULL){
+	onion_dict_add(d, "LAST_SETTING_FILENAME",((JsonConfig*)data)->getString("lastSetting"),0);
+}
+
+return index_html_template(d, req, res);
+}
+
 /*+++++++++++++ OnionServer-Class ++++++++++++++++++ */
 int OnionServer::start_server()
 {
@@ -162,8 +176,8 @@ int OnionServer::start_server()
 	onion_set_hostname(m_ponion, host); // Force ipv4.
 	onion_set_port(m_ponion, port);
 	onion_url_add_with_data(url, "mmtt_settings.js", (void*)insert_json, m_psettingKinect, NULL);
-	onion_url_add(url, "index.html", (void*)index_html_template);
-	onion_url_add(url, "", (void*)index_html_template);
+	onion_url_add_with_data(url, "index.html", (void*)index_html, m_psettingMMTT, NULL);
+	onion_url_add_with_data(url, "", (void*)index_html, m_psettingMMTT, NULL);
 	//onion_url_add_with_data(url, "index.html", (void*)checkFormularValues, this, NULL);
 	//onion_url_add_with_data(url, "", (void*)checkFormularValues, this, NULL);
 	onion_url_add_with_data(url, "json", (void*)checkFormularValues, this, NULL);
