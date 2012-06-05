@@ -33,9 +33,11 @@ int main(int argc, char **argv) {
 	string suffix(".png");
 	int iter(0);
 
+	bool sleepmode(false);
 	if( argc > 1){
 		int wk = atoi(argv[1]);
-		if(wk==0) withKinect=false;
+		if(wk==0) withKinect = false;
+		if(wk>1) sleepmode = true;
 	}
 
 	time_t last_blob_detection = time(NULL);
@@ -196,9 +198,12 @@ int main(int argc, char **argv) {
 
 
 			//if mode is HAND_DETECTION and long time no blob was detected, sleep.
-			if( mode == HAND_DETECTION ){
+			if( sleepmode && mode == HAND_DETECTION ){
 				if( tracker.getBlobs().size() < 1 ){
-					if( last_blob_detection - time(NULL) > 10 ) cvWaitKey(1000);
+					if( time(NULL) - last_blob_detection  > 10 ){
+						//printf("Sleep mode....\n");
+						cvWaitKey(2000);
+					}
 				}else{
 					last_blob_detection = time(NULL);
 				}

@@ -355,7 +355,13 @@ void ImageAnalysis::addAreaThresh(/*Mat& src,*/ std::vector<Area> areas, Mat& ar
 	Mat v(dst.size(),dst.type());
 	for( int i=0; i<areas.size(); i++){
 		printf("Depth of area %i: %i\n",i+1,areas[i].depth);
-		v = Scalar(areas[i].depth-4);
+		/* The minus value:
+		 * The detection should begin "short" behind the frame. The minDepth and
+		 * maxDepth value affect the depth unit length. Thus, this values need to be consides.
+		 * */
+		v = Scalar(areas[i].depth-
+				0.5 * (255/(m_pSettingKinect->m_maxDepth-m_pSettingKinect->m_minDepth) )
+				);
 		Mat a = (areaMask == areas[i].id);
 		v.copyTo(dst,a);
 	}
