@@ -43,19 +43,18 @@ int main(int argc, char **argv) {
 	time_t last_blob_detection = time(NULL);
 
 	//Load & Create settings
-	//JsonConfig settingMMTT("settingMMTT.json", &JsonConfig::loadMMTTlinuxSetting  );
-	SettingMMTT *settingMMTT = new SettingMMTT();
-	settingMMTT->init("settingMMTT.ini");
+	SettingKinectGrid *settingKinectGrid = new SettingKinectGrid();
+	settingKinectGrid->init("settingKinectGrid.ini");
 	
 	if(false){
-	char *conf = settingMMTT->getConfig();
+	char *conf = settingKinectGrid->getConfig();
 	printf("Settings:%s \n", conf);
 	free(conf);
 	}
 	//JsonConfig settingKinect("settingKinectDefault.json", &JsonConfig::loadKinectSetting );
 	SettingKinect *settingKinect = new SettingKinect();
 	//settingKinect->init("settingKinectDefault.json");
-	settingKinect->init( settingMMTT->getString("lastSetting") );
+	settingKinect->init( settingKinectGrid->getString("lastSetting") );
 
 	if(false){
 	char *conf = settingKinect->getConfig();
@@ -65,18 +64,18 @@ int main(int argc, char **argv) {
 
 
 	//init onion server thread
-	OnionServer* onion = new OnionServer(settingMMTT, settingKinect); 
+	OnionServer* onion = new OnionServer(settingKinectGrid, settingKinect); 
 	onion->start_server();
 
 	MyTuioServer tuio(
-			settingMMTT->getString("tuio2Dcur_host"),
-			(int) settingMMTT->getNumber("tuio2Dcur_port"));
+			settingKinectGrid->getString("tuio2Dcur_host"),
+			(int) settingKinectGrid->getNumber("tuio2Dcur_port"));
 	MyTuioServer25D tuio2(
-			settingMMTT->getString("tuio25Dblb_host"),
-			(int) settingMMTT->getNumber("tuio25Dblb_port"));
+			settingKinectGrid->getString("tuio25Dblb_host"),
+			(int) settingKinectGrid->getNumber("tuio25Dblb_port"));
 
 	//saves settings
-	//settingMMTT->saveConfigFile("settingMMTT.json");
+	//settingKinectGrid->saveConfigFile("settingKinectGrid.json");
 	//settingKinect->saveConfigFile("settingKinectDefault.json");
 
 	ImageAnalysis* ia;
@@ -121,7 +120,7 @@ int main(int argc, char **argv) {
 
 		//get 8 bit depth image
 		if(withKinect){
-			FunctionMode mode = settingMMTT->getModeAndLock();
+			FunctionMode mode = settingKinectGrid->getModeAndLock();
 
 			switch (mode){
 				case REPOKE_DETECTION:
@@ -163,7 +162,7 @@ int main(int argc, char **argv) {
 					}
 					break;
 			}
-			settingMMTT->unlockMode(mode);
+			settingKinectGrid->unlockMode(mode);
 			/*
 				 _tmpThresh->origin = 1;
 				 _tmpThresh->imageData = (char*) depthf.data;
@@ -250,7 +249,7 @@ int main(int argc, char **argv) {
 	}
 
 	delete settingKinect;
-	delete settingMMTT;
+	delete settingKinectGrid;
 
 	return 0;
 }

@@ -12,7 +12,7 @@ set(json_SRCS
 	cJSON.c
 	JsonConfig.cpp	
 	SettingKinect.cpp
-	SettingMMTT.cpp
+	SettingKinectGrid.cpp
 	)
 ## end json files
 
@@ -21,7 +21,7 @@ set(json_SRCS
 set(server_SRCS
 	OnionServer.cpp
 	index_html.c
-	mmtt_settings_js.c
+	kinectgrid_settings_js.c
 	)
 
 # create sourcefile from html template
@@ -32,20 +32,20 @@ add_custom_command(
 	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/index.html
 	)
 add_custom_command(
-	OUTPUT mmtt_script_js.c
-	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/mmtt_script.js
-	${CMAKE_CURRENT_BINARY_DIR}/mmtt_script_js.c
-	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/mmtt_script.js
+	OUTPUT kinectgrid_script_js.c
+	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinectgrid_script.js
+	${CMAKE_CURRENT_BINARY_DIR}/kinectgrid_script_js.c
+	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinectgrid_script.js
 	)
 add_custom_command(
-	OUTPUT mmtt_settings_js.c
-	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/mmtt_settings.js
-	${CMAKE_CURRENT_BINARY_DIR}/mmtt_settings_js.c
-	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/mmtt_settings.js
+	OUTPUT kinectgrid_settings_js.c
+	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinectgrid_settings.js
+	${CMAKE_CURRENT_BINARY_DIR}/kinectgrid_settings_js.c
+	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinectgrid_settings.js
 	)
 
 add_library (server SHARED ${server_SRCS})
-#add_dependencies(server index_html.c mmtt_script_js.c)
+#add_dependencies(server index_html.c kinectgrid_script_js.c)
 ## end http server
 
 ## Tuio server
@@ -70,7 +70,7 @@ set(tuio_SRCS
 # should be either OSC_HOST_BIG_ENDIAN or OSC_HOST_LITTLE_ENDIAN
 # Apple: OSC_HOST_BIG_ENDIAN
 # Win32: OSC_HOST_LITTLE_ENDIAN
-# i386 LinuX: OSC_HOST_LITTLE_ENDIAN
+# i386 Linux: OSC_HOST_LITTLE_ENDIAN
 set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -DOSC_HOST_LITTLE_ENDIAN")
 
 add_library (tuio SHARED ${tuio_SRCS})

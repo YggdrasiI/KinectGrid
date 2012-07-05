@@ -11,7 +11,7 @@
 
 #include "JsonConfig.h"
 #include "SettingKinect.h"
-#include "SettingMMTT.h"
+#include "SettingKinectGrid.h"
 
 
 /* Declare jSON data object here
@@ -32,15 +32,15 @@ class OnionServer{
 		onion* m_ponion;
 		pthread_t m_pthread;
 	private:
-		SettingMMTT* m_psettingMMTT;
+		SettingKinectGrid* m_psettingKinectGrid;
 		SettingKinect* m_psettingKinect;
 		int m_view;
 	public:
-		OnionServer(SettingMMTT* psettingMMTT, SettingKinect* psettingKinect):
+		OnionServer(SettingKinectGrid* psettingKinectGrid, SettingKinect* psettingKinect):
 			m_ponion( onion_new(O_THREADED) ),
 			m_pthread(),
 			m_view(-1),
-			m_psettingMMTT(psettingMMTT),
+			m_psettingKinectGrid(psettingKinectGrid),
 			m_psettingKinect(psettingKinect)
 		{
 			//start_server();

@@ -77,8 +77,8 @@ int mandelbrot(void *p, onion_request *req, onion_response *res)
 // This has to be extern, as we are compiling C++
 extern "C"{
 int index_html_template(void *p, onion_request *req, onion_response *res);
-int mmtt_script_js_template(void *p, onion_request *req, onion_response *res);
-int mmtt_settings_js_template(void *p, onion_request *req, onion_response *res);
+int kinectgrid_script_js_template(void *p, onion_request *req, onion_response *res);
+int kinectgrid_settings_js_template(void *p, onion_request *req, onion_response *res);
 }
 
 /*
@@ -131,7 +131,7 @@ int search_file(onion_dict *context, onion_request *req, onion_response *res){
 }
 
 /*
- Replace some template variables and send mmtt_settings.js
+ Replace some template variables and send kinectgrid_settings.js
 */
 int insert_json(void *data, onion_request *req, onion_response *res, void* foo, void* datafree)
 {
@@ -142,7 +142,7 @@ if( data != NULL){
 }
 //onion_dict_add(d, "user", user, OD_DICT|OD_FREE_VALUE);
 
-return mmtt_settings_js_template(d, req, res);
+return kinectgrid_settings_js_template(d, req, res);
 }
 
 /*
@@ -165,9 +165,9 @@ int OnionServer::start_server()
 	onion_url *url=onion_root_url(m_ponion);
 
 	const char *host, *port;
-	if( m_psettingMMTT != NULL){
-		host = m_psettingMMTT->getString("host");
-		port = m_psettingMMTT->getString("port");
+	if( m_psettingKinectGrid != NULL){
+		host = m_psettingKinectGrid->getString("host");
+		port = m_psettingKinectGrid->getString("port");
 	}else{
 		host = "0.0.0.0";
 		port = "8080";
@@ -175,9 +175,9 @@ int OnionServer::start_server()
 
 	onion_set_hostname(m_ponion, host); // Force ipv4.
 	onion_set_port(m_ponion, port);
-	onion_url_add_with_data(url, "mmtt_settings.js", (void*)insert_json, m_psettingKinect, NULL);
-	onion_url_add_with_data(url, "index.html", (void*)index_html, m_psettingMMTT, NULL);
-	onion_url_add_with_data(url, "", (void*)index_html, m_psettingMMTT, NULL);
+	onion_url_add_with_data(url, "kinectgrid_settings.js", (void*)insert_json, m_psettingKinect, NULL);
+	onion_url_add_with_data(url, "index.html", (void*)index_html, m_psettingKinectGrid, NULL);
+	onion_url_add_with_data(url, "", (void*)index_html, m_psettingKinectGrid, NULL);
 	//onion_url_add_with_data(url, "index.html", (void*)checkFormularValues, this, NULL);
 	//onion_url_add_with_data(url, "", (void*)checkFormularValues, this, NULL);
 	onion_url_add_with_data(url, "json", (void*)checkFormularValues, this, NULL);
@@ -206,25 +206,25 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 					 break;
 		case 4:{ //repoke
 						 printf("Repoke\n");
-								m_psettingMMTT->setMode(REPOKE_DETECTION);
+								m_psettingKinectGrid->setMode(REPOKE_DETECTION);
 					 }
 					 break;
 		case 3:{ // area detection
 							int start = atoi( onion_request_get_queryd(req,"start","1") );
 							if( start == 1)
-								m_psettingMMTT->setMode(AREA_DETECTION_START);
+								m_psettingKinectGrid->setMode(AREA_DETECTION_START);
 							else{
-								m_psettingMMTT->setMode(AREA_DETECTION_END);
+								m_psettingKinectGrid->setMode(AREA_DETECTION_END);
 							}
 					 }
 			break;
 		case 2:{
 						 const char* filename = onion_request_get_post(req,"filename");
-						 printf("Save new settingMMTT: %s\n",filename);
+						 printf("Save new settingKinectGrid: %s\n",filename);
 						 if( check_filename(filename ) == 1){
 							 m_psettingKinect->saveConfigFile(filename);
-							 m_psettingMMTT->setString("lastSetting",filename);
-							 m_psettingMMTT->saveConfigFile("settingMMTT.ini");
+							 m_psettingKinectGrid->setString("lastSetting",filename);
+							 m_psettingKinectGrid->saveConfigFile("settingKinectGrid.ini");
 						 }else{
 						 	printf("Filename not allowed\n");
 						 }
@@ -234,7 +234,7 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 			break;
 		case 1:{
 						 const char* filename = onion_request_get_post(req,"filename");
-						 printf("Load new settingMMTT: %s\n",filename);
+						 printf("Load new settingKinectGrid: %s\n",filename);
 						 if( check_filename(filename ) == 1){
 							 m_psettingKinect->loadConfigFile(filename);
 						 }else{

@@ -1,4 +1,4 @@
-project(MMTTlinux)
+project(KinectGrid)
 cmake_minimum_required(VERSION 2.6)
 
 set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} -g")
@@ -46,7 +46,7 @@ add_subdirectory(src)
 
 ## TODO (did not work)
 # Es sollen auch einige Dateien installiert werden, z.B. Bilder oder Übersetzungen
-#install(FILES ${CMAKE_SOURCE_DIR}/html/jquery* html/mmtt_script.js DESTINATION html)
+#install(FILES ${CMAKE_SOURCE_DIR}/html/jquery* html/kinectgrid_script.js DESTINATION html)
 
 macro(copy_files GLOBPAT DESTINATION)
   file(GLOB COPY_FILES
