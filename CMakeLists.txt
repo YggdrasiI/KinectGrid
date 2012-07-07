@@ -44,9 +44,8 @@ link_directories (
 add_subdirectory(lib)
 add_subdirectory(src)
 
-## TODO (did not work)
-# Es sollen auch einige Dateien installiert werden, z.B. Bilder oder Übersetzungen
-#install(FILES ${CMAKE_SOURCE_DIR}/html/jquery* html/kinectgrid_script.js DESTINATION html)
+## Copy html folder to build directory.
+file(COPY html/ DESTINATION html PATTERN kinectgrid_settings.js EXCLUDE )
 
 macro(copy_files GLOBPAT DESTINATION)
   file(GLOB COPY_FILES
