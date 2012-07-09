@@ -1,0 +1,11 @@
+
+1. Go to 3rdparty directory and follow the instrutions 
+   to compile onion.
+	 All dependiecies: See DEPENDENCIES.
+
+2. Compile KinectGrid:
+	mkdir build
+	cd build
+	cmake ..
+	make
+

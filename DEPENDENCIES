@@ -1,4 +1,5 @@
 OpenCV 2.3	(image analyse)
+cvblobslib (blob detection)
 libfreenect (kinect driver)
 libonion		(webserver)
 libboost (signal support, sudo apt-get install libboost-signals-dev)
