@@ -1,28 +1,51 @@
-• onion (Webserver):
-Install the onion lib in the lib-dir of this project
-Run
+This libraries are required to run KinectGrid. 
+Onion requires the manuall installation by you.
+The other ones are already included and
+noted for the sake of completeness.
 
-git clone https://github.com/davidmoreno/onion.git
-cd onion
-mkdir build
-cd build
-cmake -DCMAKE_INSTALL_PREFIX=../../lib/onionroot ..
-make
-make install
+======= 1) Onion (Webserver) ========================
+	Install the onion library in the lib folder
+	of KinectGrid. Run the following command to 
+	do that:
 
-If you want install the lib on your system omit the above CMAKE_INSTALL_PREFIX argument.
+	cd 3rdparty
+	git clone https://github.com/davidmoreno/onion.git
+	cd onion
+	mkdir build
+	cd build
+	cmake -DCMAKE_INSTALL_PREFIX=../../../lib/onion ..
+	make
+	make install
+
+	Remarks:
+	If you want install the lib on your system omit the above CMAKE_INSTALL_PREFIX argument.
+
+	Disable compiling of examples and tests (i.e just
+	comment the last two lines in CMakeLists.txt) if make causes trouble.
+
+	Known Problems: (If you not edit CMakeLists.txt)
+	• make throws
+		'onion/src/onion/poller.c:453: error: 
+		 ignoring return value of ‘write’, declared with attribute warn_unused_result'
+		 Solution: Remove -Werror from CMAKE_C_FLAGS in CMakeLists.txt
+
+	• make stops at "[ 67%] Generating fileserver_html.c" with 100% CPU usage.
+	If you compile on ARM architecture the solution can found here:
+	https://github.com/davidmoreno/onion/issues/3#issuecomment-6850193
 
 
 
-• dform (Convert json to html formular):
-git clone https://github.com/daffl/jquery.dform.git
+======= 2) dform (Convert json to html formular) ====
+	git clone https://github.com/daffl/jquery.dform.git
 
-Copy the Script jquery.dform/dist/jquery.dform-0.2.0.min.js to ${CMAKE_ROOT_DIR}/html
+	Copy the Script
+		jquery.dform/dist/jquery.dform-0.2.0.min.js
+	to ${CMAKE_ROOT_DIR}/html
 
 
-• json2.js and jsmin 
-https://github.com/douglascrockford/JSON-js.git
-https://github.com/douglascrockford/JSMin.git
+======= 3) json2.js and jsmin =======================
+	https://github.com/douglascrockford/JSON-js.git
+	https://github.com/douglascrockford/JSMin.git
 
-jsmin < file.js > file.min.js
-remove unessesary chars.
+	With jsmin you can remove unessesary chars of Javascript files.
+	jsmin < file.js > file.min.js
