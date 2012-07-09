@@ -3,6 +3,7 @@ include_directories(
 	${CMAKE_SOURCE_DIR}/lib/cvblobslib
 	${CMAKE_SOURCE_DIR}/lib/TUIO
 	${CMAKE_SOURCE_DIR}/lib/oscpack
+	${CMAKE_SOURCE_DIR}/lib/onion/include
 	${Boost_INCLUDE_DIR}
 	)
 ## end extra include directories
