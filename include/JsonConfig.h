@@ -31,9 +31,9 @@ class JsonConfig{
 		{
 		};
 
-		void init(const char* filename="")
+		int init(const char* filename="")
 		{
-			loadConfigFile(filename);
+			return loadConfigFile(filename);
 		};
 
 		~JsonConfig(){

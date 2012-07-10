@@ -20,10 +20,78 @@
 #include "MyTuioServer25D.h"
 
 #include <locale.h>
-#include <time.h>
+//#include <time.h>
+#include <sys/time.h>
 
 // Selection of output image
 enum Show {SHOW_DEPTH=1,SHOW_MASK=2,SHOW_FILTERED=3,SHOW_AREAS=4,SHOW_FRONTMASK};
+
+// for FPS estimation.
+class Fps
+{
+private:
+	int frame;
+	int mod;
+	struct timeval earlier;
+	struct timeval later;
+	struct timeval interval;
+	long long diff;
+	void tic(){
+		if(gettimeofday(&earlier,NULL))
+			perror("first gettimeofday()");
+	}
+
+	void toc(){
+		if(gettimeofday(&later,NULL))
+			perror("first gettimeofday()");
+		else
+			diff = timeval_diff(&interval, &later, &earlier);
+	}
+	long long
+		timeval_diff(struct timeval *difference,
+				struct timeval *end_time,
+				struct timeval *start_time
+				)   
+		{
+			struct timeval temp_diff;
+
+			if(difference==NULL)
+			{
+				difference=&temp_diff;
+			}
+
+			difference->tv_sec =end_time->tv_sec -start_time->tv_sec ;
+			difference->tv_usec=end_time->tv_usec-start_time->tv_usec;
+
+			/* Using while instead of if below makes the code slightly more robust. */
+
+			while(difference->tv_usec<0)
+			{
+				difference->tv_usec+=1000000;
+				difference->tv_sec -=1;
+			}
+
+			return 1000000LL*difference->tv_sec+
+				difference->tv_usec;
+
+		} /* timeval_diff() */
+
+public:
+	void next(FILE *stream){
+		frame++;
+		if( frame%mod == 1){
+			tic();
+		}else if( frame%mod == 0){
+			toc();
+			if( stream != NULL ){
+				double fps = (1000000*(double)mod)/diff;
+				fprintf(stream, "frames: %i, dt: %4.1f ms \tfps: %4.2f\n", mod , diff/1000.0, fps );
+			}
+		}
+	}
+
+	Fps():frame(0),mod(10){ }
+};
 
 int main(int argc, char **argv) {
 	bool die(false);
@@ -32,6 +100,7 @@ int main(int argc, char **argv) {
 	string filename("snapshot");
 	string suffix(".png");
 	int iter(0);
+	Fps fps;
 
 	bool sleepmode(false);
 	if( argc > 1){
@@ -44,24 +113,19 @@ int main(int argc, char **argv) {
 
 	//Load & Create settings
 	SettingKinectGrid *settingKinectGrid = new SettingKinectGrid();
-	settingKinectGrid->init("settingKinectGrid.ini");
-	
-	if(false){
-	char *conf = settingKinectGrid->getConfig();
-	printf("Settings:%s \n", conf);
-	free(conf);
+	if (settingKinectGrid->init("settingKinectGrid.ini") ){
+		//Config file did not exist. Create it.
+		printf("Create settingKinectGrid.ini\n");
+		settingKinectGrid->saveConfigFile("settingKinectGrid.ini");
 	}
-	//JsonConfig settingKinect("settingKinectDefault.json", &JsonConfig::loadKinectSetting );
+	
 	SettingKinect *settingKinect = new SettingKinect();
 	//settingKinect->init("settingKinectDefault.json");
-	settingKinect->init( settingKinectGrid->getString("lastSetting") );
-
-	if(false){
-	char *conf = settingKinect->getConfig();
-	printf("Settings:%s \n", conf);
-	free(conf);
+	if (settingKinect->init( settingKinectGrid->getString("lastSetting") )){
+		//Kinect settings did not found.
+		printf("File %s was not found. Use default values.\n", 
+				settingKinectGrid->getString("lastSetting") );
 	}
-
 
 	//init onion server thread
 	OnionServer* onion = new OnionServer(settingKinectGrid, settingKinect); 
@@ -74,9 +138,6 @@ int main(int argc, char **argv) {
 			settingKinectGrid->getString("tuio25Dblb_host"),
 			(int) settingKinectGrid->getNumber("tuio25Dblb_port"));
 
-	//saves settings
-	//settingKinectGrid->saveConfigFile("settingKinectGrid.json");
-	//settingKinect->saveConfigFile("settingKinectDefault.json");
 
 	ImageAnalysis* ia;
 	//Freenect::Freenect freenect;
@@ -195,6 +256,7 @@ int main(int argc, char **argv) {
 					break;
 			}
 
+			fps.next(stdout);
 
 			//if mode is HAND_DETECTION and long time no blob was detected, sleep.
 			if( sleepmode && mode == HAND_DETECTION ){
@@ -251,6 +313,6 @@ int main(int argc, char **argv) {
 	delete settingKinect;
 	delete settingKinectGrid;
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 
