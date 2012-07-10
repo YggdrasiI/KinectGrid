@@ -1,2 +1,11 @@
 Linux clone of MultiMultiTouchTouch aka Space Palette of Tim Thompson ( http://spacepalette.com ).
 
+
+
+Known Problems:
+ Websocket did not work and terminal prints out
+  '[ERROR onion.c:385] Error accepting connection: Function not implemented'
+
+ Solution: Probably your kernel did not support accept4(...). 
+ Add #undef SOCK_CLOEXEC just before the the #ifndef SOCK_CLOEXEC at 3rdparty/onion/src/onion.c:193
+ and recompile & reinstall the library.

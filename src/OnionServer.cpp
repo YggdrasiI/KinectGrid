@@ -183,8 +183,13 @@ int OnionServer::start_server()
 	onion_url_add_with_data(url, "json", (void*)checkFormularValues, this, NULL);
 	onion_url_add(url, "^.*$", (void*)search_file);
 
+	/* Now, m_ponion get the O_DETACH_LISTEN flag on creation and
+	   the Extra thread is omitable. */
 	//start loop as thread
-	return pthread_create( &m_pthread, NULL, &start_myonion_server, m_ponion);	
+	//return pthread_create( &m_pthread, NULL, &start_myonion_server, m_ponion);	
+	onion_listen(m_ponion);//loop
+
+	return 0;
 }
 
 int OnionServer::stop_server()

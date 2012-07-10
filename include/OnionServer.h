@@ -37,7 +37,7 @@ class OnionServer{
 		int m_view;
 	public:
 		OnionServer(SettingKinectGrid* psettingKinectGrid, SettingKinect* psettingKinect):
-			m_ponion( onion_new(O_THREADED) ),
+			m_ponion( onion_new(O_THREADED|O_DETACH_LISTEN) ),
 			m_pthread(),
 			m_view(-1),
 			m_psettingKinectGrid(psettingKinectGrid),
