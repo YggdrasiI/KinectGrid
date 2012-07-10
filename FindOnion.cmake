@@ -13,9 +13,9 @@ find_path(Onion_INCLUDE_DIR
 		libonion
 )
 
-find_library(Onion_LIBRARY
+find_path(Onion_LIBRARY
 	NAMES
-		onion
+		libonion.so
 	PATHS
 		/usr/lib
 		/usr/local/lib64
@@ -32,8 +32,6 @@ find_path(Onion_BIN_DIR
 		/usr/local/bin
 		/opt/local/bin
 		./lib/onion/bin
-	PATH_SUFFIXES
-		libonion
 )
 
 if(Onion_BIN_DIR)
