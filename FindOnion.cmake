@@ -8,20 +8,20 @@ find_path(Onion_INCLUDE_DIR
 		/usr/include
 		/usr/local/include
 		/opt/local/include
-		./lib/onionroot/include
+		./lib/onion/include
 	PATH_SUFFIXES
 		libonion
 )
 
-find_library(Onion_LIBRARY
+find_path(Onion_LIBRARY
 	NAMES
-		onion
+		libonion.so
 	PATHS
 		/usr/lib
 		/usr/local/lib64
 		/usr/local/lib
 		/opt/local/lib
-		./lib/onionroot/lib
+		./lib/onion/lib
 )
 
 find_path(Onion_BIN_DIR
@@ -31,9 +31,7 @@ find_path(Onion_BIN_DIR
 		/usr/bin
 		/usr/local/bin
 		/opt/local/bin
-		./lib/onionroot/bin
-	PATH_SUFFIXES
-		libonion
+		./lib/onion/bin
 )
 
 if(Onion_BIN_DIR)
