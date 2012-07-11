@@ -3,6 +3,10 @@ Linux clone of MultiMultiTouchTouch aka Space Palette of Tim Thompson ( http://s
 
 
 Known Problems:
+ Kinect sensor did not shutdown if KinectGrid terminated with Ctrl+C.
+ Solution: Press ESC in the application window.
+
+
  Websocket did not work and terminal prints out
   '[ERROR onion.c:385] Error accepting connection: Function not implemented'
 
