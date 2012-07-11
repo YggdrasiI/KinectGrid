@@ -75,11 +75,22 @@ FunctionMode ImageAnalysis::hand_detection()
 	Mat fMRoi(m_filteredMat,roi);
 
 	// Analyse Roi of depth frame
-	m_pdevice->getDepth8UC1(dfRoi, roi,
+
+	if(true){
+		/* Direct evluation of masked deptframe.
+		Advantages: Faster.
+		Disadvantages: No depth frame, no bluring.
+		*/
+		m_pdevice->getDepth8UC1(fMRoi, roi,
+				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth, dMRoi);
+
+	}else{
+		m_pdevice->getDepth8UC1(dfRoi, roi,
 				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth);
 
-	//filter image
-	filter(dfRoi,dMRoi,80,fMRoi);
+		//filter image
+		filter(dfRoi,dMRoi,80,fMRoi);
+	}
 
 	return HAND_DETECTION;
 }

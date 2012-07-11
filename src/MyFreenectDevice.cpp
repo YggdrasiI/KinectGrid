@@ -94,17 +94,48 @@ bool MyFreenectDevice::getDepth8UC1(Mat& output, Rect roi)
 */
 bool MyFreenectDevice::getDepth8UC1(Mat& output, Rect roi, int m, int M) 
 {
-	float a2 = -255.0*255.0/2048.0/(M-m);	
-	float b2 = (255.0-m)*255.0/(M-m);	
-//	printf("getDepth constants: %f, %f\n",a2,b2);
-	m_depth_mutex.lock();
 	if(m_new_depth_frame) {
+		float a2 = -255.0*255.0/2048.0/(M-m);	
+		float b2 = (255.0-m)*255.0/(M-m);	
+		//	printf("getDepth constants: %f, %f\n",a2,b2);
+		m_depth_mutex.lock();
 		m_depthMat(roi).convertTo(output, CV_8UC1, a2, b2);//Invert colors!
 		m_new_depth_frame = false;
 		m_depth_mutex.unlock();
 		return true;
 	} else {
+		//m_depth_mutex.unlock();
+		return false;
+	}
+}
+
+/*
+ Masked Version. (No blur!)
+ TODO: The last param should be the preimage of the mask (mask-b)/a to save operations.
+*/
+bool MyFreenectDevice::getDepth8UC1(Mat& dst, Rect roi, int m, int M, Mat& mask) 
+{
+	if(m_new_depth_frame) {
+		float a = -255.0*255.0/2048.0/(M-m);	
+		float b = (255.0-m)*255.0/(M-m);	
+		//	printf("getDepth constants: %f, %f\n",a2,b2);
+		m_depth_mutex.lock();
+
+		Mat dRoi = m_depthMat(roi);
+		MatConstIterator_<uint16_t> it1 = dRoi.begin<uint16_t>(),
+			it1_end = dRoi.end<uint16_t>();
+		MatConstIterator_<uchar> it2 = mask.begin<uchar>();
+		MatIterator_<uchar> dst_it = dst.begin<uchar>();
+		uchar tmp;
+		for( ; it1 != it1_end; ++it1, ++it2, ++dst_it ) { 
+			tmp = a**it1+b;
+			*dst_it = (tmp>*it2)?tmp:0;
+		}
+		m_new_depth_frame = false;
 		m_depth_mutex.unlock();
+		return true;
+	} else {
+		//m_depth_mutex.unlock();
 		return false;
 	}
 }

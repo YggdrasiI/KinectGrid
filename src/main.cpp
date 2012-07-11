@@ -24,7 +24,7 @@
 #include <sys/time.h>
 
 // Selection of output image
-enum Show {SHOW_DEPTH=1,SHOW_MASK=2,SHOW_FILTERED=3,SHOW_AREAS=4,SHOW_FRONTMASK};
+enum Show {SHOW_NONE=0,SHOW_DEPTH=1,SHOW_MASK=2,SHOW_FILTERED=3,SHOW_AREAS=4,SHOW_FRONTMASK};
 
 // for FPS estimation.
 class Fps
@@ -79,24 +79,25 @@ private:
 public:
 	void next(FILE *stream){
 		frame++;
-		if( frame%mod == 1){
-			tic();
-		}else if( frame%mod == 0){
+		if( frame%mod == 0){
 			toc();
 			if( stream != NULL ){
 				double fps = (1000000*(double)mod)/diff;
 				fprintf(stream, "frames: %i, dt: %4.1f ms \tfps: %4.2f\n", mod , diff/1000.0, fps );
 			}
+			tic();
 		}
 	}
 
-	Fps():frame(0),mod(10){ }
+	Fps():frame(0),mod(10){ 
+			tic();
+		}
 };
 
 int main(int argc, char **argv) {
 	bool die(false);
   bool withKinect(true);
-	int imshowNbr = SHOW_FILTERED; 
+	int imshowNbr = SHOW_NONE; 
 	string filename("snapshot");
 	string suffix(".png");
 	int iter(0);
@@ -197,6 +198,9 @@ int main(int argc, char **argv) {
 					break;
 				case HAND_DETECTION:
 					{
+					  //ia->just_depth_frame();
+						//break;
+
 						mode = ia->hand_detection(); 
 						//find blobs
 						//Mat foo = ia->m_areaMask(settingKinect->m_roi);

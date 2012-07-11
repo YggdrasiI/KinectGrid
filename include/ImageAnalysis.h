@@ -50,6 +50,17 @@ private:
 	int m_depthMaskCounter;//use -depthMaskCounter Frames for mask generation
 	Mat m_area_detection_mask;
 	std::vector<Area> m_area_detection_areas;
+
+	//For testing:
+public:
+	void just_depth_frame(){
+		Rect roi = m_pSettingKinect->m_roi;
+		Mat dfRoi(m_depthf,roi);
+		Mat dMRoi(m_depthMask,roi);
+		Mat fMRoi(m_filteredMat,roi);
+		m_pdevice->getDepth8UC1(dfRoi, roi,
+				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth);
+	}
 };
 
 
@@ -92,5 +103,16 @@ static void filter(Mat& src, Mat& mask, int nthresh, Mat& dst){
 	
 }
 
+//no blur test
+static void filterNoBlur(Mat& src, Mat& mask, int nthresh, Mat& dst){
+	Mat tmp(src.size(), src.type());
+	dst = mask < tmp ;//0-1-image
+	src.copyTo(dst, dst);// 0-'blob-depth'-image
+}
 
+//try got combine operations 'dst=mask<tmp;tmp.copyTo(dst,dst)'
+static void filterFast(Mat& src, Mat& mask, int nthresh, Mat& dst){
+	Mat tmp(src.size(), src.type());
+	//TODO
+}
 #endif
