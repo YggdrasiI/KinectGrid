@@ -111,7 +111,7 @@ bool MyFreenectDevice::getDepth8UC1(Mat& output, Rect roi, int m, int M)
 
 /*
  Masked Version. (No blur!)
- TODO: The last param should be the preimage of the mask (mask-b)/a to save operations.
+ mask.type = CV_8UC1.
 */
 bool MyFreenectDevice::getDepth8UC1(Mat& dst, Rect roi, int m, int M, Mat& mask) 
 {
@@ -128,8 +128,43 @@ bool MyFreenectDevice::getDepth8UC1(Mat& dst, Rect roi, int m, int M, Mat& mask)
 		MatIterator_<uchar> dst_it = dst.begin<uchar>();
 		uchar tmp;
 		for( ; it1 != it1_end; ++it1, ++it2, ++dst_it ) { 
-			tmp = a**it1+b;
-			*dst_it = (tmp>*it2)?tmp:0;
+			//previous memcopy for 99%-else case?!
+			//tmp = a**it1+b;
+			//*dst_it = (tmp>*it2)?tmp:0;
+
+			*dst_it = a**it1+b;
+			if(*dst_it<=*it2) *dst_it = 0;
+		}
+		m_new_depth_frame = false;
+		m_depth_mutex.unlock();
+		return true;
+	} else {
+		//m_depth_mutex.unlock();
+		return false;
+	}
+}
+/*
+ Masked Version. (No blur!)
+ mask.type = CV_16UC1. (=> Switch if and multiplication)
+*/
+bool MyFreenectDevice::getDepth8UC1_b(Mat& dst, Rect roi, int m, int M, Mat& mask) 
+{
+	if(m_new_depth_frame) {
+		float a = -255.0*255.0/2048.0/(M-m);	
+		float b = (255.0-m)*255.0/(M-m);	
+		//	printf("getDepth constants: %f, %f\n",a2,b2);
+		m_depth_mutex.lock();
+
+		Mat dRoi = m_depthMat(roi);
+		MatConstIterator_<uint16_t> it1 = dRoi.begin<uint16_t>(),
+			it1_end = dRoi.end<uint16_t>();
+		MatConstIterator_<uint16_t> it2 = mask.begin<uint16_t>();
+		MatIterator_<uchar> dst_it = dst.begin<uchar>();
+		uchar tmp;
+		//fill with zeros
+		dst = Scalar(0);
+		for( ; it1 != it1_end; ++it1, ++it2, ++dst_it ) { 
+			if( *it1<*it2 ) *dst_it = a* *it1 + b;
 		}
 		m_new_depth_frame = false;
 		m_depth_mutex.unlock();

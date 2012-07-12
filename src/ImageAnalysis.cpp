@@ -8,6 +8,7 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 	m_filterMat  (Size(KRES_X,KRES_Y),CV_8UC1),
 	m_depthMask  (Size(KRES_X,KRES_Y),CV_8UC1),
 	m_depthMaskWithoutThresh  (Size(KRES_X,KRES_Y),CV_8UC1),//backup to generate new deptMask
+	m_depthMask16U  (Size(KRES_X,KRES_Y),CV_16UC1),// = (m_depthMask - b)/a
 	m_filteredMat  (Size(KRES_X,KRES_Y),CV_8UC1),
 	m_areaMask  (Size(KRES_X,KRES_Y),CV_8UC1), //mask of areas, ids=0,1,..., offcut=255
 //	m_areaCol  (Size(KRES_X,KRES_Y),CV_8UC3),
@@ -52,6 +53,14 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 				//add local thresh val for every detected area
 				addAreaThresh(/*m_depthMask,*/ m_pSettingKinect->m_areas, m_areaMask, m_depthMask);
 			}
+			if(m_pSettingKinect->m_directFiltering){
+				//remap mask to 16UC1 format.
+				int m = m_pSettingKinect->m_minDepth;
+				int M = m_pSettingKinect->m_maxDepth;
+				float ainv = -2048.0*(M-m)/255.0/255.0;	
+				float b2 = (255-m)*2048.0/255.0;	
+				m_depthMask.convertTo(m_depthMask16U, CV_16UC1, ainv, b2);
+			}
 			printf("Depth mask detection finished.\n");
 			return HAND_DETECTION;
 		}
@@ -76,13 +85,14 @@ FunctionMode ImageAnalysis::hand_detection()
 
 	// Analyse Roi of depth frame
 
-	if(true){
+	if(m_pSettingKinect->m_directFiltering){
 		/* Direct evluation of masked deptframe.
 		Advantages: Faster.
 		Disadvantages: No depth frame, no bluring.
 		*/
-		m_pdevice->getDepth8UC1(fMRoi, roi,
-				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth, dMRoi);
+		Mat dMRoi16U(m_depthMask16U,roi);
+		m_pdevice->getDepth8UC1_b(fMRoi, roi,
+				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth, dMRoi16U);
 
 	}else{
 		m_pdevice->getDepth8UC1(dfRoi, roi,

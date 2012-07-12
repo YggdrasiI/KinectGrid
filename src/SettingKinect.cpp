@@ -29,6 +29,7 @@ cJSON* SettingKinect::loadDefaults()
 	cJSON_AddItemToArray(html, jsonCheckbox("TUIO_2Dcur",false) );
 	cJSON_AddItemToArray(html, jsonCheckbox("TUIO_25Dblb",true) );
 	cJSON_AddItemToArray(html, jsonCheckbox("areaThresh",true) );
+	cJSON_AddItemToArray(html, jsonCheckbox("directFiltering",true) );
 /*
 	cJSON* pareas = cJSON_CreateArray();
 	cJSON* parea1 = cJSON_CreateObject();
@@ -71,6 +72,7 @@ int SettingKinect::update(cJSON* jsonNew, cJSON* jsonOld, int changes=NO){
 		if( updateCheckbox(nhtml,ohtml,"TUIO_2Dcur",&m_tuioProtocols[0]) ) changes|=TUIO_PROTOCOL;
 		if( updateCheckbox(nhtml,ohtml,"TUIO_25Dblb",&m_tuioProtocols[1]) ) changes|=TUIO_PROTOCOL;
 		updateCheckbox(nhtml,ohtml,"areaThresh",&m_areaThresh) ; 
+		updateCheckbox(nhtml,ohtml,"directFiltering",&m_directFiltering) ; 
 		//update region of interest
 		int w,h,x,y;
 		x = max(m_marginLeft,0);

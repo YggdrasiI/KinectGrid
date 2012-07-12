@@ -37,6 +37,7 @@ public:
 	Mat m_filterMat;
 	Mat m_depthMask;
 	Mat m_depthMaskWithoutThresh;
+	Mat m_depthMask16U;
 	Mat m_filteredMat;
 	Mat m_areaMask;
 	Mat m_areaGrid;
@@ -50,17 +51,6 @@ private:
 	int m_depthMaskCounter;//use -depthMaskCounter Frames for mask generation
 	Mat m_area_detection_mask;
 	std::vector<Area> m_area_detection_areas;
-
-	//For testing:
-public:
-	void just_depth_frame(){
-		Rect roi = m_pSettingKinect->m_roi;
-		Mat dfRoi(m_depthf,roi);
-		Mat dMRoi(m_depthMask,roi);
-		Mat fMRoi(m_filteredMat,roi);
-		m_pdevice->getDepth8UC1(dfRoi, roi,
-				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth);
-	}
 };
 
 

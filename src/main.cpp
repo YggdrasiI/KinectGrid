@@ -198,9 +198,6 @@ int main(int argc, char **argv) {
 					break;
 				case HAND_DETECTION:
 					{
-					  //ia->just_depth_frame();
-						//break;
-
 						mode = ia->hand_detection(); 
 						//find blobs
 						//Mat foo = ia->m_areaMask(settingKinect->m_roi);
@@ -242,7 +239,8 @@ int main(int argc, char **argv) {
 
 			switch (imshowNbr){
 				case SHOW_DEPTH:
-					cv::imshow("img",ia->m_depthf(settingKinect->m_roi));
+					//cv::imshow("img",ia->m_depthf(settingKinect->m_roi));
+					cv::imshow("img",ia->m_depthMask16U(settingKinect->m_roi));
 					break;
 				case SHOW_AREAS:
 					cv::imshow("img",ia->getColoredAreas()(settingKinect->m_roi) );
