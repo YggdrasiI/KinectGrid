@@ -5,11 +5,12 @@
 
 #include "Tracker.h"
 
-Tracker::Tracker(double min_area, double max_area, double max_radius) : m_pSettingKinect(NULL), m_min_area(min_area), m_max_area(max_area), m_max_radius(max_radius)
+Tracker::Tracker(double min_area, double max_area, double max_radius) : m_pSettingKinect(NULL), m_min_area(min_area), m_max_area(max_area), m_max_radius(max_radius), m_notDrawBlob(false)
 {
 	m_pmin_area = &m_min_area;
 	m_pmax_area = &m_max_area;
 	m_pmax_radius = &m_max_radius;
+	m_pnotDrawBlob = &m_notDrawBlob;
 
 	for(int i=0; i<MAXHANDS; i++) handids[i] = false;
 	last_handid = 0;
@@ -20,6 +21,7 @@ Tracker::Tracker(SettingKinect* pSettingKinect) : m_pSettingKinect(pSettingKinec
 	m_pmin_area = &(m_pSettingKinect->m_minBlobArea);
 	m_pmax_area = &(m_pSettingKinect->m_maxBlobArea);
 	m_pmax_radius = &m_max_radius;
+	m_pnotDrawBlob = &(m_pSettingKinect->m_directFiltering);/*Avoid drawing of Blob limits. */
 
 	for(int i=0; i<MAXHANDS; i++) handids[i] = false;
 	last_handid = 0;
@@ -33,7 +35,7 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std:
 {
 	double min_area = *m_pmin_area;
 	double max_area = *m_pmax_area;
-	double max_radius = *m_pmax_radius;
+	double max_radius_2 = *m_pmax_radius * *m_pmax_radius;
 	double x, y, min_x, min_y, max_x, max_y;
 	double min_depth,max_depth;
 	Scalar sdepth, sstddev;
@@ -49,7 +51,7 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std:
 	img = mat;
 
 	// cvblobslib blob extraction
-	blob_result = CBlobResult(&img, NULL, 127/*img∈{0,255}->thresh unimportant*/, false);
+	blob_result = CBlobResult(&img, NULL, 1/*img∈{0,255}->thresh unimportant*/, false);
 	blob_result.Filter(blob_result, B_EXCLUDE, CBlobGetArea(), B_LESS, min_area); 
 	blob_result.Filter(blob_result, B_EXCLUDE, CBlobGetArea(), B_GREATER, max_area);
 
@@ -130,6 +132,7 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std:
 	}
 
 	// initialize previous blobs to untracked
+	float d1,d2;
 	for (int i = 0; i < blobs_previous.size(); i++) blobs_previous[i].tracked = false;
 
 	// main tracking loop -- O(n^2) -- simply looks for a blob in the previous frame within a specified radius
@@ -139,8 +142,10 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std:
 		for (int j = 0; j < blobs_previous.size(); j++) {
 			if (blobs_previous[j].tracked) continue;
 
+			d1=blobs[i].location.x - blobs_previous[j].location.x;
+			d2=blobs[i].location.y - blobs_previous[j].location.y;
 			if (blobs[i].areaid == blobs_previous[j].areaid 
-					&& sqrt(pow(blobs[i].location.x - blobs_previous[j].location.x, 2.0) + pow(blobs[i].location.y - blobs_previous[j].location.y, 2.0)) < max_radius) {
+					&& (d1*d1 + d2*d2) < max_radius_2) {
 				blobs_previous[j].tracked = true;
 				blobs[i].event = BLOB_MOVE;
 				blobs[i].origin.x = history ? blobs_previous[j].origin.x : blobs_previous[j].location.x;
@@ -196,12 +201,14 @@ void Tracker::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std:
 				tb = blobs[i];
 				//printf("Blobcoordsd %f, %f\n", blobs[i].location.x, blobs[i].location.y );
 				//printf("Blob areaid: %i, handid: %i, (%f,%f)\n", blobs[i].areaid, blobs[i].handid, blobs[i].location.x, blobs[i].location.y );
-				cvLine(&img,
-						Point((int)tb.origin.x,(int)tb.origin.y),
-						Point((int)tb.location.x,(int)tb.location.y),Scalar(244),2);
-				cvRectangle(&img,
-						Point((int)tb.min.x,(int)tb.min.y),
-						Point((int)tb.max.x,(int)tb.max.y),Scalar(255),2);
+				if(! *m_pnotDrawBlob ){
+					cvLine(&img,
+							Point((int)tb.origin.x,(int)tb.origin.y),
+							Point((int)tb.location.x,(int)tb.location.y),Scalar(244),2);
+					cvRectangle(&img,
+							Point((int)tb.min.x,(int)tb.min.y),
+							Point((int)tb.max.x,(int)tb.max.y),Scalar(255),2);
+				}
 			}
 	}
 //	printf("Active blobs: %i %i %i\n",counter, blobs.size(), blob_result.GetNumBlobs());

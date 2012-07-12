@@ -25,6 +25,8 @@ class Tracker {
 	 */
 	double *m_pmin_area, *m_pmax_area, *m_pmax_radius;
 	double m_min_area, m_max_area, m_max_radius;
+	bool *m_pnotDrawBlob;
+	bool m_notDrawBlob;
 	SettingKinect* m_pSettingKinect;
 
 	// instances of helper classes for obtaining blob location and bounding box

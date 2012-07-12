@@ -115,11 +115,11 @@ bool MyFreenectDevice::getDepth8UC1(Mat& output, Rect roi, int m, int M)
 */
 bool MyFreenectDevice::getDepth8UC1(Mat& dst, Rect roi, int m, int M, Mat& mask) 
 {
+	m_depth_mutex.lock();
 	if(m_new_depth_frame) {
 		float a = -255.0*255.0/2048.0/(M-m);	
 		float b = (255.0-m)*255.0/(M-m);	
 		//	printf("getDepth constants: %f, %f\n",a2,b2);
-		m_depth_mutex.lock();
 
 		Mat dRoi = m_depthMat(roi);
 		MatConstIterator_<uint16_t> it1 = dRoi.begin<uint16_t>(),
@@ -139,7 +139,7 @@ bool MyFreenectDevice::getDepth8UC1(Mat& dst, Rect roi, int m, int M, Mat& mask)
 		m_depth_mutex.unlock();
 		return true;
 	} else {
-		//m_depth_mutex.unlock();
+		m_depth_mutex.unlock();
 		return false;
 	}
 }
@@ -150,10 +150,14 @@ bool MyFreenectDevice::getDepth8UC1(Mat& dst, Rect roi, int m, int M, Mat& mask)
 bool MyFreenectDevice::getDepth8UC1_b(Mat& dst, Rect roi, int m, int M, Mat& mask) 
 {
 	if(m_new_depth_frame) {
-		float a = -255.0*255.0/2048.0/(M-m);	
-		float b = (255.0-m)*255.0/(M-m);	
-		//	printf("getDepth constants: %f, %f\n",a2,b2);
 		m_depth_mutex.lock();
+		//float a = -255.0*255.0/2048.0/(M-m);	
+		//float b = (255.0-m)*255.0/(M-m);	
+		//	printf("getDepth constants: %f, %f\n",a,b);
+		int iaz, ian, ib;
+		iaz = -255*255;
+		ian = 2048*(M-m);
+		ib = (255-m)*255/(M-m);
 
 		Mat dRoi = m_depthMat(roi);
 		MatConstIterator_<uint16_t> it1 = dRoi.begin<uint16_t>(),
@@ -164,7 +168,8 @@ bool MyFreenectDevice::getDepth8UC1_b(Mat& dst, Rect roi, int m, int M, Mat& mas
 		//fill with zeros
 		dst = Scalar(0);
 		for( ; it1 != it1_end; ++it1, ++it2, ++dst_it ) { 
-			if( *it1<*it2 ) *dst_it = a* *it1 + b;
+			//if( *it1<*it2 ) *dst_it = a* *it1 + b;
+			if( *it1<*it2 ) *dst_it = (iaz* *it1)/ian + ib;
 		}
 		m_new_depth_frame = false;
 		m_depth_mutex.unlock();

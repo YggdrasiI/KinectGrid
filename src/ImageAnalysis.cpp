@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <unistd.h>
 #include "ImageAnalysis.h"
 
 ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingKinect):
@@ -90,13 +91,24 @@ FunctionMode ImageAnalysis::hand_detection()
 		Advantages: Faster.
 		Disadvantages: No depth frame, no bluring.
 		*/
+		//m_pdevice->getDepth8UC1(fMRoi, roi,
+		//		m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth, dMRoi);
 		Mat dMRoi16U(m_depthMask16U,roi);
-		m_pdevice->getDepth8UC1_b(fMRoi, roi,
-				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth, dMRoi16U);
+		while(! m_pdevice->getDepth8UC1_b(fMRoi, roi,
+				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth, dMRoi16U))
+		{
+			//printf(" Bad, get old frame!\n");
+			usleep(50);		
+		}
 
 	}else{
-		m_pdevice->getDepth8UC1(dfRoi, roi,
-				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth);
+		while(! m_pdevice->getDepth8UC1(dfRoi, roi,
+				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth))
+		{
+			//printf(".");
+			usleep(50);
+		}
+		//printf("\n");
 
 		//filter image
 		filter(dfRoi,dMRoi,80,fMRoi);

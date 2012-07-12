@@ -89,7 +89,7 @@ public:
 		}
 	}
 
-	Fps():frame(0),mod(10){ 
+	Fps():frame(0),mod(20){ 
 			tic();
 		}
 };
@@ -239,8 +239,7 @@ int main(int argc, char **argv) {
 
 			switch (imshowNbr){
 				case SHOW_DEPTH:
-					//cv::imshow("img",ia->m_depthf(settingKinect->m_roi));
-					cv::imshow("img",ia->m_depthMask16U(settingKinect->m_roi));
+					cv::imshow("img",ia->m_depthf(settingKinect->m_roi));
 					break;
 				case SHOW_AREAS:
 					cv::imshow("img",ia->getColoredAreas()(settingKinect->m_roi) );
@@ -309,7 +308,7 @@ int main(int argc, char **argv) {
 		cvDestroyAllWindows();
 
 		//wait some time to give img-window enouth time to close.
-		cvWaitKey(1);//no, did not work on linux. Use cvStartWindowThread()
+		cvWaitKey(10);//no, did not work on linux. Use cvStartWindowThread()
 	}
 
 	delete settingKinect;
