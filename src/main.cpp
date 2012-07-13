@@ -89,7 +89,7 @@ public:
 		}
 	}
 
-	Fps():frame(0),mod(20){ 
+	Fps():frame(0),mod(10){ 
 			tic();
 		}
 };
@@ -252,6 +252,7 @@ int main(int argc, char **argv) {
 					break;
 				case SHOW_FRONTMASK:
 					cv::imshow("img",ia->getFrontMask()(settingKinect->m_roi) );
+					device->setRoi(true,settingKinect->m_roi);
 					break;
 				default:
 					break;
