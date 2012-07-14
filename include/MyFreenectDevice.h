@@ -40,12 +40,13 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 
 	/* propagate setting changes */
 	void update(SettingKinect* pSettingKinect, int changes);
+
 	/* Enable clipping in libfreenect driver */
-	int setRoi(bool enable, Rect roi){
-		uint top = roi.y;
-		uint bottom = KRES_Y - roi.height - roi.y - 1;
-		uint left = roi.x;
-		uint right = KRES_X - roi.width - roi.x - 1;
+	int setRoi(bool enable,const Rect roi){
+		int top = roi.y;
+		int bottom = KRES_Y - roi.height - roi.y ;
+		int left = roi.x;
+		int right = KRES_X - roi.width - roi.x ;
 		return setClipping(enable, top, bottom, left, right);
 	};
 
