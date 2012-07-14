@@ -207,6 +207,14 @@ void MyFreenectDevice::update(SettingKinect* pSettingKinect, int changes){
 		printf("MyFreenectDevice: Set motor degree\n");
 		setTiltDegrees(pSettingKinect->m_kinectMotorAngle);
 	}
+	if( changes &  CLIPPING|MARGIN ){
+		// Set clipping in freenect driver.
+			if( pSettingKinect->m_clipping)
+				setRoi(true,pSettingKinect->m_roi);
+			else
+				setRoi(false,Rect(0,0,0,0));
+	}
+
 	// Set Led of device
 	setLed(LED_GREEN);
 }

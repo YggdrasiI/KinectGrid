@@ -32,6 +32,7 @@ private:
 	bool repoke_step(Area& area);
 	void repoke_finish();
 	void addAreaThresh(/*Mat& src,*/ std::vector<Area> areas, Mat& areaMask,  Mat& dst);
+	void finishDepthMaskCreation();
 public:
 	Mat m_depthf  ;
 	Mat m_filterMat;

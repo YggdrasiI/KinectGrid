@@ -239,21 +239,20 @@ int main(int argc, char **argv) {
 
 			switch (imshowNbr){
 				case SHOW_DEPTH:
-					device->setRoi(true,settingKinect->m_roi);
 					cv::imshow("img",ia->m_depthf(settingKinect->m_roi));
 					break;
 				case SHOW_AREAS:
 					cv::imshow("img",ia->getColoredAreas()(settingKinect->m_roi) );
 					break;
 				case SHOW_MASK:
-					device->setRoi(false,settingKinect->m_roi);
 					cv::imshow("img",ia->m_depthMask(settingKinect->m_roi));
 					break;
 				case SHOW_FILTERED:
 					cv::imshow("img",ia->m_filteredMat(settingKinect->m_roi));
 					break;
 				case SHOW_FRONTMASK:
-					cv::imshow("img",ia->getFrontMask()(settingKinect->m_roi) );
+					cv::imshow("img",ia->m_depthMask16U(settingKinect->m_roi));
+					//cv::imshow("img",ia->getFrontMask()(settingKinect->m_roi) );
 					break;
 				default:
 					break;

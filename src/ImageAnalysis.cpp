@@ -31,11 +31,18 @@ ImageAnalysis::~ImageAnalysis()
 
 FunctionMode ImageAnalysis::depth_mask_detection(){
 	//printf("depth mask detection\n");
+	
 	if( m_depthMaskCounter > 0){
-		//depth mask already detected. Reset m_depthMaskCounter and begin again.
+		// Depth mask already detected. Reset m_depthMaskCounter and begin again.
 		m_depthMaskCounter = -NMASKFRAMES;
 	}
 	if( m_depthMaskCounter == -NMASKFRAMES ){
+		/* First step/frame. */
+		
+		//Disable clipping in libfreenect driver to get depth mask of
+		//full range.
+		m_pdevice->setRoi(false,Rect(0,0,0,0) );
+	
 		m_depthMaskWithoutThresh = Scalar(0);
 		m_depthMask = Scalar(255);//temporary full mask
 	}
@@ -48,20 +55,12 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 		m_depthMaskCounter++;
 
 		if( m_depthMaskCounter == 0 ){
-			//last step
-			addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
-			if( m_pSettingKinect->m_areaThresh ){
-				//add local thresh val for every detected area
-				addAreaThresh(/*m_depthMask,*/ m_pSettingKinect->m_areas, m_areaMask, m_depthMask);
-			}
-			if(m_pSettingKinect->m_directFiltering){
-				//remap mask to 16UC1 format.
-				int m = m_pSettingKinect->m_minDepth;
-				int M = m_pSettingKinect->m_maxDepth;
-				float ainv = -2048.0*(M-m)/255.0/255.0;	
-				float b2 = (255-m)*2048.0/255.0;	
-				m_depthMask.convertTo(m_depthMask16U, CV_16UC1, ainv, b2);
-			}
+			/* Last step/frame. */
+
+			/* Enable clipping */
+			if( m_pSettingKinect->m_clipping)
+				m_pdevice->setRoi(true,m_pSettingKinect->m_roi);
+			finishDepthMaskCreation();
 			printf("Depth mask detection finished.\n");
 			return HAND_DETECTION;
 		}
@@ -267,9 +266,13 @@ void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 	if( changes & FRONT_MASK ){
 		m_maskFront_ok = false;
 	}
+	if( changes & BACK_MASK ){
+		//recreate mask m_depthMask and m_depthMask16U from m_depthMaskWithoutThresh
+		finishDepthMaskCreation();
+	}
 	if( changes & MARGIN ){
-		printf("ImageAnalysis: Change thresh val\n");
-			addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
+		//printf("ImageAnalysis: Change thresh val\n");
+			//addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
 	}
 	if( changes & TUIO_PROTOCOL ){
 		//TODO, but not here...
@@ -397,5 +400,28 @@ void ImageAnalysis::addAreaThresh(/*Mat& src,*/ std::vector<Area> areas, Mat& ar
 				);
 		Mat a = (areaMask == areas[i].id);
 		v.copyTo(dst,a);
+	}
+}
+
+/*
+ * Eval m_depthMask and m_depthMask16U from m_depthMaskWithoutThresh.
+ * Thats the last step during the depth mask decetion. Moreover,
+ * it will called if m_marginBack, m_areaThresh or m_directFiltering
+ * updated.
+ */
+void ImageAnalysis::finishDepthMaskCreation(){
+	addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
+	if( m_pSettingKinect->m_areaThresh ){
+		//add local thresh val for every detected area
+		addAreaThresh(m_pSettingKinect->m_areas, m_areaMask, m_depthMask);
+	}
+	/* Set up m_depthMask16U for directFiltering mode */
+	if( m_pSettingKinect->m_directFiltering){
+		//remap mask to 16UC1 format.
+		int m = m_pSettingKinect->m_minDepth;
+		int M = m_pSettingKinect->m_maxDepth;
+		float ainv = -2048.0*(M-m)/255.0/255.0;	
+		float b2 = (255-m)*2048.0/255.0;	
+		m_depthMask.convertTo(m_depthMask16U, CV_16UC1, ainv, b2);
 	}
 }

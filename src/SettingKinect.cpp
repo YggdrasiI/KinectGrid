@@ -30,6 +30,7 @@ cJSON* SettingKinect::loadDefaults()
 	cJSON_AddItemToArray(html, jsonCheckbox("TUIO_25Dblb",true) );
 	cJSON_AddItemToArray(html, jsonCheckbox("areaThresh",true) );
 	cJSON_AddItemToArray(html, jsonCheckbox("directFiltering",true) );
+	cJSON_AddItemToArray(html, jsonCheckbox("clipping",true) );
 /*
 	cJSON* pareas = cJSON_CreateArray();
 	cJSON* parea1 = cJSON_CreateObject();
@@ -67,12 +68,15 @@ int SettingKinect::update(cJSON* jsonNew, cJSON* jsonOld, int changes=NO){
 		if( update(nhtml,ohtml,"marginTop",&m_marginTop) ) changes|=MARGIN;
 		if( update(nhtml,ohtml,"marginBottom",&m_marginBottom) ) changes|=MARGIN;
 		if( update(nhtml,ohtml,"marginFront",&m_marginFront) ) changes|=MARGIN|FRONT_MASK;
-		if( update(nhtml,ohtml,"marginBack",&m_marginBack) ) changes|=MARGIN;
+		if( update(nhtml,ohtml,"marginBack",&m_marginBack) ) changes|=BACK_MASK;
 
 		if( updateCheckbox(nhtml,ohtml,"TUIO_2Dcur",&m_tuioProtocols[0]) ) changes|=TUIO_PROTOCOL;
 		if( updateCheckbox(nhtml,ohtml,"TUIO_25Dblb",&m_tuioProtocols[1]) ) changes|=TUIO_PROTOCOL;
-		updateCheckbox(nhtml,ohtml,"areaThresh",&m_areaThresh) ; 
-		updateCheckbox(nhtml,ohtml,"directFiltering",&m_directFiltering) ; 
+		if( updateCheckbox(nhtml,ohtml,"areaThresh",&m_areaThresh) ) changes|=BACK_MASK ; 
+		if( updateCheckbox(nhtml,ohtml,"directFiltering",&m_directFiltering) ) changes|=BACK_MASK; 
+		if( updateCheckbox(nhtml,ohtml,"clipping",&m_clipping) ){
+			changes|=CLIPPING; 
+		}
 		//update region of interest
 		int w,h,x,y;
 		x = max(m_marginLeft,0);

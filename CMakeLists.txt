@@ -1,5 +1,7 @@
 project(KinectGrid)
 cmake_minimum_required(VERSION 2.6)
+# Clipping require modified libfreenect
+OPTION(LIBFREENECT_CLIPPING "Enable clipping option. Require modified libfreenect driver." OFF)
 
 set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} -g")
 set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -g")

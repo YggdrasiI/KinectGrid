@@ -29,6 +29,7 @@ class SettingKinect: public JsonConfig{
 		bool m_tuioProtocols[2];
 		bool m_areaThresh;
 		bool m_directFiltering;
+		bool m_clipping;
 		Rect m_roi;
 		std::vector<Area> m_areas;
 //	  Sleep m_sleep;
