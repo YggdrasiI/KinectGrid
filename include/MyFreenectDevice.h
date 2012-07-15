@@ -43,7 +43,7 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 
 	/* Enable clipping in libfreenect driver */
 	int setRoi(bool enable,const Rect roi){
-#ifdef LIBFREENECT_CLIPPING 
+#ifdef LIBFREENECT_OPT_CLIPPING 
 		int top = roi.y;
 		int bottom = KRES_Y - roi.height - roi.y ;
 		int left = roi.x;

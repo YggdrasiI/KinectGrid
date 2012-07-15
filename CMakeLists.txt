@@ -1,7 +1,7 @@
 project(KinectGrid)
 cmake_minimum_required(VERSION 2.6)
 # Clipping require modified libfreenect
-OPTION(LIBFREENECT_CLIPPING "Enable clipping option. Require modified libfreenect driver." OFF)
+OPTION(LIBFREENECT_OPT_CLIPPING "Enable clipping option. Require modified libfreenect driver." OFF)
 
 set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -g")
 set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} ")
@@ -25,9 +25,12 @@ find_package(Boost COMPONENTS signals REQUIRED)
 ## end required and optional packages
 
 ## set env variables
-if(LIBFREENECT_CLIPPING)
-	message(STATUS "LIBFREENECT_CLIPPING")
-	add_definitions(-DLIBFREENECT_CLIPPING);
+if(LIBFREENECT_OPT_CLIPPING)
+	message(STATUS "Optional clipping is on.")
+	add_definitions(-DLIBFREENECT_OPT_CLIPPING)
+	#set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -DLIBFREENECT_OPT_CLIPPING")
+else(LIBFREENECT_OPT_CLIPPING)
+	message(STATUS "Optional clipping is off.")
 endif()
 ## end set env variables
 
