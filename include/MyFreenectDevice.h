@@ -50,6 +50,7 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 		int right = KRES_X - roi.width - roi.x ;
 		return setClipping(enable, top, bottom, left, right);
 #else
+		printf("[MyFreenectDevice] setClipping not available\n");
 		return 0;
 #endif
 	};

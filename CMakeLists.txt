@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 2.6)
 # Clipping require modified libfreenect
 OPTION(LIBFREENECT_CLIPPING "Enable clipping option. Require modified libfreenect driver." OFF)
 
-set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} -g")
 set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -g")
+set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} ")
 
 ## required and optional packages
 #set(CMAKE_MODULE_PATH ${CMAKE_ROOT}/Modules ${CMAKE_SOURCE_DIR})
@@ -24,6 +24,12 @@ find_package(Boost COMPONENTS signals REQUIRED)
 
 ## end required and optional packages
 
+## set env variables
+if(LIBFREENECT_CLIPPING)
+	message(STATUS "LIBFREENECT_CLIPPING")
+	add_definitions(-DLIBFREENECT_CLIPPING);
+endif()
+## end set env variables
 
 ## add include dirs and lib dirs of above packages
 include_directories(
