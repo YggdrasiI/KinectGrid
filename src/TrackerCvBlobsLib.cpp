@@ -1,30 +1,22 @@
 /*
- * Modification of Tracker.cpp which use an other
- * blob detection lib.
+ * Code from: 
+ * http://www.keithlantz.net/2011/04/detecting-blobs-with-cvblobslib-and-tracking-blob-events-across-frames/
  */
 
-#include "Tracker2.h"
+#include "TrackerCvBlobsLib.h"
 
-Tracker2::Tracker2(double min_area, double max_area, double max_radius) : Tracker(min_area, max_area, max_radius){
-	m_blob = myblob_create();
-	myblob_set_filter(m_blob, F_DEPTH_MIN, 1);//depth=0 => background
-	myblob_set_filter(m_blob, F_DEPTH_MAX, 1);//depth=1 => blobs
-}
-
-Tracker2::Tracker2(SettingKinect* pSettingKinect) : Tracker(pSettingKinect)
+TrackerCvBlobsLib::TrackerCvBlobsLib(double min_area, double max_area, double max_radius) : Tracker(min_area, max_area, max_radius) 
 {
-	m_blob = myblob_create();
-	myblob_set_filter(m_blob, F_DEPTH_MIN, 1);//depth=0 => background
-	myblob_set_filter(m_blob, F_DEPTH_MAX, 1);//depth=1 => blobs
 }
 
-Tracker2::~Tracker2()
+TrackerCvBlobsLib::TrackerCvBlobsLib(SettingKinect* pSettingKinect) : Tracker(pSettingKinect){
+}
+
+TrackerCvBlobsLib::~TrackerCvBlobsLib()
 {
-	myblob_destroy(m_blob);
-	m_blob = NULL;
 }
 
-void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std::vector<Area> *pareas)
+void TrackerCvBlobsLib::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std::vector<Area> *pareas)
 {
 	double min_area = *m_pmin_area;
 	double max_area = *m_pmax_area;
@@ -48,14 +40,10 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 	// convert our OpenCV matrix object to one of type IplImage
 	img = mat;
 
-	//Gen blob tree structure
-	const uchar* ptr = mat.data;
-	cv::Rect *roicv = &m_pSettingKinect->m_roi;
-	MyBlobRect roi0 = {roicv->x,roicv->y,roicv->width,roicv->height};
-
-	myblob_find_blobs(m_blob, ptr, s.width, s.height, roi0, 1);
-	myblob_set_filter(m_blob, F_AREA_MIN, min_area);
-	myblob_set_filter(m_blob, F_AREA_MAX, max_area);
+	// cvblobslib blob extraction
+	blob_result = CBlobResult(&img, NULL, 1/*img∈{0,255}->thresh unimportant*/, false);
+	blob_result.Filter(blob_result, B_EXCLUDE, CBlobGetArea(), B_LESS, min_area); 
+	blob_result.Filter(blob_result, B_EXCLUDE, CBlobGetArea(), B_GREATER, max_area);
 
 	// clear the blobs from two frames ago
 	blobs_previous.clear();
@@ -68,36 +56,42 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 
 	// populate the blobs vector with the current frame
 	blobs.clear();
+	for (int i = 0; i < blob_result.GetNumBlobs(); i++) {
+		current_blob = blob_result.GetBlob(i);
 
-	MyBlobRect *roi;
-	Node *curNode = myblob_first(m_blob);
-	while( curNode != NULL ){
-	  roi = &curNode->data.roi;
-		x     = roi->x + roi->width/2;
-		y     = roi->y + roi->height/2;
+		x     = XCenter(current_blob)/*+m_pSettingKinect->m_roi.x*/;
+		y     = YCenter(current_blob)/*+m_pSettingkinect->m_roi.y*/;
 
 //		temp.areaid = areaMask.at<uchar>((int)x+p.x,(int)y+p.y);//?!not works
 		temp.areaid = (uchar) areaImg.imageData[ ((int)x+p.x) + ((int)y+p.y)*areaMask.size().width];//works
 		if( temp.areaid == 0 ) continue;
 
-		min_x = roi->x; 
-		min_y = roi->y;
-		max_x = roi->x + roi->width;
-		max_y =	roi->y + roi->height;
+		min_x = MinX(current_blob);
+		min_y = MinY(current_blob);
+		max_x = MaxX(current_blob);
+		max_y = MaxY(current_blob);
 
-		//if( (max_x-min_x)*(max_y-min_y) > 0.9*mat_area) continue;// fix blob detection issue?!
+		if( (max_x-min_x)*(max_y-min_y) > 0.9*mat_area) continue;// fix blob detection issue?!
 
 		temp.location.x = temp.origin.x = x;
 		temp.location.y = temp.origin.y = y;
 		temp.min.x = min_x; temp.min.y = min_y;
 		temp.max.x = max_x; temp.max.y = max_y;
 
+		//Rect r(min_x+p.x,min_y+p.x, max_x-min_y, max_y-min_y);
+		//Rect r(min_x,min_y, max_x-min_x, max_y-min_y);//width, height +1?!
 		Rect r( x-3, y-3, min(7,max_x-min_x), min(7, max_y-min_y));
+
+
+		//z = mean( mat(r), mat(r) )[0];/* mean is not good. The blob can include many pixel behind the frame depth*/
 
 		/* Depth detection. The measurement method is flexible. */
 		if( m_pSettingKinect->m_areaThresh ){
 			/* Mean is ok, because all pixels of the blob are in front of the frame. */
 			max_depth = mean( mat(r), mat(r) )[0]+4;/*correct blur(1) and area thresh shift (3)*/
+			//meanStdDev( mat(r), sdepth, sstddev, mat(r) );
+			//max_depth = sdepth[0]+3*sstddev[0];
+			//minMaxLoc( mat(r), &min_depth, &max_depth, NULL, NULL, mat(r) );
 
 		}else	if( pareas != NULL){
 			/* Remove values behind the area depth and count mean of rest.
@@ -114,6 +108,7 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 			//max_depth = 0;
 			minMaxLoc( mat(r), &min_depth, &max_depth, NULL, NULL, mat(r) );
 		}
+		//printf("Compared depth of area/blob: %i %f\n",(*pareas)[temp.areaid-1].depth ,max_depth);
 
 		/* Compare depth of hand with depth of area and throw blob away if hand to far away. */
 		if(pareas != NULL && max_depth - (*pareas)[temp.areaid-1].depth < -1 ){
@@ -124,7 +119,6 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 		temp.location.z = temp.origin.z = max_depth;
 
 		blobs.push_back(temp);
-		curNode = myblob_next(m_blob);
 	}
 
 	// initialize previous blobs to untracked
@@ -183,13 +177,20 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 			blobs.push_back(blobs_previous[i]);
 		}
 	}
-
+/*
+	for (int i = 1; i < blob_result.GetNumBlobs(); i++) {
+				current_blob = blob_result.GetBlob(i);
+				printf("Blobcoordsd %f, %f\n", XCenter(current_blob), YCenter(current_blob) );
+	}
+*/
 	int counter = 0;
 	cBlob tb;
 	for (int i = 0; i < blobs.size(); i++) {
 			if( blobs[i].event != BLOB_UP ){
 				counter++;
 				tb = blobs[i];
+				//printf("Blobcoordsd %f, %f\n", blobs[i].location.x, blobs[i].location.y );
+				//printf("Blob areaid: %i, handid: %i, (%f,%f)\n", blobs[i].areaid, blobs[i].handid, blobs[i].location.x, blobs[i].location.y );
 				if(! *m_pnotDrawBlob ){
 					cvLine(&img,
 							Point((int)tb.origin.x,(int)tb.origin.y),
@@ -200,4 +201,10 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 				}
 			}
 	}
+//	printf("Active blobs: %i %i %i\n",counter, blobs.size(), blob_result.GetNumBlobs());
+/*	for(int i=0; i<MAXHANDS; i++){
+		printf("%i,", (handids[i]==true)?1:0);
+	}
+	printf("\n");*/
 }
+

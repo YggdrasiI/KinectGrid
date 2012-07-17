@@ -3,6 +3,10 @@
 
 #include <limits.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Set this env. variable to enable diagonal checks */
 #define BLOB_DIAGONAL_CHECK
 
@@ -62,21 +66,25 @@ typedef struct {
 
 
 /* Create blob struct. Use myblob_destroy to free mem. */
- Myblob *myblob_create();
- void myblob_destroy(Myblob *blob );
+Myblob *myblob_create();
+void myblob_destroy(Myblob *blob );
 /* Main function to eval blobs */
- void myblob_find_blobs( Myblob *blob, 
+void myblob_find_blobs( Myblob *blob, 
 		const unsigned char *data, 
 		const int w, const int h,
 		const MyBlobRect roi,
 		const unsigned char thresh );
- void myblob_set_filter( Myblob *blob,const FILTER f,const int val);
+void myblob_set_filter( Myblob *blob,const FILTER f,const int val);
 /* Returns first node which matching the filter criteria.
  * or NULL */
- Node *myblob_first( Myblob *blob);
+Node *myblob_first( Myblob *blob);
 /* Returns next element under the given filters. 
  * or NULL */
- Node *myblob_next( Myblob *blob);
+Node *myblob_next( Myblob *blob);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

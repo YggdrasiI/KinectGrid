@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 # Clipping require modified libfreenect
 OPTION(LIBFREENECT_OPT_CLIPPING "Enable clipping option. Require modified libfreenect driver." OFF)
 OPTION(MYBLOB "Use own lib for blob detection" ON)
+add_definitions(-DMYBLOB)
 
 set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -g")
 set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} ")
@@ -25,7 +26,7 @@ find_package(Boost COMPONENTS signals REQUIRED)
 
 ## end required and optional packages
 
-## set env variables
+## set env variable for libfreenect
 if(LIBFREENECT_OPT_CLIPPING)
 	message(STATUS "Optional clipping is on.")
 	add_definitions(-DLIBFREENECT_OPT_CLIPPING)
@@ -33,16 +34,15 @@ if(LIBFREENECT_OPT_CLIPPING)
 else(LIBFREENECT_OPT_CLIPPING)
 	message(STATUS "Optional clipping is off.")
 endif()
+
 if(MYBLOB)
 	message(STATUS "Use libmyblob for blob detection.")
+	# Use add_definition on top level
+	# to propagate it to all subdirs.
 	add_definitions(-DMYBLOB)
-	include_directories( ${CMAKE_SOURCE_DIR}/lib/myblob )
-	link_directories( ${${CMAKE_PROJECT_NAME}_BINARY_DIR}/lib/myblob )
-	#set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -DLIBFREENECT_OPT_CLIPPING")
-else(LIBFREENECT_OPT_CLIPPING)
+else(MYBLOB)
 	message(STATUS "Use cvblobslib for blob detection.")
-endif()
-
+endif(MYBLOB)
 ## end set env variables
 
 ## add include dirs and lib dirs of above packages

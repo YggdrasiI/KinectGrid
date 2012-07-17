@@ -89,6 +89,8 @@ set(main_SRCS
 
 if(MYBLOB)
 	set(main_SRCS ${main_SRCS} Tracker2.cpp)
+else(MYBLOB)
+	set(main_SRCS ${main_SRCS} TrackerCvBlobsLib.cpp)
 endif(MYBLOB)
 	
 # Die auführbare Datei. Anstatt der Variablen können
@@ -96,8 +98,13 @@ endif(MYBLOB)
 add_executable (main ${main_SRCS} )
 
 # Die ausführbare Datei wird gegen diese Bibliotheken gelinkt.
-target_link_libraries(main cvblobslib server tuio ${OpenCV_LIBS} ${Freenect_LIBS} ${Onion_LIBS} ${Boost_LIBRARIES} myblob)
+target_link_libraries(main server tuio ${OpenCV_LIBS} ${Freenect_LIBS} ${Onion_LIBS} ${Boost_LIBRARIES})
 #add_dependencies(main server)
+if(MYBLOB)
+	target_link_libraries(main myblob)
+else(MYBLOB)
+	target_link_libraries(main cvblobslib)
+endif(MYBLOB)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 

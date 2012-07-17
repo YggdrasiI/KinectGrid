@@ -13,11 +13,17 @@
 #include "MyFreenectDevice.h"
 #include "ImageAnalysis.h"
 #include "BlobResult.h"
-#include "Tracker.h"
 #include "JsonConfig.h"
 #include "OnionServer.h"
 #include "MyTuioServer.h"
 #include "MyTuioServer25D.h"
+
+#ifdef MYBLOB
+#include "Tracker2.h"
+#else
+#include "TrackerCvBlobsLib.h"
+#endif
+
 
 #include <locale.h>
 //#include <time.h>
@@ -145,7 +151,11 @@ int main(int argc, char **argv) {
 	//MyFreenectDevice& device = freenect.createDevice<MyFreenectDevice>(0); 
 	Freenect::Freenect* freenect;
 	MyFreenectDevice* device;
-	Tracker tracker(settingKinect);
+#ifdef MYBLOB
+	Tracker2 tracker(settingKinect);
+#else
+	TrackerCvBlobsLib tracker(settingKinect);
+#endif
 
 	if(withKinect){
 		freenect = new Freenect::Freenect;
