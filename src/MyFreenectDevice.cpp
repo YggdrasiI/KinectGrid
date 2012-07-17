@@ -165,10 +165,11 @@ bool MyFreenectDevice::getDepth8UC1_b(Mat& dst, Rect roi, int m, int M, Mat& mas
 		MatConstIterator_<uint16_t> it2 = mask.begin<uint16_t>();
 		MatIterator_<uchar> dst_it = dst.begin<uchar>();
 		uchar tmp;
+
 		//fill with zeros
 		dst = Scalar(0);
 		for( ; it1 != it1_end; ++it1, ++it2, ++dst_it ) { 
-			//if( *it1<*it2 ) *dst_it = a* *it1 + b;
+			//*dst_it = (*it1<*it2)?((iaz* *it1)/ian + ib):0;
 			if( *it1<*it2 ) *dst_it = (iaz* *it1)/ian + ib;
 		}
 		m_new_depth_frame = false;

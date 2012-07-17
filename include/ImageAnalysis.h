@@ -94,6 +94,14 @@ static void filter(Mat& src, Mat& mask, int nthresh, Mat& dst){
 	
 }
 
+/* Output black/white  */
+static void filterBW(Mat& src, Mat& mask, int nthresh, Mat& dst){
+	Mat tmp(src.size(), src.type());
+	blur(src, tmp, Size(3,3));
+
+	dst = mask < tmp ;//0-1-image
+}
+
 //no blur test
 static void filterNoBlur(Mat& src, Mat& mask, int nthresh, Mat& dst){
 	Mat tmp(src.size(), src.type());
@@ -101,9 +109,9 @@ static void filterNoBlur(Mat& src, Mat& mask, int nthresh, Mat& dst){
 	src.copyTo(dst, dst);// 0-'blob-depth'-image
 }
 
-//try got combine operations 'dst=mask<tmp;tmp.copyTo(dst,dst)'
-static void filterFast(Mat& src, Mat& mask, int nthresh, Mat& dst){
+static void filterBWNoBlur(Mat& src, Mat& mask, int nthresh, Mat& dst){
 	Mat tmp(src.size(), src.type());
-	//TODO
+	dst = mask < tmp ;//0-1-image
 }
+
 #endif
