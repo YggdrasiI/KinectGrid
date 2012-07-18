@@ -49,11 +49,15 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 	img = mat;
 
 	//Gen blob tree structure
-	const uchar* ptr = mat.data;
 	cv::Rect *roicv = &m_pSettingKinect->m_roi;
-	MyBlobRect roi0 = {roicv->x,roicv->y,roicv->width,roicv->height};
+	const uchar* ptr = mat.data;
 
-	myblob_find_blobs(m_blob, ptr, s.width, s.height, roi0, 1);
+	/*mat.data points to first entry of the ROI, not of the full matrix.
+	 * => Set left and top border of roi0 to 0 and reduce height value. 
+	 * */
+	MyBlobRect roi0 = {0,0,roicv->width,roicv->height };
+
+	myblob_find_blobs(m_blob, ptr, s.width, s.height-p.y, roi0, 1);
 	myblob_set_filter(m_blob, F_AREA_MIN, min_area);
 	myblob_set_filter(m_blob, F_AREA_MAX, max_area);
 
