@@ -185,7 +185,6 @@ int main(int argc, char **argv) {
 	 * Gtk:Window changes locale...*/
 	setlocale(LC_NUMERIC, "C");
 
-int counter = 0;	
 	while (!die) {
 		//device.getVideo(rgbMat);
 		//cv::imshow("rgb", rgbMat);
@@ -219,9 +218,6 @@ int counter = 0;
 							tuio.send_blobs(tracker.getBlobs(), settingKinect->m_areas, settingKinect->m_roi);
 						if( settingKinect->m_tuioProtocols[1] )
 							tuio2.send_blobs(tracker.getBlobs(), settingKinect->m_areas, settingKinect->m_roi);
-
-
-						if(++counter > 300) die=true;
 					}
 					break;
 				case AREA_DETECTION_END:
@@ -307,9 +303,12 @@ int counter = 0;
 		if( k > 48 && k<58 ){ // '1'<=k<='9'
 			imshowNbr = k-48;			
 		}
-		if(iter >= 20000) break;
+
+		if(iter >= 2000000) break;
 		iter++;
 	}
+
+	printf("Quitting KinectGrid...\n");
 
 	/* Clean up objects */
 	delete onion;
@@ -319,11 +318,10 @@ int counter = 0;
 		//device->stopDepth();
 		delete ia;
 		delete freenect;
-		//cvDestroyWindow("img");
 		cvDestroyAllWindows();
 
 		//wait some time to give img-window enouth time to close.
-		cvWaitKey(10);//no, did not work on linux. Use cvStartWindowThread()
+		cvWaitKey(10);
 	}
 
 	delete settingKinect;
