@@ -185,6 +185,7 @@ int main(int argc, char **argv) {
 	 * Gtk:Window changes locale...*/
 	setlocale(LC_NUMERIC, "C");
 
+int counter = 0;	
 	while (!die) {
 		//device.getVideo(rgbMat);
 		//cv::imshow("rgb", rgbMat);
@@ -218,6 +219,9 @@ int main(int argc, char **argv) {
 							tuio.send_blobs(tracker.getBlobs(), settingKinect->m_areas, settingKinect->m_roi);
 						if( settingKinect->m_tuioProtocols[1] )
 							tuio2.send_blobs(tracker.getBlobs(), settingKinect->m_areas, settingKinect->m_roi);
+
+
+						if(++counter > 300) die=true;
 					}
 					break;
 				case AREA_DETECTION_END:

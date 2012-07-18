@@ -4,8 +4,11 @@ cmake_minimum_required(VERSION 2.6)
 OPTION(LIBFREENECT_OPT_CLIPPING "Enable clipping option. Require modified libfreenect driver." OFF)
 OPTION(MYBLOB "Use own lib for blob detection" ON)
 
-set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -g")
-set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} ")
+set(EXTRA_C_FLAGS "")
+set(EXTRA_C_FLAGS_DEBUG "-pg")
+
+set(EXTRA_CXX_FLAGS "")
+set(EXTRA_CXX_FLAGS_DEBUG "-pg")
 
 ## required and optional packages
 #set(CMAKE_MODULE_PATH ${CMAKE_ROOT}/Modules ${CMAKE_SOURCE_DIR})
@@ -29,7 +32,6 @@ find_package(Boost COMPONENTS signals REQUIRED)
 if(LIBFREENECT_OPT_CLIPPING)
 	message(STATUS "Optional clipping is on.")
 	add_definitions(-DLIBFREENECT_OPT_CLIPPING)
-	#set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -DLIBFREENECT_OPT_CLIPPING")
 else(LIBFREENECT_OPT_CLIPPING)
 	message(STATUS "Optional clipping is off.")
 endif()
