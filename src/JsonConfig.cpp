@@ -48,6 +48,7 @@ int JsonConfig::loadConfigFile(const char* filename)
 	}else{
 		printf("File %s not found. Use default values.\n",filename);
 		m_pjson_root = loadDefaults();
+		update(m_pjson_root,NULL, CONFIG);
 		return 1;
 	}
 	return 0;

@@ -574,9 +574,9 @@ int* real_ids_inv = calloc( nids,sizeof(int) ); //store for every id with positi
 		rect->height = *(bottom_index + *(real_ids+l)) - rect->y + 1;
 		rect->x = *(left_index + *(real_ids+l));
 		rect->width = *(right_index + *(real_ids+l)) - rect->x + 1;
-		printf("MyBlobRect of %i: x=%i y=%i w=%i h=%i\n",cur->data.id,
+		/*printf("MyBlobRect of %i: x=%i y=%i w=%i h=%i\n",cur->data.id,
 				rect->x, rect->y,
-				rect->width, rect->height);
+				rect->width, rect->height);*/
 #endif
 		/* check, if border element */
 	/*	if( anchor<w || anchor+w>end || anchor%w==0 || anchor%w==w-1 ) //no, this do not work.*/
@@ -607,7 +607,7 @@ int* real_ids_inv = calloc( nids,sizeof(int) ); //store for every id with positi
 	//sum up node areas
 	sum_areas(root->child, comp_size);
 
-	sort_tree(root->child);
+	//sort_tree(root->child);
 
 	//clean up
 	free(tree_id_relation);
@@ -680,54 +680,108 @@ Node *myblob_first( Myblob *blob){
 	return myblob_next(blob);
 }
 
+/* This method throws an NULL pointer exception
+ * if it's has return NULL and called again */
 Node *myblob_next(Myblob *blob){
 	//go to next element
-	if( blob->it->child != NULL){
-		blob->it = blob->it->child;
-		blob->it_depth++;
-	}else	if( blob->it->silbing != NULL ){
-		blob->it = blob->it->silbing;
+	Node *it = blob->it; 
+	int it_depth = blob->it_depth;
+
+	if( it->child != NULL){
+		it = it->child;
+		it_depth++;
+	}else	if( it->silbing != NULL ){
+		it = it->silbing;
 	}else{
-		blob->it = blob->it->parent;
-		blob->it_depth--;
+		while( 1 ){
+			it = it->parent;
+			it_depth--;
+			if(it->silbing != NULL){
+				it = it->silbing;
+				break;
+			}
+			if( it_depth < 0 ){
+				blob->it = NULL;
+				blob->it_depth=it_depth;
+				return NULL;
+			}
+		}
 	}
 
 	//check criteria/filters.
 	do{
-		if( blob->it_depth < blob->filter.min_depth 
-				|| blob->it->data.area > blob->filter.max_area ){
-			if( blob->it->child != NULL){
-				blob->it = blob->it->child;
-				blob->it_depth++;
+		if( it_depth < blob->filter.min_depth 
+				|| it->data.area > blob->filter.max_area ){
+			if( it->child != NULL){
+				it = it->child;
+				it_depth++;
 				continue;
 			}
-			if( blob->it->silbing != NULL ){
-				blob->it = blob->it->silbing;
+			if( it->silbing != NULL ){
+				it = it->silbing;
 				continue;
 			}
-			blob->it = blob->it->parent;
-			blob->it_depth--;
+			while( 1 ){
+				it = it->parent;
+				it_depth--;
+				if(it->silbing != NULL){
+					it = it->silbing;
+					break;
+				}
+				if( it_depth < 0 ){
+					blob->it = NULL;
+					blob->it_depth = it_depth;
+					return NULL;
+				}
+			}
 			continue;
 		}
-		if( blob->it_depth > blob->filter.max_depth ){
-			blob->it = blob->it->parent;
-			blob->it_depth--;
+		if( it_depth > blob->filter.max_depth ){
+			while( 1 ){
+				it = it->parent;
+				it_depth--;
+				if(it->silbing != NULL){
+					it = it->silbing;
+					break;
+				}
+				if( it_depth < 0 ){
+					blob->it = NULL;
+					blob->it_depth = it_depth;
+					return NULL;
+				}
+			}
 			continue;
 		}
-		if( blob->it->data.area < blob->filter.min_depth ){
-			if( blob->it->silbing != NULL ){
-				blob->it = blob->it->silbing;
+		if( it->data.area < blob->filter.min_area ){
+			if( it->silbing != NULL ){
+				it = it->silbing;
 				continue;
 			}
-			blob->it = blob->it->parent;
-			blob->it_depth--;
+			while( 1 ){
+				it = it->parent;
+				it_depth--;
+				if(it->silbing != NULL){
+					it = it->silbing;
+					break;
+				}
+				if( it_depth < 0 ){
+					blob->it = NULL;
+					blob->it_depth = it_depth;
+					return NULL;
+				}
+			}
 			continue;
 		}
 		// All filters ok. Return node
-		return blob->it;
+		blob->it = it;
+		blob->it_depth = it_depth;
+		return it;
 
-	}while( blob->it != blob->tree );
+	}while( it != blob->tree );
 
+	//should never reached
+	blob->it = NULL;
+	blob->it_depth = -1;
 	return NULL;
 }
 

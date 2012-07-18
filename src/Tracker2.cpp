@@ -14,7 +14,7 @@ Tracker2::Tracker2(double min_area, double max_area, double max_radius) : Tracke
 Tracker2::Tracker2(SettingKinect* pSettingKinect) : Tracker(pSettingKinect)
 {
 	m_blob = myblob_create();
-	myblob_set_filter(m_blob, F_DEPTH_MIN, 1);//depth=0 => background
+	myblob_set_filter(m_blob, F_DEPTH_MIN, 0);//depth=0 => background
 	myblob_set_filter(m_blob, F_DEPTH_MAX, 1);//depth=1 => blobs
 }
 
@@ -72,20 +72,29 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 	MyBlobRect *roi;
 	Node *curNode = myblob_first(m_blob);
 	while( curNode != NULL ){
+		//printf("Check node %i\n", curNode->data.id);
 	  roi = &curNode->data.roi;
 		x     = roi->x + roi->width/2;
 		y     = roi->y + roi->height/2;
 
 //		temp.areaid = areaMask.at<uchar>((int)x+p.x,(int)y+p.y);//?!not works
 		temp.areaid = (uchar) areaImg.imageData[ ((int)x+p.x) + ((int)y+p.y)*areaMask.size().width];//works
-		if( temp.areaid == 0 ) continue;
+		if( temp.areaid == 0 ){
+			curNode = myblob_next(m_blob);
+			continue;
+		}
 
 		min_x = roi->x; 
 		min_y = roi->y;
 		max_x = roi->x + roi->width;
 		max_y =	roi->y + roi->height;
 
-		//if( (max_x-min_x)*(max_y-min_y) > 0.9*mat_area) continue;// fix blob detection issue?!
+		/*
+		 if( (max_x-min_x)*(max_y-min_y) > 0.9*mat_area){// fix blob detection issue?!
+		 curNode = myblob_next(m_blob);
+		 continue;
+		 }
+		*/
 
 		temp.location.x = temp.origin.x = x;
 		temp.location.y = temp.origin.y = y;
@@ -118,6 +127,7 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 		/* Compare depth of hand with depth of area and throw blob away if hand to far away. */
 		if(pareas != NULL && max_depth - (*pareas)[temp.areaid-1].depth < -1 ){
 			//printf("Hand not reached area depth.\n");
+			curNode = myblob_next(m_blob);
 			continue ;
 		}
 

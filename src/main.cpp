@@ -95,7 +95,7 @@ public:
 		}
 	}
 
-	Fps():frame(0),mod(10){ 
+	Fps():frame(0),mod(300){ 
 			tic();
 		}
 };

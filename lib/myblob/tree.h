@@ -90,7 +90,7 @@ static void print_tree(Node *root, int shift){
 	int shift2=0;
 	//printf("• ");
 	//printf("%i (%i) ",root->data.id, root->data.area);
-	printf("%2i (w%i,d%i) ",root->data.id, root->width, root->height);
+	printf("%2i (w%i,h%i) ",root->data.id, root->width, root->height);
 	shift2+=12;
 	if( root->child != NULL){
 		printf("→");

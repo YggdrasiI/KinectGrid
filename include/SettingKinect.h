@@ -38,7 +38,7 @@ class SettingKinect: public JsonConfig{
 	private:
 	//	MyFreenectDevice* m_device;
 	public:
-		SettingKinect() : /*m_mode(SHOW_BLOBS),*/ m_roi(0,0,KRES_X,KRES_Y),m_minDepth(0),m_maxDepth(0), JsonConfig()//, m_sleep(false,SLEEPMODE_DURATION)
+		SettingKinect() : /*m_mode(SHOW_BLOBS),*/ m_roi(0,0,KRES_X,KRES_Y),m_minDepth(0),m_maxDepth(255), JsonConfig()//, m_sleep(false,SLEEPMODE_DURATION)
 		{
 		};
 
