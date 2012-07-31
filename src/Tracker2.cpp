@@ -7,6 +7,7 @@
 
 Tracker2::Tracker2(double min_area, double max_area, double max_radius) : Tracker(min_area, max_area, max_radius){
 	m_blob = myblob_create();
+	myblob_set_grid(m_blob, 4,4);
 	myblob_set_filter(m_blob, F_DEPTH_MIN, 1);//depth=0 => background
 	myblob_set_filter(m_blob, F_DEPTH_MAX, 1);//depth=1 => blobs
 }
@@ -14,7 +15,8 @@ Tracker2::Tracker2(double min_area, double max_area, double max_radius) : Tracke
 Tracker2::Tracker2(SettingKinect* pSettingKinect) : Tracker(pSettingKinect)
 {
 	m_blob = myblob_create();
-	myblob_set_filter(m_blob, F_DEPTH_MIN, 0);//depth=0 => background
+	myblob_set_grid(m_blob, 4,4);
+	myblob_set_filter(m_blob, F_DEPTH_MIN, 1);//depth=0 => background
 	myblob_set_filter(m_blob, F_DEPTH_MAX, 1);//depth=1 => blobs
 }
 

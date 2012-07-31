@@ -85,16 +85,17 @@ static int number_of_nodes(Node *root){
 }
 
 
-static void print_tree(Node *root, int shift){
+static void print_tree_filtered(Node *root, int shift, int minA){
 	int i;
 	int shift2=0;
 	//printf("• ");
 	//printf("%i (%i) ",root->data.id, root->data.area);
-	printf("%2i (w%i,h%i) ",root->data.id, root->width, root->height);
-	shift2+=12;
+	printf("%2i (w%i,h%i,a%2i) ",root->data.id, root->width, root->height, root->data.area);
+	shift2+=12+4;
+	if( root->data.area < minA) return;
 	if( root->child != NULL){
 		printf("→");
-		print_tree(root->child,shift+shift2);
+		print_tree_filtered(root->child,shift+shift2,minA);
 	}else{
 		printf("\n");
 	}
@@ -103,8 +104,13 @@ static void print_tree(Node *root, int shift){
 	//	printf("\n");
 		for(i=0;i<shift-1;i++) printf(" ");
 		printf("↘");
-		print_tree(root->silbing,shift);
-	}}
+		print_tree_filtered(root->silbing,shift,minA);
+	}
+}
+
+static void print_tree(Node *root, int shift){
+	return print_tree_filtered(root,shift,-1);
+}
 
 /* 
  * Helper functions for sorting 
