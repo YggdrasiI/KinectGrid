@@ -56,11 +56,24 @@ int SettingKinect::update(cJSON* jsonNew, cJSON* jsonOld, int changes=NO){
 	cJSON* ohtml = jsonOld==NULL?NULL:cJSON_GetObjectItem(jsonOld,"html");
 	if( nhtml != NULL){
 		if( update(nhtml,ohtml,"kinectMotorAngle",&m_kinectMotorAngle) ) changes|=MOTOR;
-		if( update(nhtml,ohtml,"minDepth",&m_minDepth) ) changes|=MARGIN|FRONT_MASK;
-		if( update(nhtml,ohtml,"maxDepth",&m_maxDepth) ){
+		if( update(nhtml,ohtml,"minDepth",&m_minDepth)
+				|| update(nhtml,ohtml,"maxDepth",&m_maxDepth) ){
 			changes|=MARGIN|FRONT_MASK;
 			m_maxDepth = max(m_minDepth+2,m_maxDepth);
+			//update rangeMap
+			printf("Update range map\n");
+			unsigned int iaz, ian, ib; 
+			iaz = 255*255;
+			ian = 2048*(m_maxDepth-m_minDepth);
+			ib = (255-m_minDepth)*255/(m_maxDepth-m_minDepth);
+
+			int tmp;
+			for(int i=0; i<2048; ++i){
+				tmp  = ib - (iaz* i)/ian;
+				m_rangeMap[i] = (0>tmp)?0:((tmp<255)?tmp:255);
+			}
 		}
+
 		update(nhtml,ohtml,"minBlobArea",&m_minBlobArea);
 		update(nhtml,ohtml,"maxBlobArea",&m_maxBlobArea);
 		if( update(nhtml,ohtml,"marginLeft",&m_marginLeft) ) changes|=MARGIN;

@@ -127,13 +127,14 @@ bool MyFreenectDevice::getDepth8UC1(Mat& dst, Rect roi, int m, int M, Mat& mask)
 		MatConstIterator_<uchar> it2 = mask.begin<uchar>();
 		MatIterator_<uchar> dst_it = dst.begin<uchar>();
 		uchar tmp;
+		dst = Scalar(0);
 		for( ; it1 != it1_end; ++it1, ++it2, ++dst_it ) { 
 			//previous memcopy for 99%-else case?!
-			//tmp = a**it1+b;
-			//*dst_it = (tmp>*it2)?tmp:0;
+			tmp = a**it1+b;
+			*dst_it = (tmp>*it2)?tmp:0;
 
-			*dst_it = a**it1+b;
-			if(*dst_it<=*it2) *dst_it = 0;
+			//*dst_it = a**it1+b;
+			//if(*dst_it<=*it2) *dst_it = 0;
 		}
 		m_new_depth_frame = false;
 		m_depth_mutex.unlock();
@@ -154,8 +155,8 @@ bool MyFreenectDevice::getDepth8UC1_b(Mat& dst, Rect roi, int m, int M, Mat& mas
 		//float a = -255.0*255.0/2048.0/(M-m);	
 		//float b = (255.0-m)*255.0/(M-m);	
 		//	printf("getDepth constants: %f, %f\n",a,b);
-		int iaz, ian, ib;
-		iaz = -255*255;
+		unsigned int iaz, ian, ib;
+		iaz = 255*255;//neg needed!
 		ian = 2048*(M-m);
 		ib = (255-m)*255/(M-m);
 
@@ -170,7 +171,34 @@ bool MyFreenectDevice::getDepth8UC1_b(Mat& dst, Rect roi, int m, int M, Mat& mas
 		dst = Scalar(0);
 		for( ; it1 != it1_end; ++it1, ++it2, ++dst_it ) { 
 			//*dst_it = (*it1<*it2)?((iaz* *it1)/ian + ib):0;
-			if( *it1<*it2 ) *dst_it = (iaz* *it1)/ian + ib;
+			//if( *it1<*it2 ) *dst_it = (iaz* *it1)/ian + ib;
+			if( *it1<*it2 ) *dst_it = ib - (iaz* *it1)/ian;
+		}
+		m_new_depth_frame = false;
+		m_depth_mutex.unlock();
+		return true;
+	} else {
+		//m_depth_mutex.unlock();
+		return false;
+	}
+}
+
+bool MyFreenectDevice::getDepth8UC1_b(Mat& dst, Rect roi, uint8_t *map, Mat& mask) 
+{
+	if(m_new_depth_frame) {
+		m_depth_mutex.lock();
+
+		Mat dRoi = m_depthMat(roi);
+		MatConstIterator_<uint16_t> it1 = dRoi.begin<uint16_t>(),
+			it1_end = dRoi.end<uint16_t>();
+		MatConstIterator_<uint16_t> it2 = mask.begin<uint16_t>();
+		MatIterator_<uchar> dst_it = dst.begin<uchar>();
+		uchar tmp;
+
+		//fill with zeros
+		dst = Scalar(0);
+		for( ; it1 != it1_end; ++it1, ++it2, ++dst_it ) { 
+			if( *it1<*it2 ) *dst_it = *(map+ *it1);
 		}
 		m_new_depth_frame = false;
 		m_depth_mutex.unlock();

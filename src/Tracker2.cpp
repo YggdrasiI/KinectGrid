@@ -206,7 +206,7 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 			if( blobs[i].event != BLOB_UP ){
 				counter++;
 				tb = blobs[i];
-				if(! *m_pnotDrawBlob ){
+				if(true || ! *m_pnotDrawBlob ){
 					cvLine(&img,
 							Point((int)tb.origin.x,(int)tb.origin.y),
 							Point((int)tb.location.x,(int)tb.location.y),Scalar(244),2);

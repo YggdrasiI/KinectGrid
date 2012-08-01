@@ -79,28 +79,28 @@ FunctionMode ImageAnalysis::hand_detection()
 		return depth_mask_detection();
 
 	Rect roi = m_pSettingKinect->m_roi;
-	Mat dfRoi(m_depthf,roi);
-	Mat dMRoi(m_depthMask,roi);
-	Mat fMRoi(m_filteredMat,roi);
 
 	// Analyse Roi of depth frame
 
 	if(m_pSettingKinect->m_directFiltering){
+		Mat fMRoi(m_filteredMat,roi);
+		Mat dMRoi16U(m_depthMask16U,roi);
 		/* Direct evluation of masked deptframe.
 		Advantages: Faster.
 		Disadvantages: No depth frame, no bluring.
 		*/
 		//m_pdevice->getDepth8UC1(fMRoi, roi,
 		//		m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth, dMRoi);
-		Mat dMRoi16U(m_depthMask16U,roi);
-		while(! m_pdevice->getDepth8UC1_b(fMRoi, roi,
-				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth, dMRoi16U))
+		while(! m_pdevice->getDepth8UC1_b(fMRoi, roi, m_pSettingKinect->m_rangeMap, dMRoi16U))
 		{
 			//printf(" Bad, get old frame!\n");
 			usleep(50);		
 		}
 
 	}else{
+		Mat dfRoi(m_depthf,roi);
+		Mat fMRoi(m_filteredMat,roi);
+		Mat dMRoi(m_depthMask,roi);
 		while(! m_pdevice->getDepth8UC1(dfRoi, roi,
 				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth))
 		{
