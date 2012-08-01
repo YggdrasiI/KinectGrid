@@ -36,7 +36,7 @@ else(LIBFREENECT_OPT_CLIPPING)
 endif()
 
 if(MYBLOB)
-	message(STATUS "Use libmyblob for blob detection.")
+	message(STATUS "Use libblobtree for blob detection.")
 	# Use add_definition on top level
 	# to propagate it to all subdirs.
 	add_definitions(-DMYBLOB)
