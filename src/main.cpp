@@ -261,8 +261,7 @@ int main(int argc, char **argv) {
 					cv::imshow("img",ia->m_filteredMat(settingKinect->m_roi));
 					break;
 				case SHOW_FRONTMASK:
-					cv::imshow("img",ia->m_depthMask16U(settingKinect->m_roi));
-					//cv::imshow("img",ia->getFrontMask()(settingKinect->m_roi) );
+					cv::imshow("img",ia->getFrontMask()(settingKinect->m_roi) );
 					break;
 				default:
 					break;
