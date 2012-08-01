@@ -53,7 +53,7 @@
 			<ol>
 				<li>Select raw depth view (press '1')</li>
 				<li>Lower <i>maxDepth</i> till first obstacles are light grey.</li>
-				<li>Raise <i>minDepth</i> till background nearly black.</li>
+				<li>Raise <i>minDepth</i> till background is nearly black.</li>
 			</ol>
 			</li>
 			<li>Use <i>margin[Left|Top|Right|Bottom]</i> to crop image.
@@ -63,11 +63,12 @@
 				<li>Select front mask view (press '5')</li>
 				<li>Raise <i>marginFront</i> till the frame is white and all other parts still black.</li>
 			</ol>
-			This image will used to find the areas. Ensure that the areas are full enclosed.
+			This black/white-image will used to find the 'holes' of your frame. Ensure that the areas are full enclosed.
 			</li>
-			<li>Use <i>marginBack</i> to set background threshold (depth mask) for blob detection.<br> Press '2' to show the depth mask. The global threshold will increased in two cases:
+			<li>Use <i>marginBack</i> to set the minimal background threshold (depth mask) for blob detection.<br> Press '2' to show the depth mask. This global threshold will increased in two cases:
 			<ol>
-				<li>During the depth mask detection are all values greater as <i>255-marginBack</i> increase the depth mask. Do not block the areas during the depth mask detection!</li>
+				<li>The depth mask will created on startup and after configuration changes. (Nearly <i>depthMask = max(sensordata, 255-marginBack)</i>). Do not block the camera during initialisation. 				
+				</li>
 				<li>If <i>areaThresh=1</i>, depth mask is set to frame depth inside of areas.</li>
 			</ol>
 			</li>
