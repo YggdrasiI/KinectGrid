@@ -37,6 +37,7 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 	bool getDepth8UC1(Mat& output, Rect roi, int m, int M); 
 	bool getDepth8UC1(Mat& output, Rect roi, int m, int M, Mat& mask); 
 	bool getDepth8UC1_b(Mat& output, Rect roi, int m, int M, Mat& mask); 
+	bool getDepth8UC1_b(Mat& dst, Rect roi, uint8_t *map, Mat& mask);
 
 	/* propagate setting changes */
 	void update(SettingKinect* pSettingKinect, int changes);
