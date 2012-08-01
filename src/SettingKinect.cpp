@@ -57,7 +57,7 @@ int SettingKinect::update(cJSON* jsonNew, cJSON* jsonOld, int changes=NO){
 	if( nhtml != NULL){
 		if( update(nhtml,ohtml,"kinectMotorAngle",&m_kinectMotorAngle) ) changes|=MOTOR;
 		if( update(nhtml,ohtml,"minDepth",&m_minDepth)
-				|| update(nhtml,ohtml,"maxDepth",&m_maxDepth) ){
+				+ update(nhtml,ohtml,"maxDepth",&m_maxDepth) ){
 			changes|=MARGIN|FRONT_MASK;
 			m_maxDepth = max(m_minDepth+2,m_maxDepth);
 			//update rangeMap

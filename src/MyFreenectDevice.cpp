@@ -144,6 +144,7 @@ bool MyFreenectDevice::getDepth8UC1(Mat& dst, Rect roi, int m, int M, Mat& mask)
 		return false;
 	}
 }
+
 /*
  Masked Version. (No blur!)
  mask.type = CV_16UC1. (=> Switch if and multiplication)
@@ -197,6 +198,7 @@ bool MyFreenectDevice::getDepth8UC1_b(Mat& dst, Rect roi, uint8_t *map, Mat& mas
 
 		//fill with zeros
 		dst = Scalar(0);
+		//should automaticly unrolled?!
 		for( ; it1 != it1_end; ++it1, ++it2, ++dst_it ) { 
 			if( *it1<*it2 ) *dst_it = *(map+ *it1);
 		}
