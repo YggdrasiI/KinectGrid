@@ -6,23 +6,23 @@
 #include "Tracker2.h"
 
 Tracker2::Tracker2(double min_area, double max_area, double max_radius) : Tracker(min_area, max_area, max_radius){
-	m_blob = myblob_create();
-	myblob_set_grid(m_blob, 4,4);
-	myblob_set_filter(m_blob, F_DEPTH_MIN, 1);//depth=0 => background
-	myblob_set_filter(m_blob, F_DEPTH_MAX, 1);//depth=1 => blobs
+	m_blob = blobtree_create();
+	blobtree_set_grid(m_blob, 4,4);
+	blobtree_set_filter(m_blob, F_DEPTH_MIN, 1);//depth=0 => background
+	blobtree_set_filter(m_blob, F_DEPTH_MAX, 1);//depth=1 => blobs
 }
 
 Tracker2::Tracker2(SettingKinect* pSettingKinect) : Tracker(pSettingKinect)
 {
-	m_blob = myblob_create();
-	myblob_set_grid(m_blob, 4,4);
-	myblob_set_filter(m_blob, F_DEPTH_MIN, 1);//depth=0 => background
-	myblob_set_filter(m_blob, F_DEPTH_MAX, 1);//depth=1 => blobs
+	m_blob = blobtree_create();
+	blobtree_set_grid(m_blob, 4,4);
+	blobtree_set_filter(m_blob, F_DEPTH_MIN, 1);//depth=0 => background
+	blobtree_set_filter(m_blob, F_DEPTH_MAX, 1);//depth=1 => blobs
 }
 
 Tracker2::~Tracker2()
 {
-	myblob_destroy(m_blob);
+	blobtree_destroy(m_blob);
 	m_blob = NULL;
 }
 
@@ -57,11 +57,11 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 	/*mat.data points to first entry of the ROI, not of the full matrix.
 	 * => Set left and top border of roi0 to 0 and reduce height value. 
 	 * */
-	MyBlobRect roi0 = {0,0,roicv->width,roicv->height };
+	BlobtreeRect roi0 = {0,0,roicv->width,roicv->height };
 
-	myblob_find_blobs(m_blob, ptr, s.width, s.height-p.y, roi0, 1);
-	myblob_set_filter(m_blob, F_AREA_MIN, min_area);
-	myblob_set_filter(m_blob, F_AREA_MAX, max_area);
+	blobtree_find_blobs(m_blob, ptr, s.width, s.height-p.y, roi0, 1);
+	blobtree_set_filter(m_blob, F_AREA_MIN, min_area);
+	blobtree_set_filter(m_blob, F_AREA_MAX, max_area);
 
 	// clear the blobs from two frames ago
 	blobs_previous.clear();
@@ -75,8 +75,8 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 	// populate the blobs vector with the current frame
 	blobs.clear();
 
-	MyBlobRect *roi;
-	Node *curNode = myblob_first(m_blob);
+	BlobtreeRect *roi;
+	Node *curNode = blobtree_first(m_blob);
 	while( curNode != NULL ){
 		//printf("Check node %i\n", curNode->data.id);
 	  roi = &curNode->data.roi;
@@ -86,7 +86,7 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 //		temp.areaid = areaMask.at<uchar>((int)x+p.x,(int)y+p.y);//?!not works
 		temp.areaid = (uchar) areaImg.imageData[ ((int)x+p.x) + ((int)y+p.y)*areaMask.size().width];//works
 		if( temp.areaid == 0 ){
-			curNode = myblob_next(m_blob);
+			curNode = blobtree_next(m_blob);
 			continue;
 		}
 
@@ -97,7 +97,7 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 
 		/*
 		 if( (max_x-min_x)*(max_y-min_y) > 0.9*mat_area){// fix blob detection issue?!
-		 curNode = myblob_next(m_blob);
+		 curNode = blobtree_next(m_blob);
 		 continue;
 		 }
 		*/
@@ -133,14 +133,14 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 		/* Compare depth of hand with depth of area and throw blob away if hand to far away. */
 		if(pareas != NULL && max_depth - (*pareas)[temp.areaid-1].depth < -1 ){
 			//printf("Hand not reached area depth.\n");
-			curNode = myblob_next(m_blob);
+			curNode = blobtree_next(m_blob);
 			continue ;
 		}
 
 		temp.location.z = temp.origin.z = max_depth;
 
 		blobs.push_back(temp);
-		curNode = myblob_next(m_blob);
+		curNode = blobtree_next(m_blob);
 	}
 
 	// initialize previous blobs to untracked

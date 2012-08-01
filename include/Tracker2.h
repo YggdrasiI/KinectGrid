@@ -1,17 +1,17 @@
 /*
- * Tracker for myblob lib.
+ * Tracker with own  blob detection  lib.
  */
 
 #ifndef TRACKER2_H
 #define TRACKER2_H
 
 #include "Tracker.h"
-#include "myblob.h" //myblob lib header
+#include "blobtree.h" //blobtree lib header
 
 
 class Tracker2: public Tracker {
 	private:
-		Myblob *m_blob;
+		Blobtree *m_blob;
 
 	public:
 		Tracker2(SettingKinect* pSettingKinect);
