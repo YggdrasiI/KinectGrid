@@ -38,12 +38,14 @@
  */
 
 #ifdef BLOB_COUNT_PIXEL
-#define BLOB_REALLOC_COMP_SAME comp_size = realloc(comp_size, max_comp*sizeof(int) ); 
-#define BLOB_INC_COMP_SAME *(comp_size+id) = 1; 
+#define BLOB_REALLOC_COMP_SIZE comp_size = realloc(comp_size, max_comp*sizeof(int) );
+#define BLOB_INIT_COMP_SIZE *(comp_size+id) = 1;
+#define BLOB_INC_COMP_SIZE *(comp_size+*(iPi)) += 1;
 #else
 /* empty definitions */
-#define BLOB_REALLOC_COMP_SAME
-#define BLOB_INC_COMP_SAME
+#define BLOB_REALLOC_COMP_SIZE
+#define BLOB_INIT_COMP_SIZE
+#define BLOB_INC_COMP_SIZE
 #endif
 
 #ifdef BLOB_DIMENSION
@@ -86,21 +88,21 @@
 /* *(anchors+id) = dPi-dS; */\
 *(prob_parent+id) = PARENTID; \
 *(comp_same+id) = id; \
-BLOB_INC_COMP_SAME; \
+BLOB_INIT_COMP_SIZE; \
 BLOB_INIT_INDEX_ARRAYS; \
 if( id>=max_comp ){ \
 	max_comp = (int) ( (float)w*h*max_comp/(dPi-data) ); \
 /*	anchors = realloc(anchors, max_comp*sizeof(int) );*/ \
 	prob_parent = realloc(prob_parent, max_comp*sizeof(int) ); \
 	comp_same = realloc(comp_same, max_comp*sizeof(int) ); \
-	BLOB_REALLOC_COMP_SAME; \
+	BLOB_REALLOC_COMP_SIZE; \
 	BLOB_REALLOC_INDEX_ARRAYS; \
 } 
 
 
 #define TOP_CHECK(STEPHEIGHT,WIDTH) \
 	*(iPi) = *(iPi-WIDTH); \
-	BLOB_INC_COMP_SAME; \
+	BLOB_INC_COMP_SIZE; \
 BLOB_DIMENSION_BOTTOM(STEPHEIGHT);
 
 /* check if left neighbour id can associate with top neigbour id. */ 
@@ -123,7 +125,7 @@ VPRINTF("(%i=>%i), (%i=>%i) (%i,%i), TOP_LEFT_COMP\n", *(iPi), a2, *(iPi-STEPWID
 
 #define LEFT_CHECK(STEPWIDTH) \
 	*(iPi) = *(iPi-STEPWIDTH); \
-BLOB_INC_COMP_SAME; \
+BLOB_INC_COMP_SIZE; \
 BLOB_DIMENSION_RIGHT(STEPWIDTH); 
 
 /* check if left neighbour id can associate with diagonal neigbour id. */ 
@@ -145,7 +147,7 @@ VPRINTF("(%i=>%i), (%i=>%i) (%i,%i), LEFT_DIAG_COMP\n", *(iPi), a2, *(iPi+STEPWI
 
 #define ANTI_DIAG_CHECK(STEPWIDTH,STEPHEIGHT,WIDTH) \
 	*(iPi) = *(iPi-WIDTH-STEPWIDTH); \
-BLOB_INC_COMP_SAME; \
+BLOB_INC_COMP_SIZE; \
 BLOB_DIMENSION_RIGHT(STEPWIDTH); \
 BLOB_DIMENSION_BOTTOM(STEPHEIGHT); 
 
@@ -169,7 +171,7 @@ VPRINTF("(%i=>%i), (%i=>%i) (%i,%i), ANTI_DIAG_COMP\n", *(iPi),a2 , *(iPi+STEPWI
 
 #define DIAG_CHECK(STEPWIDTH,STEPHEIGHT,WIDTH) \
 	*(iPi) = *(iPi-WIDTH+STEPWIDTH); \
-BLOB_INC_COMP_SAME; \
+BLOB_INC_COMP_SIZE; \
 BLOB_DIMENSION_LEFT(STEPWIDTH); \
 BLOB_DIMENSION_BOTTOM(STEPHEIGHT); 
 

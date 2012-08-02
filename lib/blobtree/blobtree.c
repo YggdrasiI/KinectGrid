@@ -164,7 +164,7 @@ static void debug_print_matrix2(int* ids, int* data, int w, int h, BlobtreeRect 
 }
 
 #ifdef BLOB_COUNT_PIXEL
-static int sum_areas(const Node *root, const int *comp_size){
+static int sum_areas(const Node *root, int *comp_size){
 	int *val=&root->data.area;
 	*val = *(comp_size + root->data.id );
 	if( root->child != NULL) *val += sum_areas(root->child,comp_size);
@@ -272,7 +272,7 @@ static Node* find_connection_components_subcheck(
 	int shr = (roi.height-1)%STEPHEIGHT; // remainder of height/stepheight;
 	int sh = STEPHEIGHT*w;
 	int sh1 = (STEPHEIGHT-1)*w;
-	int sh2 = shr*w;
+//	int sh2 = shr*w;
 
 	int id=-1;//id for next component
 	int a1,a2; // for comparation of g(f(x))=a1,a2=g(f(y)) 
@@ -310,16 +310,16 @@ static Node* find_connection_components_subcheck(
 	printf("triwidth: %i\n", triwidth);
 #endif
 
-	const unsigned char* dS = data+w*roi.y+roi.x;
-	unsigned char* dR = dS+roi.width; //Pointer to right border. Update on every line
+	const unsigned char* const dS = data+w*roi.y+roi.x;
+	const unsigned char* dR = dS+roi.width; //Pointer to right border. Update on every line
 	//unsigned char* dR2 = swr>0?dR-swr-stepwidth-stepwidth:dR; //cut last indizies.
-	unsigned char* dR2 = dR-swr-stepwidth; //cut last indizies.
+	const unsigned char* dR2 = dR-swr-stepwidth; //cut last indizies.
 
-	const unsigned char* dE = dR + (roi.height-1)*w;
-	const unsigned char* dE2 = dE - shr*w;//remove last lines.
+	const unsigned char* const dE = dR + (roi.height-1)*w;
+  const unsigned char* const dE2 = dE - shr*w;//remove last lines.
 
 //int i = w*roi.y+roi.x;
-	unsigned char* dPi = dS; // Pointer to data+i 
+	const unsigned char* dPi = dS; // Pointer to data+i 
 	int* iPi = ids+(dS-data); // Poiner to ids+i
 
 #if VERBOSE > 0
@@ -795,24 +795,26 @@ int* real_ids_inv = calloc( nids,sizeof(int) ); //store for every id with positi
 	for(k=0;k<nids;k++){
 		tmp_id = k;
 		tmp_id2 = *(comp_same+tmp_id); 
-#if VERBOSE > 1
+#if VERBOSE > 0
 printf("%i: (%i->%i) ",k,tmp_id,tmp_id2);
 #endif
 		while( tmp_id2 != tmp_id ){
-#ifdef BLOB_COUNT_PIXEL
-			//move area size to other id.
-			*(comp_size+tmp_id2) += *(comp_size+tmp_id); 
-			*(comp_size+tmp_id) = 0;
-#endif
 			tmp_id = tmp_id2; 
 			tmp_id2 = *(comp_same+tmp_id); 
-#if VERBOSE > 1
+#if VERBOSE > 0
 printf("(%i->%i) ",tmp_id,tmp_id2);
 #endif
 		}
-#if VERBOSE > 1
+#if VERBOSE > 0 
 printf("\n");
 #endif
+
+#ifdef BLOB_COUNT_PIXEL
+			//move area size to other id.
+			*(comp_size+tmp_id2) += *(comp_size+k); 
+			*(comp_size+k) = 0;
+#endif
+
 
 #ifdef BLOB_DIMENSION
 			//update dimension
@@ -855,8 +857,8 @@ printf("\n");
 
 	Node *root = tree;
 	Node *cur  = tree;
-	int parent_id /*, anchor */;
-	int end = w*h;
+//	int parent_id /*, anchor */;
+//	int end = w*h;
 	root->data.id = -1;
 	BlobtreeRect *rect;
 
@@ -1011,8 +1013,8 @@ void blobtree_find_blobs(Blobtree *blob, const unsigned char *data, const int w,
 }
 
 Node *blobtree_first( Blobtree *blob){
-	blob->it = blob->tree;
-	blob->it_depth = -1;
+	blob->it = blob->tree->child;
+	blob->it_depth = 0;
 	return blobtree_next(blob);
 }
 

@@ -71,15 +71,15 @@ static Node* find_connection_components_coarse(
 	int s=roi.x,z=roi.y; //s-spalte, z-zeile
 #endif
 
-	const unsigned char* dS = data+w*roi.y+roi.x;
-	unsigned char* dR = dS+roi.width; //Pointer to right border. Update on every line
-	unsigned char* dR2 = dR-swr; //cut last indizies.
+	const unsigned char* const dS = data+w*roi.y+roi.x;
+	const unsigned char* dR = dS+roi.width; //Pointer to right border. Update on every line
+	const unsigned char* dR2 = dR-swr; //cut last indizies.
 
-	const unsigned char* dE = dR + (roi.height-1)*w;
-	const unsigned char* dE2 = dE - shr*w;//remove last lines.
+	const unsigned char* const dE = dR + (roi.height-1)*w;
+	const unsigned char* const dE2 = dE - shr*w;//remove last lines.
 
 //int i = w*roi.y+roi.x;
-	unsigned char* dPi = dS; // Pointer to data+i //TODO
+	const unsigned char* dPi = dS; // Pointer to data+i //TODO
 	int* iPi = ids+(dS-data); // Poiner to ids+i
 
 	/**** A,A'-CASE *****/
@@ -121,10 +121,10 @@ static Node* find_connection_components_coarse(
 	}
 
 	//correct pointer shift of last for loop step.
-	iPi -= stepwidth-swr;
-	dPi -= stepwidth-swr;
+	iPi -= stepwidth-swr-1;
+	dPi -= stepwidth-swr-1;
 #ifdef BLOB_DIMENSION
-		s -= stepwidth-swr;
+		s -= stepwidth-swr-1;
 #endif
 	
 	//continue with +swr stepwidth
@@ -147,8 +147,8 @@ static Node* find_connection_components_coarse(
 	}
 
 	//move pointer to 'next' row
-	dPi += r+roi.x+sh1+1;
-	iPi += r+roi.x+sh1+1;
+	dPi += r+roi.x+sh1;
+	iPi += r+roi.x+sh1;
 	dR += sh; //rechter Randindex wird in nächste Zeile geschoben.
 	dR2 += sh;
 #ifdef BLOB_DIMENSION
@@ -337,7 +337,7 @@ static Node* find_connection_components_coarse(
 					NEW_COMPONENT_OLD
 				}
 			}else{
-				/**** G-CASE *****/
+				/**** G'-CASE *****/
 				if( *(dPi-sh) <= thresh ){//same component as top neighbour
 					TOP_CHECK(stepheight, sh)
 					// check if left neighbour id can associate with top neigbour id.
@@ -698,15 +698,15 @@ static Node* find_connection_components_coarse(
 
 /* end of main algo */
 
+#if VERBOSE > 0 
 //printf("Matrix of ids:\n");
 //print_matrix(ids,w,h);
 
 //printf("comp_same:\n");
 //print_matrix(comp_same, id+1, 1);
-//debug_print_matrix( ids, w, h, roi, stepwidth, stepheight);
-//printf("\n\n");
-//debug_print_matrix2( ids, comp_same, w, h, roi, stepwidth, stepheight);
-
+debug_print_matrix( ids, w, h, roi, 1, 1);
+debug_print_matrix2( ids, comp_same, w, h, roi, 1, 1);
+#endif
 
 /* Postprocessing.
  * Sum up all areas with connecteted ids.
@@ -723,22 +723,28 @@ int* real_ids_inv = calloc( nids,sizeof(int) ); //store for every id with positi
 	for(k=0;k<nids;k++){
 		tmp_id = k;
 		tmp_id2 = *(comp_same+tmp_id); 
+#if VERBOSE > 0
+printf("%i: (%i->%i) ",k,tmp_id,tmp_id2);
+#endif
 		while( tmp_id2 != tmp_id ){
+
+#ifdef BLOB_COUNT_PIXEL
 			//move area size to other id.
 			*(comp_size+tmp_id2) += *(comp_size+tmp_id); 
 			*(comp_size+tmp_id) = 0;
-#ifdef BLOB_DIMENSION
-			//update dimension
-			if( *( left_index+tmp_id2 ) > *( left_index+tmp_id ) )
-				*( left_index+tmp_id2 ) = *( left_index+tmp_id );
-			if( *( right_index+tmp_id2 ) < *( right_index+tmp_id ) )
-				*( right_index+tmp_id2 ) = *( right_index+tmp_id );
-			if( *( bottom_index+tmp_id2 ) < *( bottom_index+tmp_id ) )
-				*( bottom_index+tmp_id2 ) = *( bottom_index+tmp_id );
 #endif
+
 			tmp_id = tmp_id2; 
 			tmp_id2 = *(comp_same+tmp_id); 
+
+#if VERBOSE > 0
+printf("(%i->%i) ",tmp_id,tmp_id2);
+#endif
 		}
+#if VERBOSE > 0 
+printf("\n");
+#endif
+
 
 		//check if area id already identified as real id
 		found = 0;
@@ -769,8 +775,8 @@ int* real_ids_inv = calloc( nids,sizeof(int) ); //store for every id with positi
 
 	Node *root = tree;
 	Node *cur  = tree;
-	int anchor, parent_id;
-	int end = w*h;
+	int anchor;
+//	int end = w*h;
 	root->data.id = -1;
 	BlobtreeRect *rect;
 
@@ -817,7 +823,9 @@ int* real_ids_inv = calloc( nids,sizeof(int) ); //store for every id with positi
 	}
 
 	//sum up node areas
+#ifdef BLOB_COUNT_PIXEL
 	sum_areas(root->child, comp_size);
+#endif
 
 #ifdef BLOB_SORT_TREE
 	//sort_tree(root->child);

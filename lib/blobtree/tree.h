@@ -90,8 +90,10 @@ static void print_tree_filtered(Node *root, int shift, int minA){
 	int shift2=0;
 	//printf("• ");
 	//printf("%i (%i) ",root->data.id, root->data.area);
-	printf("%2i (w%i,h%i,a%2i) ",root->data.id, root->width, root->height, root->data.area);
-	shift2+=12+4;
+	//printf("%2i (w%i,h%i,a%2i) ",root->data.id, root->width, root->height, root->data.area);
+	//shift2+=9+4;
+	printf("%2i (area:%3i) ",root->data.id, root->data.area);
+	shift2+=15;
 	if( root->data.area < minA){
 		printf("\n");
 		return;
