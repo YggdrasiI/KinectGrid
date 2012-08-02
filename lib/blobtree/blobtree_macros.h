@@ -320,12 +320,12 @@ if( *(DPI) > thresh ){ \
 /* | s |swr|,  s-stewidth
  * 1xxxXxxx
  * */
-#define SUBCHECK_ROW(DPI,IPI,STEPWIDTH,W,SH,S,Z,SWR) {\
-	const unsigned char *pc = DPI+SWR; \
+#define SUBCHECK_ROW(DPI,IPI,STEPWIDTH,W,SH,S,Z,SWR) { \
+	const unsigned char * const pc = DPI+SWR; \
 	DPI -= STEPWIDTH-1; \
 	IPI -= STEPWIDTH-1; \
 	SZ(S -= STEPWIDTH-1); \
-	for( ;DPI<=pc; ){ \
+	for( ;DPI<pc; ){ \
 		if( *(DPI) > thresh ){ \
 			if( *(DPI-1) > thresh ){ \
 				LEFT_CHECK(1) \
@@ -345,6 +345,19 @@ if( *(DPI) > thresh ){ \
 	/*DPI -= SWR; */ \
 	/*IPI -= SWR; */ \
 	/*S -= SWR; */ \
+	if( *(DPI) > thresh ){ \
+		if( *(DPI-1) > thresh ){ \
+			LEFT_CHECK(1) \
+		}else{ \
+			NEW_COMPONENT( *(IPI-1) ); \
+		} \
+	}else{ \
+		if( *(DPI-1) <= thresh ){ \
+			LEFT_CHECK(1) \
+		}else{ \
+			NEW_COMPONENT( *(IPI-1) ); \
+		} \
+	} \
 }
 
 /* Check of row without consider other rows. */
@@ -356,7 +369,7 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART1a(DPI,IPI,STEPWIDTH,W,SH,S,Z) {\
-	const unsigned char *pc = DPI-SH; \
+	const unsigned char * const pc = DPI-SH; \
 	DPI -= SH+STEPWIDTH-1; \
 	IPI -= SH+STEPWIDTH-1; \
 	SZ(S -= STEPWIDTH-1); \
@@ -402,7 +415,7 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART1b(DPI,IPI,STEPWIDTH,W,SH,S,Z) {\
-	const unsigned char *pc = DPI-SH; \
+	const unsigned char * const pc = DPI-SH; \
 	DPI -= SH+STEPWIDTH-1; \
 	IPI -= SH+STEPWIDTH-1; \
 	SZ(S -= STEPWIDTH-1); \
@@ -463,7 +476,7 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART1bb(DPI,IPI,STEPWIDTH,W,SH,S,Z) {\
-	const unsigned char *pc = DPI-SH; \
+	const unsigned char * const pc = DPI-SH; \
 	int shift = W, shh=1; \
 	DPI -= SH+STEPWIDTH-1; \
 	IPI -= SH+STEPWIDTH-1; \
@@ -522,7 +535,7 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART1c(DPI,IPI,STEPWIDTH,W,SH,S,Z) {\
-	const unsigned char *pc = DPI-SH+STEPWIDTH; \
+	const unsigned char * const pc = DPI-SH+STEPWIDTH; \
 	DPI -= SH-1; \
 	IPI -= SH-1; \
 	SZ(++S); \
@@ -571,7 +584,7 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART1d(DPI,IPI,STEPWIDTH,W,SH,S,Z) {\
-	const unsigned char *pc = DPI-SH+STEPWIDTH; \
+	const unsigned char * const pc = DPI-SH+STEPWIDTH; \
 	DPI -= SH-1; \
 	IPI -= SH-1; \
 	SZ(++S); \
@@ -634,7 +647,7 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART1dd(DPI,IPI,STEPWIDTH,W,SH,S,Z) {\
-	const unsigned char *pc = DPI-SH+STEPWIDTH; \
+	const unsigned char * const pc = DPI-SH+STEPWIDTH; \
 	int shift=W, shh=1; \
 	DPI -= SH-1; \
 	IPI -= SH-1; \
@@ -710,7 +723,7 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART2a(DPI,IPI,STEPWIDTH,W,SH,S,Z) { \
-	const unsigned char *pc = DPI-W; \
+	const unsigned char * const pc = DPI-W; \
 	DPI -= SH+STEPWIDTH; \
 	IPI -= SH+STEPWIDTH; \
 	SZ(S -= STEPWIDTH); \
@@ -747,7 +760,7 @@ if( *(DPI) > thresh ){ \
  * X0000
  */
 #define SUBCHECK_PART2b(DPI,IPI,STEPWIDTH,W,SH,S,Z) { \
-	const unsigned char *pc = DPI; \
+	const unsigned char * const pc = DPI; \
 	DPI -= sh1; \
 	IPI -= sh1; \
 	SZ(Z -= STEPWIDTH-1); \
@@ -780,7 +793,7 @@ if( *(DPI) > thresh ){ \
  * 000X
  */
 #define SUBCHECK_PART3a(DPI,IPI,STEPWIDTH,W,SH,S,Z) { \
-	const unsigned char *pc = DPI-STEPWIDTH; \
+	const unsigned char * const pc = DPI-STEPWIDTH; \
 	DPI -= sh1/*SH-W*/+STEPWIDTH; \
 	IPI -= sh1/*SH-W*/+STEPWIDTH; \
 	SZ(S -= STEPWIDTH); \
@@ -816,7 +829,7 @@ if( *(DPI) > thresh ){ \
  * 000X
  */
 #define SUBCHECK_PART3b(DPI,IPI,STEPWIDTH,W,SH,S,Z) { \
-	const unsigned char *pc = DPI-W; \
+	const unsigned char * const pc = DPI-W; \
 	DPI -= sh1/*SH-W*/; \
 	IPI -= sh1/*SH-W*/; \
 	SZ(Z -= STEPWIDTH-1); \
@@ -846,7 +859,7 @@ if( *(DPI) > thresh ){ \
  * 1xxxx
  */
 #define SUBCHECK_PART4a(DPI,IPI,STEPWIDTH,W,SH,S,Z) { \
-	const unsigned char *pc = DPI; \
+	const unsigned char * const pc = DPI; \
 	DPI -= STEPWIDTH-1; \
 	IPI -= STEPWIDTH-1; \
 	SZ(S -= STEPWIDTH-1); \
@@ -910,7 +923,7 @@ if( *(DPI) > thresh ){ \
  * 1xxX xx
  * */
 #define SUBCHECK_PART6a(DPI,IPI,STEPWIDTH,W,SH,S,Z,SWR) { \
-	const unsigned char *pc = DPI-W+SWR; \
+	const unsigned char * const pc = DPI-W+SWR; \
 	DPI -= sh1/*SH-W*/+STEPWIDTH; \
 	IPI -= sh1/*SH-W*/+STEPWIDTH; \
 	SZ(S -= STEPWIDTH); \
@@ -957,7 +970,7 @@ if( *(DPI) > thresh ){ \
  * 1xxX xx
  * */
 #define SUBCHECK_PART6b(DPI,IPI,STEPWIDTH,W,SH,S,Z,SWR) { \
-	const unsigned char *pc = DPI+SWR; \
+	const unsigned char * const pc = DPI+SWR; \
 	DPI -= sh1/*SH-W*/; \
 	IPI -= sh1/*SH-W*/; \
 	SZ(Z -= STEPWIDTH-1); \

@@ -344,7 +344,7 @@ static Node* find_connection_components_subcheck(
 	 * */
 
 	//top border
-	for(;dPi<dR2;iPi += stepwidth,dPi += stepwidth){
+	for( ;dPi<dR2; ){
 		if( *(dPi) > thresh ){
 			/**** B-CASE *****/
 			if( *(dPi-stepwidth) > thresh ){//same component as left neighbour
@@ -360,18 +360,20 @@ static Node* find_connection_components_subcheck(
 				SUBCHECK_ROW(dPi,iPi,stepwidth,w,sh,s,z,0);
 			}
 		}
+		iPi += stepwidth;
+		dPi += stepwidth;
 #ifdef BLOB_DIMENSION
 		s += stepwidth;
 #endif
 	}
 
-	//now process last, bigger, cell.
+	//now process last, bigger, cell. stepwidth+swr indizies left.
 	//SUBCHECK_ROW(dPi,iPi,stepwidth,w,sh,s,z,swr);
 	SUBCHECK_ROW(dPi,iPi,stepwidth,w,sh,s,z,swr);
-	/* Pointer is stepwidth+swr+1 behind currrent element.
+	/* Pointer is stepwidth+swr behind currrent element.
 	 * Move pointer to 'next' row.*/
-	dPi += r+roi.x+sh1;
-	iPi += r+roi.x+sh1;
+	dPi += r+roi.x+sh1+1;
+	iPi += r+roi.x+sh1+1;
 
 	dR += sh; // Move right border to next row.
 	dR2 += sh;

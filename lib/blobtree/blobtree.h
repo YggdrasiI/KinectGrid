@@ -12,7 +12,7 @@ extern "C" {
 
 /* Sort tree by child node structure and area size. This provide 
 	 some robustness on rotation for tree comparison. */
-#define BLOB_SORT_TREE
+//#define BLOB_SORT_TREE
 
 /* Set this env. variable to enable diagonal checks */
 #define BLOB_DIAGONAL_CHECK
@@ -29,7 +29,7 @@ extern "C" {
  * Do not define BLOB_COUNT_PIXEL if you want use stepwidth>1
  * to cut of some operations.
  */
-#define BLOB_COUNT_PIXEL
+//#define BLOB_COUNT_PIXEL
 
 /* See README
  */
