@@ -1,5 +1,10 @@
 Linux clone of MultiMultiTouchTouch aka Space Palette of Tim Thompson ( http://spacepalette.com ).
 
+Use your Kinect to define 'virtual' touchpads and 
+send touch information in TUIO format. Look at the
+wiki page for some screenshots.
+
+Even on ARM platforms (I.e. beagleboard) are 30 fps reached.
 
 
 Known Problems:
