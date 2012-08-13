@@ -9,6 +9,9 @@
 #include <boost/signal.hpp>
 #include <boost/bind.hpp>
 
+//for usleep
+#include <unistd.h>
+
 #include "constants.h"
 #include "MyFreenectDevice.h"
 #include "ImageAnalysis.h"
@@ -199,9 +202,20 @@ int main(int argc, char **argv) {
 			else
 				device->setRoi(false,Rect(0,0,0,0));
 
-			device->getVideo(rgbMat);
-			cv::imshow("img",rgbMat(settingKinect->m_roi));
-			cvWaitKey(33);
+			while( !device->getVideo(rgbMat) ){
+				usleep(50);
+			}
+
+			imshowNbr = onion->getView(imshowNbr);			
+			switch (imshowNbr){
+				case SHOW_DEPTH:
+					cv::imshow("img",rgbMat);
+				case SHOW_MASK:
+					cv::imshow("img",rgbMat(settingKinect->m_roi));
+			}
+
+
+			fps.next(stdout);
 
 		//get 8 bit depth image
 		}else if(withKinect){
