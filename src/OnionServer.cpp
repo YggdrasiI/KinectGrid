@@ -51,28 +51,6 @@ int check_filename(const char *filename){
 
 	return ret;
 }
-/**
- * @short Calculates the given mandelbrot, and returns the PNG image
- * 
- * It can receive several query parameters, but all are optional:
- * 
- * * X, Y -- Top left complex area position
- * * W, H -- Width and Height of the complex area to show
- * * width, height -- Image size
- */
-int mandelbrot(void *p, onion_request *req, onion_response *res)
-{
-	int width=atoi(onion_request_get_queryd(req,"width","256"));
-	int height=atoi(onion_request_get_queryd(req,"height","256"));
-	double left=atof(onion_request_get_queryd(req,"X","-2"));
-	
-	unsigned char *image=new unsigned char[width*height];
-	unsigned char *imagep=image;
- 	
-	onion_png_response(image, 1, width, height, res);
-	delete image;
-	return OCS_PROCESSED;
-}
 
 // This has to be extern, as we are compiling C++
 extern "C"{
@@ -203,6 +181,14 @@ int OnionServer::stop_server()
 int OnionServer::updateSetting(onion_request *req, onion_response *res){
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 	switch(actionid){
+		case 7:{  //load masks
+						 m_psettingKinectGrid->setMode(LOAD_MASKS);
+					 }
+					 break;
+		case 6:{ //save masks
+						 m_psettingKinectGrid->setMode(SAVE_MASKS);
+					 }
+					 break;
 		case 5:{ //select view
 							//m_view = atoi( onion_request_get_queryd(req,"view","-1") );
 							m_view = atoi( onion_request_get_post(req,"view") );

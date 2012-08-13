@@ -162,6 +162,16 @@ function repoke(){
 function setView(i){
 	send("json?actionid=5","view="+i);
 }
+
+function saveMasks(){
+	send("json?actionid=6","");
+}
+
+function loadMasks(){
+	send("json?actionid=7","");
+}
+
+
 function deepCopy(p,c) {
 	var c = c||{}; for (var i in p) {
 		if (typeof p[i] === 'object') {

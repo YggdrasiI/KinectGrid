@@ -210,6 +210,7 @@ int main(int argc, char **argv) {
 			switch (imshowNbr){
 				case SHOW_DEPTH:
 					cv::imshow("img",rgbMat);
+					break;
 				case SHOW_MASK:
 					cv::imshow("img",rgbMat(settingKinect->m_roi));
 			}
@@ -230,7 +231,7 @@ int main(int argc, char **argv) {
 					break;
 				case DEPTH_MASK_DETECTION:
 					{
-						 mode = ia->depth_mask_detection(); 
+						mode = ia->depth_mask_detection(); 
 					}
 					break;
 				case HAND_DETECTION:
@@ -247,13 +248,57 @@ int main(int argc, char **argv) {
 							tuio2.send_blobs(tracker.getBlobs(), settingKinect->m_areas, settingKinect->m_roi);
 					}
 					break;
+				case LOAD_MASKS:
+					{
+						//filename (with extension....)	
+						const char* sname = settingKinectGrid->getString("lastSetting");
+
+						std::ostringstream depth;
+						depth << sname << "_depth" << ".png";
+						Mat tmpLoadImg1 = cv::imread(depth.str(),0);
+						if(tmpLoadImg1.empty()) {
+							printf("Can't load depth mask %s_depth.png. \n", sname );
+						}else{
+							ia->m_depthMaskWithoutThresh = tmpLoadImg1;
+						}
+
+						std::ostringstream area;
+						area << sname << "_area" << ".png";
+						Mat tmpLoadImg2 = cv::imread(area.str(),0);
+						if(tmpLoadImg2.empty()) {
+							printf("Can't load area mask %s_area.png. \n", sname );
+						}else{
+							ia->m_areaMask = tmpLoadImg2;
+						}
+
+						ia->m_areaCol_ok = false;
+						ia->finishDepthMaskCreation();
+						mode = HAND_DETECTION;
+					}
+					break;
+				case SAVE_MASKS:
+					{
+						//filename (with extension....)	
+						const char* sname = settingKinectGrid->getString("lastSetting");
+
+						std::ostringstream depth;
+						depth << sname << "_depth" << ".png";
+						cv::imwrite(depth.str(),ia->m_depthMaskWithoutThresh);
+
+						std::ostringstream area;
+						area << sname << "_area" << ".png";
+						cv::imwrite(area.str(),ia->m_areaMask);
+
+						mode = HAND_DETECTION;
+					}
+					break;
 				case AREA_DETECTION_END:
-						ia->m_area_detection_step = 3;
-						mode = ia->area_detection(&tracker);
-						break;
+					ia->m_area_detection_step = 3;
+					mode = ia->area_detection(&tracker);
+					break;
 				case AREA_DETECTION_START:
-						ia->m_area_detection_step = 0;
-						imshowNbr = SHOW_AREAS;
+					ia->m_area_detection_step = 0;
+					imshowNbr = SHOW_AREAS;
 				case AREA_DETECTION:
 				default:
 					{

@@ -27,12 +27,12 @@ public:
 	void genColoredAreas();
 	Mat getColoredAreas();
 	Mat &getFrontMask();
+	void finishDepthMaskCreation();
 private:
 	void repoke_init();
 	bool repoke_step(Area& area);
 	void repoke_finish();
 	void addAreaThresh(/*Mat& src,*/ std::vector<Area> areas, Mat& areaMask,  Mat& dst);
-	void finishDepthMaskCreation();
 public:
 	Mat m_depthf  ;
 	Mat m_filterMat;
@@ -47,10 +47,10 @@ public:
 	bool m_maskFront_ok;
 	int m_area_detection_step;
 private:
+	Mat m_area_detection_mask;
 	MyFreenectDevice* m_pdevice;
 	SettingKinect* m_pSettingKinect;
 	int m_depthMaskCounter;//use -depthMaskCounter Frames for mask generation
-	Mat m_area_detection_mask;
 	std::vector<Area> m_area_detection_areas;
 };
 

@@ -428,4 +428,5 @@ void ImageAnalysis::finishDepthMaskCreation(){
 		float b2 = (255-m)*2048.0/255.0;	
 		m_depthMask.convertTo(m_depthMask16U, CV_16UC1, ainv, b2);
 	}
+	m_depthMaskCounter = 0;
 }
