@@ -5,25 +5,27 @@ MyFreenectDevice::MyFreenectDevice(freenect_context *_ctx, int _index):
 	Freenect::FreenectDevice(_ctx, _index),
 	m_buffer_depth(FREENECT_DEPTH_11BIT),
 	m_buffer_rgb(FREENECT_VIDEO_RGB),
-	m_gamma(2048),
+//	m_gamma(2048),
 	m_new_rgb_frame(false),
 	m_new_depth_frame(false),
 	m_depthMat(Size(640,480),CV_16UC1),
 	m_rgbMat(Size(640,480),CV_8UC3,Scalar(0))
 {
 
-
+/*
 	for( unsigned int i = 0 ; i < 2048 ; i++) {
 		float v = i/2048.0;
 		v = std::pow(v, 3)* 6;
 		m_gamma[i] = v*6*256;
 	}
+	*/
 }
 
 MyFreenectDevice::~MyFreenectDevice()
 {
 	m_depth_mutex.lock();
-	stopDepth();
+	//stopVideo();
+	//stopDepth();
 	m_depth_mutex.unlock();
 	//freenect.deleteDevice(0); 
 }
@@ -31,7 +33,7 @@ MyFreenectDevice::~MyFreenectDevice()
 	// Do not call directly even in child
 void MyFreenectDevice::VideoCallback(void* _rgb, uint32_t timestamp)
 {
-	std::cout << "RGB callback" << std::endl;
+	//std::cout << "RGB callback" << std::endl;
 	m_rgb_mutex.lock();
 	uint8_t* rgb = static_cast<uint8_t*>(_rgb);
 	m_rgbMat.data = rgb;

@@ -110,10 +110,12 @@ int main(int argc, char **argv) {
 	Fps fps;
 
 	bool sleepmode(false);
+	bool rgbmode(false);
 	if( argc > 1){
 		int wk = atoi(argv[1]);
 		if(wk==0) withKinect = false;
-		if(wk>1) sleepmode = true;
+		if(wk==1) sleepmode = true;
+		if(wk==2) rgbmode = true; /* just for debugging libfreenect */
 	}
 
 	time_t last_blob_detection = time(NULL);
@@ -169,8 +171,10 @@ int main(int argc, char **argv) {
 		settingKinect->updateSig.connect(boost::bind(&MyFreenectDevice::update,device, _1, _2));
 		settingKinect->updateSig.connect(boost::bind(&ImageAnalysis::resetMask,ia, _1, _2));
 
-		//device.startVideo();
-		device->startDepth();
+		if( rgbmode )
+			device->startVideo();
+		else
+			device->startDepth();
 
 		/* This should fix the problem, that opencv window did not closed on quit.
 		 * See http://stackoverflow.com/questions/8842901/opencv-closing-the-image-display-window
@@ -186,12 +190,21 @@ int main(int argc, char **argv) {
 	setlocale(LC_NUMERIC, "C");
 
 	while (!die) {
-		//device.getVideo(rgbMat);
-		//cv::imshow("rgb", rgbMat);
-		//device.getDepth(depthMat);
+
+		if( rgbmode ){
+			Mat rgbMat(Size(640,480),CV_8UC3,Scalar(0));
+
+			if( settingKinect->m_clipping)
+				device->setRoi(true,settingKinect->m_roi);
+			else
+				device->setRoi(false,Rect(0,0,0,0));
+
+			device->getVideo(rgbMat);
+			cv::imshow("img",rgbMat(settingKinect->m_roi));
+			cvWaitKey(33);
 
 		//get 8 bit depth image
-		if(withKinect){
+		}else if(withKinect){
 			FunctionMode mode = settingKinectGrid->getModeAndLock();
 
 			switch (mode){
@@ -313,8 +326,11 @@ int main(int argc, char **argv) {
 	delete onion;
 
 	if(withKinect){
-		//device->stopVideo();
-		//device->stopDepth();
+		if(rgbmode)
+			device->stopVideo();
+		else
+			device->stopDepth();
+
 		delete ia;
 		delete freenect;
 		cvDestroyAllWindows();
