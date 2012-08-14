@@ -300,9 +300,15 @@ int main(int argc, char **argv) {
 					ia->m_area_detection_step = 0;
 					imshowNbr = SHOW_AREAS;
 				case AREA_DETECTION:
-				default:
 					{
 						mode = ia->area_detection(&tracker);
+					}
+					break;
+				case QUIT:
+				default:
+					{
+						printf("End main loop\n");
+						die = true;
 					}
 					break;
 			}
@@ -354,6 +360,13 @@ int main(int argc, char **argv) {
 			}
 
 		}else{
+			FunctionMode mode = settingKinectGrid->getModeAndLock();
+			if( mode == QUIT ){
+				printf("End main loop\n");
+				die = true;
+			}
+			settingKinectGrid->unlockMode(mode);
+
 			sleep(1);
 		}
 

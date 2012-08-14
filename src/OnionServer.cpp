@@ -180,7 +180,12 @@ int OnionServer::stop_server()
 
 int OnionServer::updateSetting(onion_request *req, onion_response *res){
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
+	printf("Actionid: %i \n", actionid);
 	switch(actionid){
+		case 8:{  //quit programm
+						 m_psettingKinectGrid->setMode(QUIT);
+					 }
+					 break;
 		case 7:{  //load masks
 						 m_psettingKinectGrid->setMode(LOAD_MASKS);
 					 }

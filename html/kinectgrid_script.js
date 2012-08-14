@@ -164,11 +164,15 @@ function setView(i){
 }
 
 function saveMasks(){
-	send("json?actionid=6","");
+	send("json?actionid=6","foo=1");
 }
 
 function loadMasks(){
-	send("json?actionid=7","");
+	send("json?actionid=7","foo=1");
+}
+
+function quit(){
+	send("json?actionid=8","foo=1");
 }
 
 
