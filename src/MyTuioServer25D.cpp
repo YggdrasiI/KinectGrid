@@ -19,12 +19,12 @@ static void localCoords(cBlob *pb, Area* pa, cv::Rect* roi, float *lx, float *ly
 	y = (y<0)?-1+(1+y)*(1+y):y = 1-(1-y)*(1-y);
 
 	/* Map to [0,1) */
-			*lx = min( (x+1)/2, 0.99999 );
-			*ly = min( (y+1)/2, 0.99999 );
+			*lx = min( (x+1)/2, 0.99999f );
+			*ly = min( (y+1)/2, 0.99999f );
 
 	/* Depth */
-	z = (pb->location.z - pa->depth)/25.0/*100.0*/;
-	*lz = (z<0)?0:((z<1)?z:1);
+	z = (pb->location.z - pa->depth)/25.0f/*100.0*/;
+	*lz = (z<0)?0:((z<1)?z:0.99999f);
 }
 void MyTuioServer25D::send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& areas, cv::Rect& roi){
 

@@ -19,8 +19,8 @@ static void localCoords(cBlob *pb, Area* pa, cv::Rect* roi, float *lx, float *ly
 	y = (y<0)?-1+(1+y)*(1+y):y = 1-(1-y)*(1-y);
 
 	/* Map to [0,1) */
-			*lx = min( (x+1)/2, 0.99999 );
-			*ly = min( (y+1)/2, 0.99999 );
+			*lx = min( (x+1)/2, 0.99999f );
+			*ly = min( (y+1)/2, 0.99999f );
 }
 void MyTuioServer::send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& areas, cv::Rect& roi){
 
