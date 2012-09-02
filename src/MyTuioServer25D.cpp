@@ -7,7 +7,7 @@ inline long tuioSessionId(cBlob* b){
 }
 
 static void localCoords(cBlob *pb, Area* pa, cv::Rect* roi, float *lx, float *ly, float *lz){
-//	printf("Vars: (%f - (%i-%i))  / %i\n", pb->location.x, pa->rect.x, roi->x, pa->rect.width);
+	//printf("Vars: (%f - (%i-%i))  / %i\n", pb->location.x, pa->rect.x, roi->x, pa->rect.width);
 	float x,y,z;
 	/*hflip coords. Where is the efficient position for flipping the whole input? convertTo? Is flip() fast?*/
 	/* Map on [-1,1] */
@@ -15,12 +15,12 @@ static void localCoords(cBlob *pb, Area* pa, cv::Rect* roi, float *lx, float *ly
 	y = 1 - 2*(pb->location.y - pa->rect.y + roi->y ) / (float)pa->rect.height;
 
   /* Gain distanace to origin */
-	x = (x<0)?-1+(1+x)*(1+x):x = 1-(1-x)*(1-x);
-	y = (y<0)?-1+(1+y)*(1+y):y = 1-(1-y)*(1-y);
+	x = (x<0)?-1+(1+x)*(1+x):1-(1-x)*(1-x);
+	y = (y<0)?-1+(1+y)*(1+y):1-(1-y)*(1-y);
 
 	/* Map to [0,1) */
-			*lx = min( (x+1)/2, 0.99999f );
-			*ly = min( (y+1)/2, 0.99999f );
+			*lx = min((x+1)/2, 0.99999f);//fmin and min with same order.
+			*ly = min((y+1)/2, 0.99999f);
 
 	/* Depth */
 	z = (pb->location.z - pa->depth)/25.0f/*100.0*/;

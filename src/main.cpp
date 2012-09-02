@@ -186,6 +186,9 @@ int main(int argc, char **argv) {
 		//cvStartWindowThread();
 
 		namedWindow("img",CV_WINDOW_AUTOSIZE);
+
+		//Set mode to LOAD_MASKS. This try to load masks and repoke areas.
+		settingKinectGrid->setMode(LOAD_MASKS);
 	}
 
 	/* Local needs to be set to avoid errors with printf + float values.
@@ -252,16 +255,29 @@ int main(int argc, char **argv) {
 					{
 						//filename (with extension....)	
 						const char* sname = settingKinectGrid->getString("lastSetting");
+						bool loadingFailed = false;
+
+						std::ostringstream frame;
+						frame << sname << "_frame" << ".png";
+						Mat tmpLoadImg0 = cv::imread(frame.str(),0);
+						if(tmpLoadImg0.empty()) {
+							printf("Can't load depth mask %s_depth.png. \n", sname );
+							loadingFailed = true;
+						}else{
+							ia->m_areaGrid = tmpLoadImg0;
+						}
 
 						std::ostringstream depth;
 						depth << sname << "_depth" << ".png";
 						Mat tmpLoadImg1 = cv::imread(depth.str(),0);
 						if(tmpLoadImg1.empty()) {
 							printf("Can't load depth mask %s_depth.png. \n", sname );
+							loadingFailed = true;
 						}else{
 							ia->m_depthMaskWithoutThresh = tmpLoadImg1;
 						}
 
+						/*
 						std::ostringstream area;
 						area << sname << "_area" << ".png";
 						Mat tmpLoadImg2 = cv::imread(area.str(),0);
@@ -270,10 +286,20 @@ int main(int argc, char **argv) {
 						}else{
 							ia->m_areaMask = tmpLoadImg2;
 						}
-
+						
 						ia->m_areaCol_ok = false;
 						ia->finishDepthMaskCreation();
-						mode = HAND_DETECTION;
+						*/
+						// repoke to generate m_areaMask and eval position+dimensions of areas.
+						if( loadingFailed){
+							mode = HAND_DETECTION;
+						}else{
+							//set some flags to avoid possible new evaluation of front/depth mask.
+							ia->m_maskFront_ok = true;
+							ia->finishDepthMaskCreation(); //set m_depthMaskCounter to zero;
+
+							mode = REPOKE_DETECTION;
+						}
 					}
 					break;
 				case SAVE_MASKS:
@@ -281,13 +307,19 @@ int main(int argc, char **argv) {
 						//filename (with extension....)	
 						const char* sname = settingKinectGrid->getString("lastSetting");
 
+						std::ostringstream frame;
+						frame << sname << "_frame" << ".png";
+						cv::imwrite(frame.str(),ia->m_areaGrid);
+
 						std::ostringstream depth;
 						depth << sname << "_depth" << ".png";
 						cv::imwrite(depth.str(),ia->m_depthMaskWithoutThresh);
 
+						//This image gives only an overview and is irrelevant.
 						std::ostringstream area;
 						area << sname << "_area" << ".png";
-						cv::imwrite(area.str(),ia->m_areaMask);
+						//cv::imwrite(area.str(),ia->m_areaMask);
+						cv::imwrite(area.str(),ia->getColoredAreas());
 
 						mode = HAND_DETECTION;
 					}
