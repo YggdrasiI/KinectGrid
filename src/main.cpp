@@ -402,6 +402,7 @@ int main(int argc, char **argv) {
 			sleep(1);
 		}
 
+		cvWaitKey(500);
 		char k = cvWaitKey(10);
 		if( k == 27 ){
 			printf("End main loop\n");

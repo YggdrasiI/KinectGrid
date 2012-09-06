@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 # Clipping require modified libfreenect
 OPTION(LIBFREENECT_OPT_CLIPPING "Enable clipping option. Require modified libfreenect driver." OFF)
 OPTION(MYBLOB "Use own lib for blob detection" ON)
+OPTION(CENTER_ADJUSTMENT "Extended search of maximal depth of blob and better midpoint detection." ON)
 
 #set(PG_FLAGS "-O2 -pg -g -fno-omit-frame-pointer -DNDEBUG -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls ")
 
@@ -44,6 +45,10 @@ else(MYBLOB)
 	message(STATUS "Use cvblobslib for blob detection.")
 endif(MYBLOB)
 ## end set env variables
+
+if(CENTER_ADJUSTMENT)
+	add_definitions(-DCENTER_ADJUSTMENT)
+endif(CENTER_ADJUSTMENT)
 
 ## add include dirs and lib dirs of above packages
 include_directories(

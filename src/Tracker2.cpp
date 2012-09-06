@@ -102,33 +102,35 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 		 }
 		*/
 
-		temp.location.x = temp.origin.x = x;
-		temp.location.y = temp.origin.y = y;
-		temp.min.x = min_x; temp.min.y = min_y;
-		temp.max.x = max_x; temp.max.y = max_y;
-
+#ifdef CENTER_ADJUSTMENT
+		//Improved Detection of blob midpoint require big rect.
+		Rect r(roi->x,roi->y,roi->width,roi->height);
+#else
 		Rect r( x-3, y-3, min(7,max_x-min_x), min(7, max_y-min_y));
+#endif
 
-		/* Depth detection. The measurement method is flexible. */
+		Mat matR = mat(r);
+
+#ifdef CENTER_ADJUSTMENT
+		/* Approximante position of tip of Blob
+		 * */
+		temp.back.x = x;
+		temp.back.y = y;
+
+		uint8_t thresh;
 		if( m_pSettingKinect->m_areaThresh ){
-			/* Mean is ok, because all pixels of the blob are in front of the frame. */
-			max_depth = mean( mat(r), mat(r) )[0]+4;/*correct blur(1) and area thresh shift (3)*/
-
-		}else	if( pareas != NULL){
-			/* Remove values behind the area depth and count mean of rest.
-				This is problematic/choppy if to many pixels are removed.
-			*/
-			max_depth = max( (*pareas)[temp.areaid-1].depth-22, 
-					mean( mat(r), mat(r)>(*pareas)[temp.areaid-1].depth-2 )[0] + 1);
-
+			//Do not use constant thresh. matR already includes this (pointwise) information.
+			thresh = 0;
+		}else if( pareas != NULL){
+			//use depthvalue of area as thresh.
+			thresh = (*pareas)[temp.areaid-1].depth-2;
+			if(thresh>252) thresh=0; 
 		}else{
-			/* Very few information. Use maximum of blob. (Choppy).
-			 * Can be improved, if mean of i.e. 10 biggest values is used
-			 * minMaxLoc require filtered/blured images.
-			 * */
-			//max_depth = 0;
-			minMaxLoc( mat(r), &min_depth, &max_depth, NULL, NULL, mat(r) );
+			//use general back value as thresh.
+			thresh =  m_pSettingKinect->m_marginBack;
 		}
+		get_tip(r, matR, thresh, &x, &y, &max_depth);
+
 
 		/* Compare depth of hand with depth of area and throw blob away if hand to far away. */
 		if(pareas != NULL && max_depth - (*pareas)[temp.areaid-1].depth < -1 ){
@@ -137,7 +139,50 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 			continue ;
 		}
 
+		temp.location.x = temp.origin.x = x;
+		temp.location.y = temp.origin.y = y;
 		temp.location.z = temp.origin.z = max_depth;
+
+		printf("L: %f %f C: %f %f \n",temp.location.x,temp.location.y,temp.back.x,temp.back.y);
+
+#else
+
+		temp.location.x = temp.origin.x = x;
+		temp.location.y = temp.origin.y = y;
+
+		/* Depth detection. The measurement method is flexible. */
+		if( m_pSettingKinect->m_areaThresh ){
+			/* Mean is ok, because all pixels of the blob are in front of the frame. */
+			max_depth = mean( matR, matR )[0]+4;/*correct blur(1) and area thresh shift (3)*/
+
+		}else	if( pareas != NULL){
+			/* Remove values behind the area depth and count mean of rest.
+				This is problematic/choppy if to many pixels are removed.
+			*/
+			max_depth = max( (*pareas)[temp.areaid-1].depth-22, 
+					mean( matR, matR>(*pareas)[temp.areaid-1].depth-2 )[0] + 1);
+
+		}else{
+			/* Very few information. Use maximum of blob. (Choppy).
+			 * Can be improved, if mean of i.e. 10 biggest values is used
+			 * minMaxLoc require filtered/blured images.
+			 * */
+			//max_depth = 0;
+			minMaxLoc( matR, &min_depth, &max_depth, NULL, NULL, matR );
+		}
+
+
+		/* Compare depth of hand with depth of area and throw blob away if hand to far away. */
+		if(pareas != NULL && max_depth - (*pareas)[temp.areaid-1].depth < -1 ){
+			//printf("Hand not reached area depth.\n");
+			curNode = blobtree_next(m_blob);
+			continue ;
+		}
+		temp.location.z = temp.origin.z = max_depth;
+#endif
+
+		temp.min.x = min_x; temp.min.y = min_y;
+		temp.max.x = max_x; temp.max.y = max_y;
 
 		blobs.push_back(temp);
 		curNode = blobtree_next(m_blob);
@@ -209,11 +254,24 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 				if(true || ! *m_pnotDrawBlob ){
 					cvLine(&img,
 							Point((int)tb.origin.x,(int)tb.origin.y),
-							Point((int)tb.location.x,(int)tb.location.y),Scalar(244),2);
+							Point((int)tb.location.x,(int)tb.location.y),Scalar(230),2);
 					cvRectangle(&img,
 							Point((int)tb.min.x,(int)tb.min.y),
 							Point((int)tb.max.x,(int)tb.max.y),Scalar(255),2);
+					/**/
+					//test barycenter
+					cvRectangle(&img,
+							Point((int)tb.min.x,(int)tb.min.y),
+							Point((int)tb.max.x,(int)tb.max.y),Scalar(50),-1);
+					cvRectangle(&img,
+							Point((int)tb.back.x-2,(int)tb.back.y-2),
+							Point((int)tb.back.x+2,(int)tb.back.y+2),Scalar(200),2);
+					cvRectangle(&img,
+							Point((int)tb.location.x-2,(int)tb.location.y-2),
+							Point((int)tb.location.x+2,(int)tb.location.y+2),Scalar(250),2);
+					/**/
 				}
 			}
 	}
 }
+

@@ -25,6 +25,7 @@ class cBlob {
 	int areaid; 
 	TUIO::TuioCursor *cursor;
 	TUIO::TuioCursor25D *cursor25D;
+	point back; // backup location before get_tip_pos search (weighted) barycenter of blob. (testing...)
 };
 
 #endif
