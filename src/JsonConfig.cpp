@@ -29,7 +29,11 @@ int JsonConfig::setConfig(const char* json_str, int changes=NO)
 
 char* JsonConfig::getConfig()//const
 {
-	return cJSON_Print(m_pjson_root);
+	m_pjson_mutex.lock();
+	if( m_tmp_config_str != NULL ) free( m_tmp_config_str);
+	m_tmp_config_str = cJSON_Print(m_pjson_root);
+	m_pjson_mutex.unlock();
+	return m_tmp_config_str;
 }
 
 int JsonConfig::loadConfigFile(const char* filename)

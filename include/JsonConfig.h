@@ -22,12 +22,14 @@ typedef cJSON* DefaultsType(void);
 class JsonConfig{
 	private:
 		int clearConfig();
+		char *m_tmp_config_str;
 	protected:
 		cJSON* m_pjson_root;
 		Mutex m_pjson_mutex;
 	public:
 		JsonConfig():
-			m_pjson_root(NULL)
+			m_pjson_root(NULL),
+			m_tmp_config_str(NULL)
 		{
 		};
 
@@ -38,6 +40,10 @@ class JsonConfig{
 
 		~JsonConfig(){
 			clearConfig();
+			if( m_tmp_config_str != NULL ){
+				free( m_tmp_config_str);
+				m_tmp_config_str = NULL;
+			}
 		};
 	
 		int setConfig(const char* json_str, int update);
