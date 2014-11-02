@@ -17,7 +17,7 @@ cJSON* SettingKinect::loadDefaults()
 	cJSON* html = cJSON_CreateArray();	
 	cJSON_AddItemToArray(html, jsonDoubleField("kinectMotorAngle",0,-16,16,5) );
 	cJSON_AddItemToArray(html, jsonIntField("minDepth",0,0,255,100) );
-	cJSON_AddItemToArray(html, jsonIntField("maxDepth",0,255,255,100) );
+	cJSON_AddItemToArray(html, jsonIntField("maxDepth",255,0,255,100) );
 	cJSON_AddItemToArray(html, jsonDoubleField("minBlobArea",256,16,4096*4,100) );
 	cJSON_AddItemToArray(html, jsonDoubleField("maxBlobArea",2048,16,4096*8,100) );
 	cJSON_AddItemToArray(html, jsonIntField("marginLeft",0,0,KRES_X-1,100) );

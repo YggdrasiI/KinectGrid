@@ -62,8 +62,8 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 //	std::vector<uint16_t> m_gamma;
 	Mat m_depthMat;
 	Mat m_rgbMat;
-	Mutex m_rgb_mutex;
-	Mutex m_depth_mutex;
+	::Mutex m_rgb_mutex;
+	::Mutex m_depth_mutex;
 	bool m_new_rgb_frame;
 	bool m_new_depth_frame;
 	//SettingKinect* m_pSettingKinect;

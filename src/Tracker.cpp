@@ -4,7 +4,11 @@
 
 #include "Tracker.h"
 
-Tracker::Tracker(double min_area, double max_area, double max_radius) : m_pSettingKinect(NULL), m_min_area(min_area), m_max_area(max_area), m_max_radius(max_radius), m_notDrawBlob(false), m_count_N(40)
+Tracker::Tracker(double min_area, double max_area, double max_radius) : m_pSettingKinect(NULL), m_min_area(min_area), m_max_area(max_area), m_max_radius(max_radius),
+	m_notDrawBlob(false)
+#ifdef CENTER_ADJUSTMENT
+											, m_count_N(40)
+#endif
 {
 	m_pmin_area = &m_min_area;
 	m_pmax_area = &m_max_area;
@@ -32,7 +36,11 @@ Tracker::Tracker(double min_area, double max_area, double max_radius) : m_pSetti
 #endif
 }
 
-Tracker::Tracker(SettingKinect* pSettingKinect) : m_pSettingKinect(pSettingKinect), m_min_area(-1.0), m_max_area(-1.0), m_max_radius(TMAXRADIUS), m_count_N(40)
+Tracker::Tracker(SettingKinect* pSettingKinect) : m_pSettingKinect(pSettingKinect), m_min_area(-1.0), m_max_area(-1.0),
+	m_max_radius(TMAXRADIUS)
+#ifdef CENTER_ADJUSTMENT
+													, m_count_N(40)
+#endif
 {
 	m_pmin_area = &(m_pSettingKinect->m_minBlobArea);
 	m_pmax_area = &(m_pSettingKinect->m_maxBlobArea);

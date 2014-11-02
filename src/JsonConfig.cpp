@@ -63,9 +63,12 @@ int JsonConfig::saveConfigFile(const char* filename)
 	FILE *file;
 	file = fopen(filename,"w");
 	char* conf = getConfig();
+	/* Lock to avoid freeing of conf string during file writing.*/
+	m_pjson_mutex.lock();
 	fprintf(file,"%s", conf );
-	free(conf);
-	fclose(file); 
+	m_pjson_mutex.unlock();
+	//free(conf);//conf will cleared automaticly, now.
+	fclose(file);
 	return 0;
 }
 

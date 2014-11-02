@@ -47,10 +47,10 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 		m_depthMask = Scalar(255);//temporary full mask
 	}
 	if( m_depthMaskCounter < 0){
-		// Use (fullsize) eary frames to generate mask
+		// Use (fullsize) early frames to generate mask
 		m_pdevice->getDepth8UC1(m_depthf, Rect(0,0,KRES_X,KRES_Y),
 				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth);
-		if( m_depthMaskCounter > 2-NMASKFRAMES)//depratecd error handling for first frames of device.
+		if( m_depthMaskCounter > 2-NMASKFRAMES)//deprecated error handling for first frames of device.
 			createMask(m_depthf,m_depthMaskWithoutThresh,/*m_pSettingKinect->m_marginBack,*/m_depthMaskWithoutThresh);
 		m_depthMaskCounter++;
 
@@ -67,7 +67,6 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 		}
 		return DEPTH_MASK_DETECTION;
 	}else{
-		assert(false);
 		return HAND_DETECTION;
 	}
 		return DEPTH_MASK_DETECTION;

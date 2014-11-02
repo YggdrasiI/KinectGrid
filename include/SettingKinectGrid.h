@@ -23,7 +23,7 @@ class SettingKinectGrid: public JsonConfig{
 		int update(cJSON* root, cJSON* update, int changes);
 
 	protected:
-		Mutex m_mode_mutex;
+		::Mutex m_mode_mutex;
 
 };
 
