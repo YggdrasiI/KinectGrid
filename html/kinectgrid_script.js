@@ -10,7 +10,7 @@ function myField(myoptions){
 		//inputfield.click( function(event){ alert("Foo\n"+event.target.id) });
 		m1 = $('<input type="button" value="---" />');
 		m1.click( function(event){ myoptions.change(options.id,options.min,options.max,-options.diff); });
-		m2 =  $('<input type="button" value="-" />');
+		m2 =  $('<input type="button" value="--" />');
 		m2.click( function(event){ myoptions.change(options.id,options.min,options.max,-options.diff/10.0); });
 		m3 =  $('<input type="button" value="-" />');
 		m3.click( function(event){ myoptions.change(options.id,options.min,options.max,-options.diff/100.0); });
@@ -175,6 +175,12 @@ function quit(){
 	send("json?actionid=8","foo=1");
 }
 
+function resetConfig(){
+	send("json?actionid=9","foo=1");
+	setTimeout(function(){
+		window.location.reload();
+	}, 2000);
+}
 
 function deepCopy(p,c) {
 	var c = c||{}; for (var i in p) {

@@ -72,25 +72,10 @@ add_subdirectory(lib)
 add_subdirectory(src)
 
 ## Copy html folder to build directory.
-file(COPY html/ DESTINATION html PATTERN kinectgrid_settings.js EXCLUDE )
 
-macro(copy_files GLOBPAT DESTINATION)
-  file(GLOB COPY_FILES
-    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-    ${GLOBPAT})
-  add_custom_target(copy ALL
-    COMMENT "Copying files: ${GLOBPAT}")
-
-  foreach(FILENAME ${COPY_FILES})
-    set(SRC "${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}")
-    set(DST "${DESTINATION}/${FILENAME}")
-
-    add_custom_command(
-      TARGET copy
-      COMMAND ${CMAKE_COMMAND} -E copy ${SRC} ${DST}
-      )
-  endforeach(FILENAME)
-endmacro(copy_files)
-## end TODO
-
-#add_dependencies(main copy_files "html/*.js" "${CMAKE_CURRENT_BINARY_DIR}/html" )
+file(GLOB WEBSERVER_FILES
+	  "html/*.*"
+		)
+file(COPY ${WEBSERVER_FILES}
+	DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/html"
+	)

@@ -45,7 +45,7 @@ class SettingKinect: public JsonConfig{
 		cJSON* loadDefaults();
 		int update(cJSON* jsonNew, cJSON* jsonOld, int changes);//override virtual method
 
-		/* Map [0,....,2047] to [0,....,0,1,....,254,255,....,255]
+		/* Map [0,....,2047] to [0,....,0,1,....,254,255,....,255,0]
 		 * require (and get) update on changes of m_maxDepth or m_minDepth
 		 */
 		uint8_t /*unsigned char*/ m_rangeMap[2048];

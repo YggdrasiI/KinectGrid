@@ -92,6 +92,7 @@ FunctionMode ImageAnalysis::hand_detection()
 		//m_pdevice->getDepth8UC1(fMRoi, roi,
 		//		m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth, dMRoi);
 		while(! m_pdevice->getDepth8UC1_b(fMRoi, roi, m_pSettingKinect->m_rangeMap, dMRoi16U))
+		//while(! m_pdevice->getDepth8UC1_b(fMRoi, roi, m_pSettingKinect->m_minDepth, m_pSettingKinect->m_maxDepth, dMRoi16U))
 		{
 			//printf(" Bad, get old frame!\n");
 			usleep(50);		
@@ -418,14 +419,18 @@ void ImageAnalysis::finishDepthMaskCreation(){
 		//add local thresh val for every detected area
 		addAreaThresh(m_pSettingKinect->m_areas, m_areaMask, m_depthMask);
 	}
+
+	/* Debug 2014, add frame as mask. This is required for directFiltering mask. */
+	//m_depthMask = max(m_depthMask,getFrontMask());//this would be bad for hand blobs which overlap the borders
+
 	/* Set up m_depthMask16U for directFiltering mode */
 	if( m_pSettingKinect->m_directFiltering){
 		//remap mask to 16UC1 format.
 		int m = m_pSettingKinect->m_minDepth;
 		int M = m_pSettingKinect->m_maxDepth;
-		float ainv = -2048.0*(M-m)/255.0/255.0;	
-		float b2 = (255-m)*2048.0/255.0;	
-		m_depthMask.convertTo(m_depthMask16U, CV_16UC1, ainv, b2);
+		float alphaInv = ( M-m )/( 0.0-255.0 );
+		float betaInv = ( m*0 - M*255.0 )/(0-255);
+		m_depthMask.convertTo(m_depthMask16U, CV_16UC1, alphaInv, betaInv);
 	}
 	m_depthMaskCounter = 0;
 }

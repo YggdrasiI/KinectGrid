@@ -16,8 +16,8 @@ cJSON* SettingKinect::loadDefaults()
 
 	cJSON* html = cJSON_CreateArray();	
 	cJSON_AddItemToArray(html, jsonDoubleField("kinectMotorAngle",0,-16,16,5) );
-	cJSON_AddItemToArray(html, jsonIntField("minDepth",0,0,255,100) );
-	cJSON_AddItemToArray(html, jsonIntField("maxDepth",255,0,255,100) );
+	cJSON_AddItemToArray(html, jsonIntField("minDepth",0,0,2048,100) );
+	cJSON_AddItemToArray(html, jsonIntField("maxDepth",2048,0,2048,100) );
 	cJSON_AddItemToArray(html, jsonDoubleField("minBlobArea",256,16,4096*4,100) );
 	cJSON_AddItemToArray(html, jsonDoubleField("maxBlobArea",2048,16,4096*8,100) );
 	cJSON_AddItemToArray(html, jsonIntField("marginLeft",0,0,KRES_X-1,100) );
@@ -28,8 +28,8 @@ cJSON* SettingKinect::loadDefaults()
 	cJSON_AddItemToArray(html, jsonIntField("marginBack",0,0,255,100) );
 	cJSON_AddItemToArray(html, jsonCheckbox("TUIO_2Dcur",false) );
 	cJSON_AddItemToArray(html, jsonCheckbox("TUIO_25Dblb",true) );
-	cJSON_AddItemToArray(html, jsonCheckbox("areaThresh",true) );
-	cJSON_AddItemToArray(html, jsonCheckbox("directFiltering",true) );
+	cJSON_AddItemToArray(html, jsonCheckbox("areaThresh",false) );
+	cJSON_AddItemToArray(html, jsonCheckbox("directFiltering",false) );
 	cJSON_AddItemToArray(html, jsonCheckbox("clipping",true) );
 /*
 	cJSON* pareas = cJSON_CreateArray();
@@ -62,16 +62,32 @@ int SettingKinect::update(cJSON* jsonNew, cJSON* jsonOld, int changes=NO){
 			m_maxDepth = max(m_minDepth+2,m_maxDepth);
 			//update rangeMap
 			printf("Update range map\n");
+			/*
 			unsigned int iaz, ian, ib; 
 			iaz = 255*255;
 			ian = 2048*(m_maxDepth-m_minDepth);
 			ib = (255-m_minDepth)*255/(m_maxDepth-m_minDepth);
-
-			int tmp;
 			for(int i=0; i<2048; ++i){
-				tmp  = ib - (iaz* i)/ian;
+				int tmp  = ib - (iaz* i)/ian;
 				m_rangeMap[i] = (0>tmp)?0:((tmp<255)?tmp:255);
 			}
+			*/
+
+			/* Map [0,2048]⌋ ⊇ [m_minDepth, m_maxDepth] linear onto [255,0] via
+			 * f(x) = alpha * x + beta
+			 * 
+			 */
+			int alphaEnumerator, alphaDenominator, beta;
+			alphaEnumerator = 0-255;
+			alphaDenominator = m_maxDepth - m_minDepth;
+			beta = (255*m_maxDepth - 0*m_minDepth) / ( m_maxDepth - m_minDepth );
+
+			for(int i=0; i<2048; ++i){
+				int tmp  = (i*alphaEnumerator)/alphaDenominator + beta;
+				m_rangeMap[i] = (0>tmp)?0:((tmp<255)?tmp:255);
+			}
+			m_rangeMap[2047/*FREENECT_DEPTH_RAW_NO_VALUE*/] = 0;
+
 		}
 
 		update(nhtml,ohtml,"minBlobArea",&m_minBlobArea);

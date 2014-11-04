@@ -4,12 +4,18 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>KinectGrid Settings</title>
 <style>
+	body {
+			background-color:#DDD;
+	}
 	#settingKinectForm { }
-	#settingKinectForm * span.propName { margin-right:1em; width:200px; text-align:right;color:blue;display:inline-block;}
+	#settingKinectForm * span.propName { margin-right:1em; width:13em; text-align:right;color:blue;display:inline-block;}
 	#settingKinectForm input { text-align:center;}
-	#settingKinectForm input[type="button"] { width:3em; }
+	#settingKinectForm input[type="button"] { width:2.5em; }
 
 	.containerL {float:left; max-width:44em; }
+	.containerR {float:right; max-width:44em; }
+	div#desc_calibration ol > li { margin-bottom:1em; }
+	div#desc_calibration ol * ol { list-style-type:lower-roman; }
 </style>
 <!--<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>-->
 <script type="text/javascript" src="jquery_1.7.1_jquery.min.js"></script>
@@ -32,7 +38,7 @@
 			<input type="button" value="Stop Area Detection" onclick="areaDetection(0)"/>
 			</p>
 			<p>
-			<input type="button" value="Repoke" onclick="repoke()"/>
+			<input type="button" value="Refit" onclick="repoke()" title="Try to find areas on previous saved positions" />
 			</p>
 		</div>
 		<h1>View</h1>
@@ -51,18 +57,18 @@
 		<input type="button" onclick="quit()" value="Quit" />
 	</div>
 	<div class="containerL">
-		<h1>Variables</h1>
+		<h1>Variables<a style="font-size:70%;float:right;" href="javascript:resetConfig();">(Reset values)</a></h1>
 		<div id="settingKinectForm"> </div>
 	</div>
-	<div class="containerL">
+	<div class="containerL" id="desc_calibration">
 		<h1>Calibration</h1>
-		Attention: The depth values are inverted: 255=close points, 0=distant points.
-		<ul>
+		Note that the raw depth values (0-2048) will be flipped: 255=close points, 0=distant points.
+		<ol>
 			<li>Set Depth Range
 			<ol>
 				<li>Select raw depth view (press '1')</li>
-				<li>Lower <i>maxDepth</i> till first obstacles are light grey.</li>
-				<li>Raise <i>minDepth</i> till background is nearly black.</li>
+				<li>Raise <i>minDepth</i> till first obstacles are light grey.</li>
+				<li>Lower <i>maxDepth</i> till background is nearly black.</li>
 			</ol>
 			</li>
 			<li>Use <i>margin[Left|Top|Right|Bottom]</i> to crop image.
@@ -74,21 +80,25 @@
 			</ol>
 			This black/white-image will used to find the 'holes' of your frame. Ensure that the areas are full enclosed.
 			</li>
-			<li>Use <i>marginBack</i> to set the minimal background threshold (depth mask) for blob detection.<br> Press '2' to show the depth mask. This global threshold will increased in two cases:
+			<li>Use <i>marginBack</i> to set the minimal background threshold (depth mask) for blob detection.<br> Press '2' to show the depth mask. This global threshold will increased pixelwise in two cases:
 			<ol>
-				<li>The depth mask will created on startup and after configuration changes. (Nearly <i>depthMask = max(sensordata, 255-marginBack)</i>). Do not block the camera during initialisation. 				
+				<li>During the depth mask creation on startup (and configuration changes) by all obstacles.
+				(Roughly <i>depthMask = max(sensordata, 255-marginBack)</i>). Thus, do not block the camera during initialisation. 				
 				</li>
-				<li>If <i>areaThresh=1</i>, depth mask is set to frame depth inside of areas.</li>
+				<li>If the option <i>areaThresh</i> is enabled, the depth mask inside an area depends by its border pixel distances.</li>
 			</ol>
 			</li>
-			<li>Save Configuration :-)</li>
-		</ul>
+			<li>Save Configuration</li>
+		</ol>
 	</div>
 	<div class="containerL">
 		<h1>Area Detection</h1>
-		If calibration is finished (check front mask!) you can start the area detection. Push Hand in first area and check the output. Select more areas and finish area detection with an other push in area 1.
-		<h1>Repoke</h1>
-		Use this option to repeat the area detection.
+		If the calibration was finished (<i>mask view</i> looks feasible and <i>blob view</i> do not react on tiny, undesired disturbances) you can start the area detection.<br>
+		Click on <i>Start Area Detection</i>, place behind the frame, and push a hand in the first area. Select more areas and finish area detection with an second push into area 1.
+		<h1>Refit</h1>
+		Use this option to repeat the area detection. It search areas nearby the saved midpoints.
+		<h1>Load/Save Masks</h1>
+		If you want remove the frame after the setup you can click on <i>Save mask</i>. This creates two images ({Configname}_[depth|area].png), which will be loaded at startup and reconstruct the previous depth filter and area definition. Remove this files to restore the normal startup behaviour.
 	</div>
 	<div class="containerL">
 		<h1>Variables Description</h1>
@@ -97,5 +107,12 @@
 		TUIO_25Dblb : Send tuio messages in 25Dblb format (like Space Palette).<br>
 		areaThresh : Use depth of the frame to filter hand movement behind the frame.<br>
 		directFiltering: Skip depthFrame evaluation to avoid some memcpy. (For ARM, Slower on x86.)<br>
+	</div>
+	<hr style="clear:both;margin-top:3em;" />
+	<div class="containerL" >
+		<img src="sketchFront.png" style="max-width:100%"/>
+	</div>
+	<div class="containerR" >
+		<img src="sketchSide.png" style="max-width:100%"/>
 	</div>
 </body>

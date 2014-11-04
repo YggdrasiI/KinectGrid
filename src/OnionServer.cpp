@@ -22,6 +22,7 @@
 #include <assert.h>
 #include <sys/types.h>
 #include <regex.h>
+#include "cJSON.h"
 #include "OnionServer.h"
 
 
@@ -182,6 +183,10 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
 	printf("Actionid: %i \n", actionid);
 	switch(actionid){
+		case 9:{  //reset config values to defaults.
+						 m_psettingKinect->loadConfigFile(NULL);
+					 }
+					 break;
 		case 8:{  //quit programm
 						 m_psettingKinectGrid->setMode(QUIT);
 					 }
