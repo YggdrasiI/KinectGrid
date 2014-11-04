@@ -200,7 +200,7 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 					 }
 					 break;
 		case 5:{ //select view
-							//m_view = atoi( onion_request_get_queryd(req,"view","-1") );
+							//m_view = atoi( onion_request_get_queryd(req,"view","0") );
 							m_view = atoi( onion_request_get_post(req,"view") );
 						 printf("Set view to %i.\n",m_view);
 					 }
@@ -211,7 +211,7 @@ int OnionServer::updateSetting(onion_request *req, onion_response *res){
 					 }
 					 break;
 		case 3:{ // area detection
-							int start = atoi( onion_request_get_queryd(req,"start","1") );
+							int start = atoi( onion_request_get_post(req,"start") );
 							if( start == 1)
 								m_psettingKinectGrid->setMode(AREA_DETECTION_START);
 							else{

@@ -402,7 +402,6 @@ int main(int argc, char **argv) {
 			sleep(1);
 		}
 
-		//cvWaitKey(500);//slow down on approx. 1.5 fps
 		char k = cvWaitKey(10);
 		if( k == 27 ){
 			printf("End main loop\n");

@@ -119,19 +119,26 @@ FunctionMode ImageAnalysis::hand_detection()
 
 FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 {
+	/* Too small values lead to flawed detections. We backup the 
+	 * user value and restore it later. */
+	int backupMinBlobSize = m_pSettingKinect->m_minBlobArea;
+
 	switch (m_area_detection_step) {
 	case 2:
 		{// Wait util no blob is detected.
-			printf("area detection 2\n");
+			//printf("area detection 2\n");
 			hand_detection();
+			m_pSettingKinect->m_minBlobArea = max(backupMinBlobSize,256);
 			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_roi), m_areaMask, true, NULL);
+			m_pSettingKinect->m_minBlobArea = backupMinBlobSize;
 			if( tracker->getBlobs().size() == 0 ){
 				m_area_detection_step = 1;
 			}
 		} break;
 	case 3://for AREA_DETECTION_END
 		{
-			m_area_detection_step = 1;
+			//printf("area detection 3\n");
+			m_area_detection_step = 3;
 			repoke_finish();
 			return HAND_DETECTION;
 		} break;
@@ -143,12 +150,13 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 			m_area_detection_step = 1;
 		}//no break!
 	case 1:
-	default:
 		{
-			printf("area detection 1\n");
+			//printf("area detection 1\n");
 			//Mat& depth = m_depthMaskWithoutThresh;
 			hand_detection();
+			m_pSettingKinect->m_minBlobArea = max(backupMinBlobSize,256);
 			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_roi), m_areaMask, true, NULL);
+			m_pSettingKinect->m_minBlobArea = backupMinBlobSize;
 			std::vector<cBlob>& blobs = tracker->getBlobs();
 
 			for(int i=0;i<blobs.size(); i++){
@@ -180,6 +188,10 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 					break;
 				}
 			}
+		}break;
+	default:
+		{
+			printf("Unknown state during area detection\n");
 		}break;
 	}
 
