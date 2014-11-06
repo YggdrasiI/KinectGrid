@@ -229,12 +229,12 @@ void MyFreenectDevice::update(SettingKinect* pSettingKinect, int changes){
 	// Set vertical Position
 	if( changes &  MOTOR ){
 		printf("MyFreenectDevice: Set motor degree\n");
-		setTiltDegrees(pSettingKinect->m_kinectMotorAngle);
+		setTiltDegrees(pSettingKinect->m_kinectProp.kinectMotorAngle);
 	}
 	if( changes &  CLIPPING|MARGIN ){
 		// Set clipping in freenect driver.
-			if( pSettingKinect->m_clipping)
-				setRoi(true,pSettingKinect->m_roi);
+			if( pSettingKinect->m_kinectProp.clipping)
+				setRoi(true,pSettingKinect->m_kinectProp.roi);
 			else
 				setRoi(false,Rect(0,0,0,0));
 	}

@@ -3,26 +3,49 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>KinectGrid Settings</title>
+<link rel="stylesheet" type="text/css" href="style.css" />
 <style>
-	body {
-			background-color:#DDD;
-	}
-	#settingKinectForm { }
-	#settingKinectForm * span.propName { margin-right:1em; width:13em; text-align:right;color:blue;display:inline-block;}
-	#settingKinectForm input { text-align:center;}
-	#settingKinectForm input[type="button"] { width:2.5em; }
-
-	.containerL {float:left; max-width:44em; }
-	.containerR {float:right; max-width:44em; }
-	div#desc_calibration ol > li { margin-bottom:1em; }
-	div#desc_calibration ol * ol { list-style-type:lower-roman; }
 </style>
 <!--<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>-->
 <script type="text/javascript" src="jquery_1.7.1_jquery.min.js"></script>
-<script type="text/javascript" src="jquery.dform-0.2.0.min.js"></script>
+<script type="text/javascript" src="jquery.mousewheel.min.js"></script>
+<!--<script type="text/javascript" src="jquery.dform-0.2.0.min.js"></script>-->
 <script type="text/javascript" src="json2.min.js"></script>
-<script type="text/javascript" src="kinectgrid_settings.js"></script>
-<script type="text/javascript" src="kinectgrid_script.js"></script>
+<script type="text/javascript" src="kinect_settings.js"></script>
+<script type="text/javascript" src="kinect_script.js"></script>
+<script type="text/javascript">
+	json_b9creator = null;
+	refreshIntervall = null;
+
+	/* This function checks the existance of a json struct
+		 in the parent window and use this values if possible.
+		 This reduce the loading calls of 'settings'.
+	 */
+	function refresh2(update){
+		if( window.opener !== null && !window.opener.closed &&
+				typeof(window.opener.json_b9creator) === "object" ){
+			json_b9creator = window.opener.json_b9creator;
+			if(update) update_fields(json_b9creator);
+			else create_fields(json_b9creator);
+
+		}else{
+			send("settings","",
+					function(data){
+					json_b9creator = JSON.parse(data);//change global var
+					if(update) update_fields(json_b9creator);
+					else create_fields(json_b9creator);
+					}
+			);
+		}
+	}
+
+/* Moreover, check opener.json_b9creator existens on creation, too. */
+$(function(){
+		refresh2(false);
+		//refreshIntervall = window.setInterval("refresh2(true)", 1000);
+		});
+
+</script>
 </head>
 <body>
 	<div class="containerL">
@@ -58,7 +81,23 @@
 	</div>
 	<div class="containerL">
 		<h1>Variables<a style="font-size:70%;float:right;" href="javascript:resetConfig();">(Reset values)</a></h1>
-		<div id="settingKinectForm"> </div>
+		<div id="settingKinectForm">AAA</div>
+		<div class="prop" id="kinectMotorAngle"></div>
+		<div class="prop" id="minDepth"></div>
+		<div class="prop" id="maxDepth"></div>
+		<div class="prop" id="minBloabArea"></div>
+		<div class="prop" id="maxBlobArea"></div>
+		<div class="prop" id="marginLeft"></div>
+		<div class="prop" id="marginRight"></div>
+		<div class="prop" id="marginTop"></div>
+		<div class="prop" id="marginBottom"></div>
+		<div class="prop" id="marginFront"></div>
+		<div class="prop" id="marginBack"></div>
+		<div class="prop" id="TUIO_2Dcur"></div>
+		<div class="prop" id="TUIO_25Dblb"></div>
+		<div class="prop" id="areaThresh"></div>
+		<div class="prop" id="directFiltering"></div>
+		<div class="prop" id="clipping"></div>
 	</div>
 	<div class="containerL" id="desc_calibration">
 		<h1>Calibration</h1>
@@ -108,7 +147,30 @@
 		areaThresh : Use depth of the frame to filter hand movement behind the frame.<br>
 		directFiltering: Skip depthFrame evaluation to avoid some memcpy. (For ARM, Slower on x86.)<br>
 	</div>
+
 	<hr style="clear:both;margin-top:3em;" />
+
+	<div class="containerL">
+		<h1>Log</h1>
+		<div class="prop" id="serialMessages"></div>
+	</div>
+	<div class="containerR preview" id="previewContainer" xxx="{{ONION_LINE_BREAK_FIX}}">
+		<h1>Preview</h1>
+		<p>Blub
+		<span style="padding-left:3em" >Automatic refresh: <input id="previewRefresh" type="checkbox" checked="checked" /> 
+			Scale: <select id="previewScale">
+				<option value="100">100%</option>
+				<option value="50" selected>50%</option>
+				<option value="25" >25%</option>
+			</select>
+		</span>
+		<span id="info"></span>
+		</p>
+		<span id="previewImg" onClick="reloadImage(true)" title="Click to reload."><img src="preview.png?scale=50&force=1" /></span>
+	</div>
+
+	<hr style="clear:both;margin-top:3em;" />
+
 	<div class="containerL" >
 		<img src="sketchFront.png" style="max-width:100%"/>
 	</div>

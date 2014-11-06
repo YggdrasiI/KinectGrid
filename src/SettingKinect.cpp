@@ -1,86 +1,169 @@
+#include <vector>
 #include "SettingKinect.h"
+#include "OnionServer.h"
 
+using namespace std;
 
-/*
- * Special properties. This values can modified with the web interface.
- * I.e. angle of kinect, nmbr of areas, position of areas, minimal blob size.
- */
-cJSON* SettingKinect::loadDefaults()
+SettingKinect::SettingKinect() :
+	JsonConfig(),
+	m_mode_mutex(),
+	m_queues(),
+	m_host(),
+	m_port(),
+	m_tuio2Dcur_host(),
+	m_tuio25Dblb_host()
 {
-	cJSON* root = cJSON_CreateObject();	
-	cJSON_AddStringToObject(root, "kind", "settingKinect");
-	cJSON_AddItemToObject(root, "type", cJSON_CreateString("form"));
-
-	cJSON_AddStringToObject(root, "action", "index.html");
-	cJSON_AddStringToObject(root, "method", "post");
-
-	cJSON* html = cJSON_CreateArray();	
-	cJSON_AddItemToArray(html, jsonDoubleField("kinectMotorAngle",0,-16,16,5) );
-	cJSON_AddItemToArray(html, jsonIntField("minDepth",0,0,2048,100) );
-	cJSON_AddItemToArray(html, jsonIntField("maxDepth",2048,0,2048,100) );
-	cJSON_AddItemToArray(html, jsonDoubleField("minBlobArea",256,16,4096*4,100) );
-	cJSON_AddItemToArray(html, jsonDoubleField("maxBlobArea",2048,16,4096*8,100) );
-	cJSON_AddItemToArray(html, jsonIntField("marginLeft",0,0,KRES_X-1,100) );
-	cJSON_AddItemToArray(html, jsonIntField("marginRight",0,0,KRES_X-1,100) );
-	cJSON_AddItemToArray(html, jsonIntField("marginTop",0,0,KRES_Y-1,100) );
-	cJSON_AddItemToArray(html, jsonIntField("marginBottom",0,0,KRES_Y-1,100) );
-	cJSON_AddItemToArray(html, jsonIntField("marginFront",0,0,255,100) );
-	cJSON_AddItemToArray(html, jsonIntField("marginBack",0,0,255,100) );
-	cJSON_AddItemToArray(html, jsonCheckbox("TUIO_2Dcur",false) );
-	cJSON_AddItemToArray(html, jsonCheckbox("TUIO_25Dblb",true) );
-	cJSON_AddItemToArray(html, jsonCheckbox("areaThresh",false) );
-	cJSON_AddItemToArray(html, jsonCheckbox("directFiltering",false) );
-	cJSON_AddItemToArray(html, jsonCheckbox("clipping",true) );
-/*
-	cJSON* pareas = cJSON_CreateArray();
-	cJSON* parea1 = cJSON_CreateObject();
-	cJSON_AddNumberToObject(parea1, "top", 0 );
-	cJSON_AddNumberToObject(parea1, "left", 0 );
-	cJSON_AddNumberToObject(parea1, "width", 640 );
-	cJSON_AddNumberToObject(parea1, "height", 480 );
-	cJSON_AddItemToObject(pareas, "area1", parea1 );
-	cJSON_AddItemToObject(root, "areas", pareas );
-*/
-	cJSON_AddItemToObject(root, "html", html);
-
-	/* Point information for repoke */
-	cJSON* areas = cJSON_CreateArray();	
-	cJSON_AddItemToArray(areas, jsonArea(1,320.0,240.0,100.0) );
-	cJSON_AddItemToObject(root, "areas", areas);
-	return root;
+	loadDefaults();
 }
 
-int SettingKinect::update(cJSON* jsonNew, cJSON* jsonOld, int changes=NO){
-	//parse_and_callback(m_pjson_root,"");//error
-	cJSON* nhtml = cJSON_GetObjectItem(jsonNew,"html");
-	cJSON* ohtml = jsonOld==NULL?NULL:cJSON_GetObjectItem(jsonOld,"html");
-	if( nhtml != NULL){
-		if( update(nhtml,ohtml,"kinectMotorAngle",&m_kinectMotorAngle) ) changes|=MOTOR;
-		if( update(nhtml,ohtml,"minDepth",&m_minDepth)
-				+ update(nhtml,ohtml,"maxDepth",&m_maxDepth) ){
-			changes|=MARGIN|FRONT_MASK;
-			m_maxDepth = max(m_minDepth+2,m_maxDepth);
-			//update rangeMap
-			printf("Update range map\n");
-			/*
-			unsigned int iaz, ian, ib; 
-			iaz = 255*255;
-			ian = 2048*(m_maxDepth-m_minDepth);
-			ib = (255-m_minDepth)*255/(m_maxDepth-m_minDepth);
-			for(int i=0; i<2048; ++i){
-				int tmp  = ib - (iaz* i)/ian;
-				m_rangeMap[i] = (0>tmp)?0:((tmp<255)?tmp:255);
-			}
-			*/
+SettingKinect::~SettingKinect(){
+}
 
-			/* Map [0,2048]⌋ ⊇ [m_minDepth, m_maxDepth] linear onto [255,0] via
+void SettingKinect::setMode(FunctionMode mode){
+	m_mode_mutex.lock();
+	m_mode = mode;
+	m_mode_mutex.unlock();
+}
+
+FunctionMode SettingKinect::getModeAndLock(){
+	m_mode_mutex.lock();
+	return m_mode;
+}
+
+void SettingKinect::unlockMode(FunctionMode mode){
+	m_mode = mode;
+	m_mode_mutex.unlock();
+}
+
+/*
+ * Generate json struct of properties. Use the subnode 'html'
+ * for values which can be modified on the web interface.
+ */
+cJSON *SettingKinect::genJson()
+{
+	cJSON *root = cJSON_CreateObject();	
+	/* Kind only used to distinct different json structs. */
+	cJSON_AddItemToObject(root, "kind", cJSON_CreateString("kinectSettings"));
+
+	cJSON_AddItemToObject(root, "host", cJSON_CreateString(m_host.c_str() ));
+	cJSON_AddItemToObject(root, "port", cJSON_CreateString(m_port.c_str() ));
+	cJSON_AddItemToObject(root, "tuio2Dcur_host", cJSON_CreateString("127.0.0.1"));
+	cJSON_AddItemToObject(root, "tuio25Dblb_host", cJSON_CreateString("127.0.0.1"));
+	cJSON_AddItemToObject(root, "tuio2Dcur_port", cJSON_CreateNumber(3333));
+	cJSON_AddItemToObject(root, "tuio25Dblb_port", cJSON_CreateNumber(3335));
+
+	/* Sub node. This values will transmitted to the web interface */
+	cJSON *html = cJSON_CreateArray();	
+
+	cJSON_AddItemToArray(html, jsonDoubleField("kinectMotorAngle",
+				m_kinectProp.kinectMotorAngle,-16,16,5) );
+	cJSON_AddItemToArray(html, jsonIntField("minDepth",
+				m_kinectProp.minDepth,0,2048,100) );
+	cJSON_AddItemToArray(html, jsonIntField("maxDepth",
+				m_kinectProp.maxDepth,0,2048,100) );
+	cJSON_AddItemToArray(html, jsonDoubleField("minBlobArea",
+				m_kinectProp.minBlobArea,16,4096*4,100) );
+	cJSON_AddItemToArray(html, jsonDoubleField("maxBlobArea",
+				m_kinectProp.maxBlobArea,16,4096*8,100) );
+	cJSON_AddItemToArray(html, jsonIntField("marginLeft",
+				m_kinectProp.marginLeft,0,KRES_X-1,100) );
+	cJSON_AddItemToArray(html, jsonIntField("marginRight",
+				m_kinectProp.marginRight,0,KRES_X-1,100) );
+	cJSON_AddItemToArray(html, jsonIntField("marginTop",
+				m_kinectProp.marginTop,0,KRES_Y-1,100) );
+	cJSON_AddItemToArray(html, jsonIntField("marginBottom",
+				m_kinectProp.marginBottom,0,KRES_Y-1,100) );
+	cJSON_AddItemToArray(html, jsonIntField("marginFront",
+				m_kinectProp.marginFront,0,255,100) );
+	cJSON_AddItemToArray(html, jsonIntField("marginBack",
+				m_kinectProp.marginBack,0,255,100) );
+	cJSON_AddItemToArray(html, jsonCheckbox("TUIO_2Dcur",
+				m_tuioProtocols[0]) );
+	cJSON_AddItemToArray(html, jsonCheckbox("TUIO_25Dblb",
+				m_tuioProtocols[1]) );
+	cJSON_AddItemToArray(html, jsonCheckbox("areaThresh",
+				m_kinectProp.areaThresh) );
+	cJSON_AddItemToArray(html, jsonCheckbox("directFiltering",
+				m_kinectProp.directFiltering) );
+	cJSON_AddItemToArray(html, jsonCheckbox("clipping",
+				m_kinectProp.clipping) );
+
+	cJSON_AddItemToArray(html, jsonStateField("currentMode",m_mode,"percent","percent") );//in Percent
+	cJSON_AddItemToArray(html, jsonStateField("tuio2Dcur_host",m_tuio2Dcur_host) );
+	cJSON_AddItemToArray(html, jsonStateField("tuio25Dblb_host",m_tuio25Dblb_host) );
+	cJSON_AddItemToArray(html, jsonStateField("tuio2Dcur_port",m_tuio2Dcur_port) );
+	cJSON_AddItemToArray(html, jsonStateField("tuio25Dblb_port",m_tuio25Dblb_port) );
+
+	cJSON_AddItemToObject(root, "html", html);
+
+	return root;
+};
+
+void SettingKinect::loadDefaults()
+{
+	m_host = "0.0.0.0";
+	m_port = "8080";
+	m_tuio2Dcur_host = "127.0.0.1"; 
+	m_tuio25Dblb_host = "127.0.0.1"; 
+	m_tuio2Dcur_port = 3333;
+	m_tuio25Dblb_port = 3335;
+	m_tuioProtocols[0] = false;
+	m_tuioProtocols[1] = false;
+	m_kinectProp.kinectMotorAngle=0.0;
+	m_kinectProp.minDepth=0;
+	m_kinectProp.maxDepth=2047;
+	m_kinectProp.minBlobArea=256;
+	m_kinectProp.maxBlobArea=3000;
+	m_kinectProp.marginLeft=0;
+	m_kinectProp.marginRight=0;
+	m_kinectProp.marginTop=0;
+	m_kinectProp.marginBottom=0;
+	m_kinectProp.marginFront=0;
+	m_kinectProp.marginBack=0;
+	m_kinectProp.areaThresh = false;
+	m_kinectProp.directFiltering = false;
+	m_kinectProp.clipping = true;
+};
+
+/*
+ * replaces |=YES with |=XYZ to extend changes flag.
+ * It's could be useful to detect special updates, conflicts...
+ */
+int SettingKinect::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
+	cJSON *nhtml = cJSON_GetObjectItem(jsonNew,"html");
+	cJSON *ohtml = jsonOld==NULL?NULL:cJSON_GetObjectItem(jsonOld,"html");
+
+	lock();
+
+	/*load values outside of the html node. This values should only
+	* read from config files.
+	*/
+	if( changes & CONFIG ){
+		m_host = JsonConfig::getString(jsonNew,"host");
+		m_port = JsonConfig::getString(jsonNew,"port");
+		m_tuio2Dcur_host = JsonConfig::getString(jsonNew,"tuio2Dcur_host");
+		m_tuio25Dblb_host = JsonConfig::getString(jsonNew,"tuio25Dblb_host");
+		m_tuio2Dcur_port = JsonConfig::getNumber(jsonNew,"tuio2Dcur_port");
+		m_tuio25Dblb_port = JsonConfig::getNumber(jsonNew,"tuio25Dblb_port");
+	}
+
+	if( nhtml != NULL){
+
+		if( JsonConfig::update(nhtml,ohtml,"kinectMotorAngle",&m_kinectProp.kinectMotorAngle) ) changes|=MOTOR;
+		if( JsonConfig::update(nhtml,ohtml,"minDepth",&m_kinectProp.minDepth)
+				+ JsonConfig::update(nhtml,ohtml,"maxDepth",&m_kinectProp.maxDepth) ){
+			changes|=MARGIN|FRONT_MASK;
+			m_kinectProp.maxDepth = max(m_kinectProp.minDepth+2,m_kinectProp.maxDepth);
+
+			//update rangeMap
+			/* Map [0,2048]⌋ ⊇ [minDepth, maxDepth] linear onto [255,0] via
 			 * f(x) = alpha * x + beta
 			 * 
 			 */
 			int alphaEnumerator, alphaDenominator, beta;
 			alphaEnumerator = 0-255;
-			alphaDenominator = m_maxDepth - m_minDepth;
-			beta = (255*m_maxDepth - 0*m_minDepth) / ( m_maxDepth - m_minDepth );
+			alphaDenominator = m_kinectProp.maxDepth - m_kinectProp.minDepth;
+			beta = (255*m_kinectProp.maxDepth - 0*m_kinectProp.minDepth) / ( m_kinectProp.maxDepth - m_kinectProp.minDepth );
 
 			for(int i=0; i<2048; ++i){
 				int tmp  = (i*alphaEnumerator)/alphaDenominator + beta;
@@ -90,28 +173,29 @@ int SettingKinect::update(cJSON* jsonNew, cJSON* jsonOld, int changes=NO){
 
 		}
 
-		update(nhtml,ohtml,"minBlobArea",&m_minBlobArea);
-		update(nhtml,ohtml,"maxBlobArea",&m_maxBlobArea);
-		if( update(nhtml,ohtml,"marginLeft",&m_marginLeft) ) changes|=MARGIN;
-		if( update(nhtml,ohtml,"marginRight",&m_marginRight) ) changes|=MARGIN;
-		if( update(nhtml,ohtml,"marginTop",&m_marginTop) ) changes|=MARGIN;
-		if( update(nhtml,ohtml,"marginBottom",&m_marginBottom) ) changes|=MARGIN;
-		if( update(nhtml,ohtml,"marginFront",&m_marginFront) ) changes|=MARGIN|FRONT_MASK;
-		if( update(nhtml,ohtml,"marginBack",&m_marginBack) ) changes|=BACK_MASK;
+		JsonConfig::update(nhtml,ohtml,"minBlobArea",&m_kinectProp.minBlobArea);
+		JsonConfig::update(nhtml,ohtml,"maxBlobArea",&m_kinectProp.maxBlobArea);
+		if( JsonConfig::update(nhtml,ohtml,"marginLeft",&m_kinectProp.marginLeft) ) changes|=MARGIN;
+		if( JsonConfig::update(nhtml,ohtml,"marginRight",&m_kinectProp.marginRight) ) changes|=MARGIN;
+		if( JsonConfig::update(nhtml,ohtml,"marginTop",&m_kinectProp.marginTop) ) changes|=MARGIN;
+		if( JsonConfig::update(nhtml,ohtml,"marginBottom",&m_kinectProp.marginBottom) ) changes|=MARGIN;
+		if( JsonConfig::update(nhtml,ohtml,"marginFront",&m_kinectProp.marginFront) ) changes|=MARGIN|FRONT_MASK;
+		if( JsonConfig::update(nhtml,ohtml,"marginBack",&m_kinectProp.marginBack) ) changes|=BACK_MASK;
 
-		if( updateCheckbox(nhtml,ohtml,"TUIO_2Dcur",&m_tuioProtocols[0]) ) changes|=TUIO_PROTOCOL;
-		if( updateCheckbox(nhtml,ohtml,"TUIO_25Dblb",&m_tuioProtocols[1]) ) changes|=TUIO_PROTOCOL;
-		if( updateCheckbox(nhtml,ohtml,"areaThresh",&m_areaThresh) ) changes|=BACK_MASK ; 
-		if( updateCheckbox(nhtml,ohtml,"directFiltering",&m_directFiltering) ) changes|=BACK_MASK; 
-		if( updateCheckbox(nhtml,ohtml,"clipping",&m_clipping) ){
+		if( JsonConfig::updateCheckbox(nhtml,ohtml,"TUIO_2Dcur",&m_tuioProtocols[0]) ) changes|=TUIO_PROTOCOL;
+		if( JsonConfig::updateCheckbox(nhtml,ohtml,"TUIO_25Dblb",&m_tuioProtocols[1]) ) changes|=TUIO_PROTOCOL;
+
+		if( JsonConfig::updateCheckbox(nhtml,ohtml,"areaThresh",&m_kinectProp.areaThresh) ) changes|=BACK_MASK ; 
+		if( JsonConfig::updateCheckbox(nhtml,ohtml,"directFiltering",&m_kinectProp.directFiltering) ) changes|=BACK_MASK; 
+		if( JsonConfig::updateCheckbox(nhtml,ohtml,"clipping",&m_kinectProp.clipping) ){
 			changes|=CLIPPING; 
 		}
 		//update region of interest
 		int w,h,x,y;
-		x = max(m_marginLeft,0);
-		y = max(m_marginTop,0);
-		w = max(KRES_X-m_marginLeft-m_marginRight,0);
-		h = max(KRES_Y-m_marginTop-m_marginBottom,0);
+		x = max(m_kinectProp.marginLeft,0);
+		y = max(m_kinectProp.marginTop,0);
+		w = max(KRES_X-m_kinectProp.marginLeft-m_kinectProp.marginRight,0);
+		h = max(KRES_Y-m_kinectProp.marginTop-m_kinectProp.marginBottom,0);
 		updateRoi(x,y,w,h);
 
 		// fill m_area, if empty. (if-criteria should improved?!)
@@ -132,83 +216,81 @@ int SettingKinect::update(cJSON* jsonNew, cJSON* jsonOld, int changes=NO){
 					a.depth =  (float)cJSON_GetObjectItem(area,"depth")->valuedouble;
 					m_areas.push_back(a);
 				}
-				/*hm, to early. Need depth detection first */
-				//changes|=REPOKE;//let imageanalysis search areas
 			}
 		}
 
 		//call signal
 		printf("Changes: %i\n",changes);
-	  updateSig(this,changes);
+	  //updateSig(this,changes);
 	}
-	return changes!=NO>0?1:0;
+
+	unlock();
+
+	//call update signal
+	updateSettings(changes);	
+
+	return changes!=NO?1:0;
 }
 
-bool SettingKinect::update(cJSON* jsonNew, cJSON* jsonOld,const char* id, int* val){
-	double tmp = *val;
-	bool ret;
-	ret = update(jsonNew, jsonOld, id, &tmp);
+/* Update of val without argument checking. */
+bool SettingKinect::updateState(cJSON *jsonNew, cJSON *jsonOld,const char* id, int* val){
+	double tmp=*val;
+	bool ret = updateState(jsonNew,jsonOld,id,&tmp);
 	*val = (int)tmp;
 	return ret;
 }
-
-bool SettingKinect::update(cJSON* jsonNew, cJSON* jsonOld,const char* id, double* val){
-	cJSON* ntmp = getArrayEntry(jsonNew,id);
-	cJSON* otmp;
+bool SettingKinect::updateState(cJSON *jsonNew, cJSON *jsonOld,const char* id, double* val){
+	cJSON *ntmp = getArrayEntry(jsonNew,id);
+	cJSON *otmp;
 	bool ret(false);
-	printf("update of %s:",id);				
-	double nval=0.0, oval=*val;
-	if( jsonOld != NULL && NULL != (otmp=getArrayEntry(jsonOld,id)) ){
-		oval = getNumber(otmp,"val");//probably redundant.
-		nval = doubleFieldValue(ntmp,otmp);
-		if(oval!=nval) ret=true;
-	}else if( ntmp != NULL){
-		nval = doubleFieldValue(ntmp,ntmp);
-		ret = true;
-	}
-	printf(" %f\n",nval);				
-	/* If input data was manipulated on client side, nval can differ from "ntmp.val"
-	 * nval conside [min_old,max_old] and "ntmp.val" not.
-	 * An Update of ntmp.val is possible but avoided for performance reasons.
-	 */
-	*val = nval;
-	return ret;
-}
-
-bool SettingKinect::updateCheckbox(cJSON* jsonNew, cJSON* jsonOld,const char* id, bool* val){
-	cJSON* ntmp = getArrayEntry(jsonNew,id);
-	cJSON* otmp;
-	bool ret(false);
-	printf("update of %s:",id);				
+	//VPRINT("update of %s:",id);				
 	double nval=0.0, oval=*val;
 	if( jsonOld != NULL && NULL != (otmp=getArrayEntry(jsonOld,id)) ){
 		oval = getNumber(otmp,"val");
 		nval = getNumber(ntmp,"val");
-		if(oval!=nval) ret=true;
+		if(oval!=nval){
+			/* Attention. The case 'oval!=*val' indicates changes of this property
+			 * by an other thread/operation. nval OVERWRITE *val. This could
+			 * be problematic in some special cases. */
+			*val = nval;
+			ret=true;
+		}
 	}else if( ntmp != NULL){
 		nval = getNumber(ntmp,"val");
+		*val = nval;
 		ret = true;
 	}
-	printf(" %f\n",nval);				
-	*val = nval==1;
+	//VPRINT(" %f\n",nval);				
 	return ret;
 }
+
 bool SettingKinect::updateRoi(int x, int y, int width, int height){
 	if( x<0 || y<0 || x+width>KRES_X || y+height>KRES_Y){
 		return false;
 	}
-	m_roi.x = x;
-	m_roi.y = y;
-	m_roi.width = width;
-	m_roi.height = height;
-	//printf("Roi: (%i,%i,%i,%i)\n",m_roi.x,m_roi.y,m_roi.width,m_roi.height);
+	m_kinectProp.roi.x = x;
+	m_kinectProp.roi.y = y;
+	m_kinectProp.roi.width = width;
+	m_kinectProp.roi.height = height;
+	VPRINT("Roi: (%i,%i,%i,%i)\n",m_kinectProp.roi.x,m_kinectProp.roi.y,m_kinectProp.roi.width,m_kinectProp.roi.height);
 }
 
-/*void SettingKinect::setDevice(MyFreenectDevice* device){
-			m_device = device;
-		};
-*/
-		
+bool SettingKinect::webserverUpdateConfig(Onion::Request *preq, int actionid, Onion::Response *pres){
+	if( actionid == 0 ){
+		VPRINT("update kinectSettings values\n");
+		const char* json_str = onion_request_get_post(preq->c_handler(), "kinectSettings");
+		if( json_str != NULL){
+			setConfig(json_str, WEB_INTERFACE|PARSE_AGAIN);
+			//hm, send update signal here with some flags which mark changes?
+		}
+		std::string reply = "ok";
+		pres->write( reply.c_str(), reply.size() ); 
+		return true;
+	}
+return false;
+}
+
+
 void SettingKinect::setAreas(std::vector<Area> &new_areas){
 
 	//m_areas.clear();//redundant
@@ -222,9 +304,9 @@ void SettingKinect::setAreas(std::vector<Area> &new_areas){
 		cJSON_AddItemToArray(areas, jsonArea(m_areas[i].id,m_areas[i].repoke_x,m_areas[i].repoke_y,m_areas[i].depth) );
 	}
 
-	m_pjson_mutex.lock();
+	m_json_mutex.lock();
 	cJSON_ReplaceItemInObject(m_pjson_root, "areas", areas);
-	m_pjson_mutex.unlock();
+	m_json_mutex.unlock();
 	//cJSON_Delete( );
 	//printf("Json updated?!\n%s", getConfig());
 }

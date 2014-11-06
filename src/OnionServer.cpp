@@ -1,266 +1,547 @@
 /*
-	Onion HTTP server library
-	Copyright (C) 2010 David Moreno Montero
-
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU Affero General Public License as
-	published by the Free Software Foundation, either version 3 of the
-	License, or (at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU Affero General Public License for more details.
-
-	You should have received a copy of the GNU Affero General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * This class use the onion library from David Moreno.
+ * See https://github.com/davidmoreno/onion .
 	*/
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <fstream>
+//#include <sys/types.h>
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <assert.h>
-#include <sys/types.h>
-#include <regex.h>
-#include "cJSON.h"
+#include <boost/bind.hpp>
+#include <boost/iostreams/device/file.hpp>
+#include <boost/iostreams/stream.hpp>
+#include "boost/filesystem.hpp"
+//#include <istream>
+namespace fs = boost::filesystem;
+
+#include "JsonMessage.h"
+#include "SettingKinect.h"
 #include "OnionServer.h"
 
 
-int check_filename(const char *filename){
-	regex_t regex;
-	int reti, ret;
-	char msgbuf[100];
-
-	/* Compile regular expression */
-	reti = regcomp(&regex, "^[[:alnum:]]*\\.json$", 0);
-	if( reti ){ fprintf(stderr, "Could not compile regex\n"); return -1; }
-
-	/* Execute regular expression */
-	reti = regexec(&regex, filename, 0, NULL, 0);
-	if( !reti ){
-		ret= 1;
-	}else if( reti == REG_NOMATCH ){
-		ret= 0;
-	}else{
-		regerror(reti, &regex, msgbuf, sizeof(msgbuf));
-		fprintf(stderr, "Regex match failed: %s\n", msgbuf);
-		ret= 0;
-	}
-
-	/* Free compiled regular expression if you want to use the regex_t again */
-	regfree(&regex);
-
-	return ret;
-}
-
 // This has to be extern, as we are compiling C++
 extern "C"{
-int index_html_template(void *p, onion_request *req, onion_response *res);
-int kinectgrid_script_js_template(void *p, onion_request *req, onion_response *res);
-int kinectgrid_settings_js_template(void *p, onion_request *req, onion_response *res);
+onion_connection_status index_html_template(void *p, onion_request *req, onion_response *res);
+onion_connection_status kinect_settings_js_template(void *p, onion_request *req, onion_response *res);
+}
+
+extern "C" {
+	/* Replace default onion_log function to 
+	 * to filter out O_INFO messages */
+	void log_wrapper(onion_log_level level, const char *filename,
+			int lineno, const char *fmt, ...){
+
+		if( level == O_INFO) return;
+
+		char tmp[256];
+		va_list ap;
+		va_start(ap, fmt);
+		vsnprintf(tmp,sizeof(tmp),fmt, ap);
+		va_end(ap);
+		onion_log_stderr(level, filename, lineno, tmp);
+	};
+
+	void (*onion_log)(onion_log_level level, const char *filename,
+			int lineno, const char *fmt, ...)=log_wrapper;
+}
+
+
+/* Helper functions */
+static bool check_regex(const std::string &s, const std::string &pattern){
+	boost::regex re;
+	//std::string pattern("^[[:alnum:]]*\\.b9j$");
+	//std::string s(filename);
+	//std::cout << "String: " << s << std::endl << "Pattern: " << pattern << std::endl;
+	try {
+		re.assign(pattern, boost::regex_constants::icase);
+	} catch (boost::regex_error& e) {
+		std::cout << pattern << " is not a valid regular expression: \""
+			<< e.what() << "\"" << std::endl;
+	}
+
+	if (boost::regex_match(s, re)) return true;
+	return false;
+}
+
+static bool check_filename(const char *filename){
+	const std::string s(filename);
+	const std::string pattern("^[[:alnum:]]*\\.\\(png|html|js|css\\)$");
+	return check_regex(s,pattern);
+}
+
+static bool check_configFilename(const char *filename){
+	const std::string s(filename);
+	const std::string pattern("^.*\\.json$");
+	return check_regex(s,pattern);
 }
 
 /*
- Check post values and then return template of index.html.
- (Or use *p for other callbacks (not implemented))
+ * Parse data from client. Use actionid-arg to distinct different
+ * cases.
+ */
+onion_connection_status OnionServer::updateData(
+		Onion::Request &req, Onion::Response &res) {
+	/* Default reply is 'reload' which force reload
+	 * of complete website. In mosty cases this string will replaced
+	 * by one of the signal handlers.
+	 */
+	int actionid = atoi( onion_request_get_queryd(req.c_handler(), "actionid","0") );
+
+	if( ! updateSignal( &req, actionid, &res) ){
+		// Signal returns true if at least one handler writes into res.
+		// Write default reply, if nothing was written.
+		std::string reply("reload");
+		res.write(reply.c_str(), reply.size() );
+	}
+
+	return OCS_PROCESSED;
+}
+
+/*
+ * Returns json struct of current settings.
+ */
+onion_connection_status OnionServer::getSettingKinect(
+		Onion::Request &req, Onion::Response &res ){
+	const char* kinect = m_settingKinect.getConfig(true);
+	size_t len = strlen( kinect );
+	res.write(kinect, (int) len );
+	return OCS_PROCESSED;
+}
+
+/*
+ Returns json struct of filenames in job files folder.
 */
-int checkFormularValues(void *p, onion_request *req, onion_response *res){
-	int ok = ((OnionServer*)p)->updateSetting(req,res);
-	if( ok != 0){
-		onion_response_set_length(res, 6);
-		onion_response_write(res, "reload", 6); 
+/*
+onion_connection_status OnionServer::getJobFolder(
+		Onion::Request &req, Onion::Response &res ){
+
+	std::string &folder = m_b9CreatorSettings.m_b9jDir;
+	std::ostringstream json_reply;
+
+	fs::path full_path( fs::initial_path<fs::path>() );
+	full_path = fs::system_complete( fs::path( folder ) );
+
+	unsigned long file_count = 0;
+
+	json_reply << "{ \"name\" : \"" << folder << "\", \"content\" : [" ;
+
+	if( !fs::exists( full_path ) ){
+		std::cout << "Not found: " << full_path.filename() << std::endl;
+		json_reply << "\"none\"";
+	}else if ( !fs::is_directory( full_path ) ){
+		std::cout << "Path is no directory: " << full_path.filename() << std::endl;
+		json_reply << "\"none\"";
 	}else{
-		onion_response_set_length(res, 2);
-		onion_response_write(res, "Ok", 2); 
+		fs::directory_iterator end_iter;
+		for ( fs::directory_iterator dir_itr( full_path );
+				dir_itr != end_iter;
+				++dir_itr )
+		{
+			try
+			{
+				if (! fs::is_directory( dir_itr->status() ) )
+				{ //regluar file or symbolic link
+					if( file_count ) json_reply << ", " << std::endl;
+					json_reply << "{ \"" << file_count << "\":	" \
+						<< dir_itr->path().filename() << " }";
+					++file_count;
+				}
+
+			}
+			catch ( const std::exception & ex )
+			{
+				std::cout << dir_itr->path().filename() << " " << ex.what() << std::endl;
+			}
+		}
+	}
+
+	json_reply << "] }" ;
+
+	std::string json_replyStr = json_reply.str();
+	size_t len = json_replyStr.size();
+	res.write(json_replyStr.c_str(), (int) len );
+	return OCS_PROCESSED;
+}
+*/
+
+
+/* Like getJobFolder but with some prefix and suffix text
+ * to get an *.js file.
+ * */
+/*
+onion_connection_status OnionServer::getJobFolderWrapped(
+		Onion::Request &req, Onion::Response &res ){
+	res.write("json_job_files = ", 17);
+	onion_connection_status ret = getJobFolder(req, res);
+	res.write(";", 1);
+	return ret;
+}*/
+
+
+/*
+ * Convert all enties of message queue into json code and send this file
+ * to the client.
+ */
+onion_connection_status OnionServer::getPrinterMessages(
+		Onion::Request &req, Onion::Response &res ){
+
+		Messages &q = m_settingKinect.m_queues;
+		cJSON* tmp = jsonMessages("serialMessages", q.m_messageQueue);
+		if( tmp != NULL ){
+			char* json_serialMessages = cJSON_Print( tmp );
+			size_t len = strlen( json_serialMessages );
+			res.write(json_serialMessages, (int) len);
+
+			cJSON_Delete(tmp);
+			tmp = NULL;
+			free(json_serialMessages);
+			json_serialMessages = NULL;
+		}else{
+			const char* json_serialMessages = "(OnionServer) Serial Messages Error";
+			size_t len = strlen( json_serialMessages );
+			res.write(json_serialMessages, (int) len);
+			//Do not free json_serialMessages in this case. It's point to static string here.
+		}
+
+	return OCS_PROCESSED;
+}
+
+
+/* SendSignal with actionid=10 to get png image from
+ * DisplayManager.
+ */
+onion_connection_status OnionServer::preview(
+		Onion::Request &req, Onion::Response &res ){
+	int actionid = 10;
+	if( ! updateSignal(&req, actionid, &res) ){
+		//signals did not write into response. Write default reply.
+		std::string reply("Could not generate Image.");
+		res.write( reply.c_str(), reply.size() );
 	}
 	return OCS_PROCESSED;
 }
+
 
 /*
  Return raw file if found. Security risk?! Check of filename/path required?!
 */
-int search_file(onion_dict *context, onion_request *req, onion_response *res){
-	//const char* path = onion_request_get_path(req);//empty?!
-	const char* path = onion_request_get_fullpath(req);
-	printf("Request of %s %i.\n",path, strlen(path));
-	char filename[strlen(path)+8];
-	//sprintf(filename,"./%s",path);
-	sprintf(filename,"./html/%s",path);
+onion_connection_status OnionServer::search_file(
+		Onion::Request &req, Onion::Response &res ){
+	//const char* path = onion_request_get_path(req);//Hm, is empty?!
+	const char* path = onion_request_get_fullpath( req.c_handler() );
+#ifdef VERBOSE
+	printf("Request of %s.\n",path);
+#endif
+	std::string filename("./html/");
+	filename.append(path);
 
-		//read file 
-	if( FILE *f=fopen(filename,"rb") ){
-		fseek(f,0,SEEK_END);
-		long len=ftell(f);
-		fseek(f,0,SEEK_SET);
-		char *data=(char*)malloc(len+1);
-		fread(data,1,len,f);
-		fclose(f);
+	std::ifstream file(filename.c_str());
+	std::string line;
 
-		if (context) onion_dict_add(context, "LANG", onion_request_get_language_code(req), OD_FREE_VALUE);
-		onion_response_set_length(res, len);
-		onion_response_write(res, data, len); 
-		if (context) onion_dict_free(context);
+	if( file.is_open()){
 
-		free(data);
+		/* Create header with mime type and charset information for several file extensions.
+		 * This is just a workaround. There should be an automatic mechanicm
+		 * in libonion. */
+		int periodPos = filename.find_last_of('.');
+		std::string extension = filename.substr(periodPos+1);
+		std::string key("Content-Type");
+		std::string defaultType("text/html; charset: utf-8");
+
+		std::string mime = m_mimedict.get( extension , defaultType ) ;
+		res.setHeader(key,mime);
+		onion_response_write_headers(res.c_handler());// missing in cpp bindings?
+		//res.writeHeaders();//this was added by me...
+
+		try{
+			while (std::getline(file, line)) {
+				res.write( line.c_str(), line.size() );
+				res.write("\n", 1 );
+			}
+		}//catch ( const boost::iobase::failure &ex )
+		catch ( const std::exception & ex ){
+			std::cerr << "Can not read " << filename << std::endl;
+			res.write( "<h1>Error while reading File.</h1>", 34);
+		}
 	}else{
-		onion_response_set_length(res, 24);
-		onion_response_write(res, "<h1>File not found</h1>", 24); 
+		res.write( "<h1>File not found.</h1>", 34);
 	}
+
 	return OCS_PROCESSED;
-}
-
-/*
- Replace some template variables and send kinectgrid_settings.js
-*/
-int insert_json(void *data, onion_request *req, onion_response *res, void* foo, void* datafree)
-{
- //	printf("Pointer in callback: %p %p %p)\n",data,p,datafree);
-onion_dict *d=onion_dict_new();
-if( data != NULL){
-	onion_dict_add(d, "ONION_JSON_KINECT",((JsonConfig*)data)->getConfig(),0);
-}
-//onion_dict_add(d, "user", user, OD_DICT|OD_FREE_VALUE);
-
-return kinectgrid_settings_js_template(d, req, res);
 }
 
 /*
  Replace some template variables (filename of last config) call index_html_template
 */
-int index_html(void *data, onion_request *req, onion_response *res, void* foo, void* datafree)
+onion_connection_status OnionServer::index_html( Onion::Request &req, Onion::Response &res)
 {
- //	printf("Pointer in callback: %p %p %p)\n",data,p,datafree);
-onion_dict *d=onion_dict_new();
-if( data != NULL){
-	onion_dict_add(d, "LAST_SETTING_FILENAME",((JsonConfig*)data)->getString("lastSetting"),0);
+	/* Issue note: The following cause double free of mem because
+	 * onion_dict_free will called twice: in index_html_template and deconstructor.
+	 * Onion::Dict d;
+	 std::string key("LAST_SETTING_FILENAME");
+	 d.add(key,m_b9CreatorSettings.m_configFilename,0);
+	 return index_html_template(d.c_handler(), req.c_handler(), res.c_handler() );
+
+	 => Thus, use pointer, but do not free here.
+	 */
+	onion_dict *d=onion_dict_new();//will free'd in template call
+	onion_dict_add( d, "LAST_SETTING_FILENAME",
+			m_settingKinect.m_configFilename.c_str(), 0);
+
+	return index_html_template(d, req.c_handler(), res.c_handler() );
 }
 
-return index_html_template(d, req, res);
+
+/*
+ Replace some template variables and send kinect_settings.js
+*/
+onion_connection_status OnionServer::getSettingKinectWrapped(
+		Onion::Request &req, Onion::Response &res)
+{
+	onion_dict *d=onion_dict_new();//will free'd in template call
+	onion_dict_add( d, "ONION_JSON",
+			m_settingKinect.getConfig(), 0);
+	return kinect_settings_js_template(d, req.c_handler(), res.c_handler());
 }
+
 
 /*+++++++++++++ OnionServer-Class ++++++++++++++++++ */
-int OnionServer::start_server()
-{
-	onion_url *url=onion_root_url(m_ponion);
+OnionServer::OnionServer(SettingKinect &settingKinect ):
+	m_onion( O_ONE_LOOP),
+	//m_onion( O_THREADED),//never shutdown server
+	//m_onion( O_THREADED|O_DETACH_LISTEN ),
+	//m_onion( O_ONE_LOOP|O_DETACH_LISTEN ),
+	m_url(m_onion),
+	m_mimedict(),
+	m_mimes(),
+	m_urls(),
+	m_view(-1),
+	m_settingKinect(settingKinect) {
+		//m_onion.setTimeout(5000);
 
-	const char *host, *port;
-	if( m_psettingKinectGrid != NULL){
-		host = m_psettingKinectGrid->getString("host");
-		port = m_psettingKinectGrid->getString("port");
-	}else{
-		host = "0.0.0.0";
-		port = "8080";
+		// Store used urls
+		m_urls.push_back( "" );
+		m_urls.push_back("index.html");
+		m_urls.push_back("kinect_settings.js");
+		m_urls.push_back("settings");
+		m_urls.push_back("messages");
+		m_urls.push_back("preview.png");
+		m_urls.push_back("update");
+		m_urls.push_back("^.*$");
+
+		// Store used mime types
+		m_mimes.push_back("html");
+		m_mimes.push_back("text/html; charset: utf-8");
+		m_mimes.push_back("css");
+		m_mimes.push_back("text/css; charset: utf-8"); 
+		m_mimes.push_back("js");
+		m_mimes.push_back("application/javascript; charset: utf-8");
+		m_mimes.push_back("png");
+		m_mimes.push_back("image/png");
+
+		//Set mime types dict
+		m_mimedict.add( m_mimes[0], m_mimes[1], 0);
+		m_mimedict.add( m_mimes[2], m_mimes[3], 0);
+		m_mimedict.add( m_mimes[4], m_mimes[5], 0);
+		m_mimedict.add( m_mimes[6], m_mimes[7], 0);
+
+
+		//add default signal handler.
+		updateSignal.connect(
+				boost::bind(&OnionServer::updateWebserver,this, _1, _2, _3)
+				);
+		//add signal handler of m_settingKinect
+		updateSignal.connect(
+				boost::bind(&SettingKinect::webserverUpdateConfig,&m_settingKinect, _1, _2, _3)
+				);
+		//start_server();
+
 	}
 
-	onion_set_hostname(m_ponion, host); // Force ipv4.
-	onion_set_port(m_ponion, port);
-	onion_url_add_with_data(url, "kinectgrid_settings.js", (void*)insert_json, m_psettingKinect, NULL);
-	onion_url_add_with_data(url, "index.html", (void*)index_html, m_psettingKinectGrid, NULL);
-	onion_url_add_with_data(url, "", (void*)index_html, m_psettingKinectGrid, NULL);
-	//onion_url_add_with_data(url, "index.html", (void*)checkFormularValues, this, NULL);
-	//onion_url_add_with_data(url, "", (void*)checkFormularValues, this, NULL);
-	onion_url_add_with_data(url, "json", (void*)checkFormularValues, this, NULL);
-	onion_url_add(url, "^.*$", (void*)search_file);
+int OnionServer::start_server() {
 
-	/* Now, m_ponion get the O_DETACH_LISTEN flag on creation and
-	   the Extra thread is omitable. */
-	//start loop as thread
-	//return pthread_create( &m_pthread, NULL, &start_myonion_server, m_ponion);	
-	onion_listen(m_ponion);//loop
+	std::string host(m_settingKinect.getString("host"));
+	std::string port(m_settingKinect.getString("port"));
 
-	return 0;
+	m_onion.setHostname(host);
+	m_onion.setPort(port);
+
+	m_url.add<OnionServer>(m_urls[0], this, &OnionServer::index_html );
+	m_url.add<OnionServer>(m_urls[1], this, &OnionServer::index_html );
+
+	/** Dynamic content **/
+	/* Send data */
+	m_url.add<OnionServer>(m_urls[2], this, &OnionServer::getSettingKinectWrapped );
+	m_url.add<OnionServer>(m_urls[3], this, &OnionServer::getSettingKinect );
+	m_url.add<OnionServer>(m_urls[4], this, &OnionServer::getPrinterMessages );
+	m_url.add<OnionServer>(m_urls[5], this, &OnionServer::preview );
+	
+	/* Recive data */
+	m_url.add<OnionServer>(m_urls[6], this, &OnionServer::updateData );
+
+//	m_url.add<OnionServer>(m_urls[4], this, &OnionServer::getJobFolderWrapped );
+//	m_url.add<OnionServer>(m_urls[5], this, &OnionServer::getJobFolder );
+
+	/** Static content **/
+	/* Send data, should be the last added case. */
+	m_url.add<OnionServer>(m_urls[7], this, &OnionServer::search_file );
+
+	//start loop as thread  (O_DETACH_LISTEN flag is set.)
+	//m_onion.listen();//loop
+	//return 0;
+	return pthread_create( &m_pthread, NULL, &start_myonion_server, &m_onion);
 }
 
 int OnionServer::stop_server()
 {
-	onion_listen_stop(m_ponion);//stop loop
+	m_onion.listenStop();
 	int i = pthread_join( m_pthread, NULL);//wait till loop ends
-	onion_free(m_ponion);
 	return i;
 }
 
-int OnionServer::updateSetting(onion_request *req, onion_response *res){
-	int actionid = atoi( onion_request_get_queryd(req,"actionid","0") );
-	printf("Actionid: %i \n", actionid);
+/* return value marks, if reply string contains data which should
+ * return to the web client:
+ * -2: No data written into reply. Input generate error. Currently, it's not handled.
+ * -1: No data written into reply. Input generate state which require reloading of web page.
+ *  0: data written into reply
+ *  1: No data written into reply, but input processed successful.*/
+bool OnionServer::updateWebserver(
+		Onion::Request *preq, int actionid, Onion::Response *pres ){
+	VPRINT("Actionid: %i \n", actionid);
+	switch(actionid){
+		case 4:
+			{ /* Command Message */
+				const char* json_str = onion_request_get_post(preq->c_handler(), "cmd");
+				std::string reply;
+
+				if( json_str != NULL){
+					Messages &q = m_settingKinect.m_queues;
+					std::string cmd(json_str);
+					q.add_command(cmd);	
+					reply = "ok";
+				}else{
+					reply = "missing post variable 'cmd'";
+				}
+
+				pres->write(reply.c_str(), reply.size() );
+				return true;
+			}
+			break;
+		case 3:
+			{ /* Quit */
+				std::string reply("quit");
+				pres->write(reply.c_str(), reply.size() );
+
+				printf("Quitting...\n");
+				m_settingKinect.lock();
+				//m_settingKinect.m_die = true;
+				m_settingKinect.setMode(QUIT);
+				m_settingKinect.unlock();
+
+				return true;
+			}
+			break;
+		default:
+			break;
+	}
+
 	switch(actionid){
 		case 9:{  //reset config values to defaults.
-						 m_psettingKinect->loadConfigFile(NULL);
+						 m_settingKinect.loadConfigFile(NULL);
+						 std::string reply("ok");
+						 pres->write(reply.c_str(), reply.size() );
+						 return true;
 					 }
 					 break;
 		case 8:{  //quit programm
-						 m_psettingKinectGrid->setMode(QUIT);
+						 std::string reply("quit");
+						 pres->write(reply.c_str(), reply.size() );
+						 m_settingKinect.setMode(QUIT);
+						 return true;
 					 }
 					 break;
 		case 7:{  //load masks
-						 m_psettingKinectGrid->setMode(LOAD_MASKS);
+						 m_settingKinect.setMode(LOAD_MASKS);
+						 std::string reply("ok");
+						 pres->write(reply.c_str(), reply.size() );
+						 return true;
 					 }
 					 break;
 		case 6:{ //save masks
-						 m_psettingKinectGrid->setMode(SAVE_MASKS);
+						 m_settingKinect.setMode(SAVE_MASKS);
+						 std::string reply("ok");
+						 pres->write(reply.c_str(), reply.size() );
+						 return true;
 					 }
 					 break;
 		case 5:{ //select view
-							//m_view = atoi( onion_request_get_queryd(req,"view","0") );
-							m_view = atoi( onion_request_get_post(req,"view") );
-						 printf("Set view to %i.\n",m_view);
+						 //m_view = atoi( onion_request_get_queryd(req,"view","0") );
+						 m_view = atoi( onion_request_get_post(preq->c_handler(),"view") );
+						 VPRINT("Set view to %i.\n",m_view);
+						 std::string reply("ok");
+						 pres->write(reply.c_str(), reply.size() );
+						 return true;
 					 }
 					 break;
 		case 4:{ //repoke
-						 printf("Repoke\n");
-								m_psettingKinectGrid->setMode(REPOKE_DETECTION);
+						 VPRINT("Repoke\n");
+						 m_settingKinect.setMode(REPOKE_DETECTION);
+						 std::string reply("ok");
+						 pres->write(reply.c_str(), reply.size() );
+						 return true;
 					 }
 					 break;
 		case 3:{ // area detection
-							int start = atoi( onion_request_get_post(req,"start") );
-							if( start == 1)
-								m_psettingKinectGrid->setMode(AREA_DETECTION_START);
-							else{
-								m_psettingKinectGrid->setMode(AREA_DETECTION_END);
-							}
+						 int start = atoi( onion_request_get_post(preq->c_handler(),"start") );
+						 if( start == 1)
+							 m_settingKinect.setMode(AREA_DETECTION_START);
+						 else{
+							 m_settingKinect.setMode(AREA_DETECTION_END);
+						 }
+						 std::string reply("ok");
+						 pres->write(reply.c_str(), reply.size() );
+						 return true;
 					 }
 			break;
 		case 2:{
-						 const char* filename = onion_request_get_post(req,"filename");
-						 printf("Save new settingKinectGrid: %s\n",filename);
-						 if( check_filename(filename ) == 1){
-							 m_psettingKinect->saveConfigFile(filename);
-							 m_psettingKinectGrid->setString("lastSetting",filename);
-							 m_psettingKinectGrid->saveConfigFile("settingKinectGrid.ini");
+						 const char* filename = onion_request_get_post(preq->c_handler(), "filename");
+						 VPRINT("Save new settingKinectGrid: %s\n",filename);
+						 if( check_configFilename(filename) ){
+							 m_settingKinect.saveConfigFile(filename);
+							 //m_settingKinect.setString("lastSetting",filename);
+							 //m_settingKinect.saveConfigFile("settingKinectGrid.ini");
 						 }else{
-						 	printf("Filename not allowed\n");
+						 	VPRINT("Filename not allowed\n");
 						 }
-						 /* force reload of website */
-						 return 0;
+						 std::string reply("ok");
+						 pres->write(reply.c_str(), reply.size() );
+						 return true;
 					 }
 			break;
 		case 1:{
-						 const char* filename = onion_request_get_post(req,"filename");
-						 printf("Load new settingKinectGrid: %s\n",filename);
-						 if( check_filename(filename ) == 1){
-							 m_psettingKinect->loadConfigFile(filename);
+						 const char* filename = onion_request_get_post(preq->c_handler(), "filename");
+						 VPRINT("Load new settingKinectGrid: %s\n",filename);
+						 if( check_configFilename(filename) ){
+							 m_settingKinect.loadConfigFile(filename);
 						 }else{
 							 printf("Filename not allowed\n");
 						 }
-						 return -1;
+						 /* force reload of website */
+						 std::string reply("reload");
+						 pres->write(reply.c_str(), reply.size() );
+						 return true;
 					 }
 			break;
-		case 0:
+		//case 0: // this case will be handled in webserverUpdateConfig
 		default:{
-							printf("update settingKinect values\n");
-							const char* json_str = onion_request_get_post(req,"settingKinect");
-							if( json_str != NULL){
-								//printf("Get new settingKinect: %s\n",json_str);
-								m_psettingKinect->setConfig(json_str, NO);
-							}else{
-								return -1;
-							}
 						}
 			break;
 	}
-	return 0; 
+
+	return false;
 }
-
-
 
 
 

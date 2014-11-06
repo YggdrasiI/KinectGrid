@@ -124,31 +124,25 @@ int main(int argc, char **argv) {
 	time_t last_blob_detection = time(NULL);
 
 	//Load & Create settings
-	SettingKinectGrid *settingKinectGrid = new SettingKinectGrid();
-	if (settingKinectGrid->init("settingKinectGrid.ini") ){
-		//Config file did not exist. Create it.
-		printf("Create settingKinectGrid.ini\n");
-		settingKinectGrid->saveConfigFile("settingKinectGrid.ini");
-	}
-	
-	SettingKinect *settingKinect = new SettingKinect();
-	//settingKinect->init("settingKinectDefault.json");
-	if (settingKinect->init( settingKinectGrid->getString("lastSetting") )){
+	SettingKinect settingKinect;
+	settingKinect.init("default_settings.json");
+	/*
+	if (settingKinect.init( settingKinectGrid->getString("lastSetting") )){
 		//Kinect settings did not found.
 		printf("File %s was not found. Use default values.\n", 
-				settingKinectGrid->getString("lastSetting") );
-	}
+				settingKinectGrid.getString("lastSetting") );
+	}*/
 
 	//init onion server thread
-	OnionServer* onion = new OnionServer(settingKinectGrid, settingKinect); 
+	OnionServer* onion = new OnionServer(settingKinect); 
 	onion->start_server();
 
 	MyTuioServer tuio(
-			settingKinectGrid->getString("tuio2Dcur_host"),
-			(int) settingKinectGrid->getNumber("tuio2Dcur_port"));
+			settingKinect.getString("tuio2Dcur_host"),
+			(int) settingKinect.getNumber("tuio2Dcur_port"));
 	MyTuioServer25D tuio2(
-			settingKinectGrid->getString("tuio25Dblb_host"),
-			(int) settingKinectGrid->getNumber("tuio25Dblb_port"));
+			settingKinect.getString("tuio25Dblb_host"),
+			(int) settingKinect.getNumber("tuio25Dblb_port"));
 
 
 	ImageAnalysis* ia;
@@ -157,9 +151,9 @@ int main(int argc, char **argv) {
 	Freenect::Freenect* freenect;
 	MyFreenectDevice* device;
 #ifdef MYBLOB
-	Tracker2 tracker(settingKinect);
+	Tracker2 tracker(&settingKinect);
 #else
-	TrackerCvBlobsLib tracker(settingKinect);
+	TrackerCvBlobsLib tracker(&settingKinect);
 #endif
 
 	if(withKinect){
@@ -168,11 +162,11 @@ int main(int argc, char **argv) {
 		MyFreenectDevice& mydevice = freenect->createDevice<MyFreenectDevice>(0); 
 		device = &mydevice;
 
-		ia = new ImageAnalysis(device, settingKinect);
+		ia = new ImageAnalysis(device, &settingKinect);
 
 		//Set Signals
-		settingKinect->updateSig.connect(boost::bind(&MyFreenectDevice::update,device, _1, _2));
-		settingKinect->updateSig.connect(boost::bind(&ImageAnalysis::resetMask,ia, _1, _2));
+		settingKinect.updateSig.connect(boost::bind(&MyFreenectDevice::update,device, _1, _2));
+		settingKinect.updateSig.connect(boost::bind(&ImageAnalysis::resetMask,ia, _1, _2));
 
 		if( rgbmode )
 			device->startVideo();
@@ -188,7 +182,7 @@ int main(int argc, char **argv) {
 		namedWindow("img",CV_WINDOW_AUTOSIZE);
 
 		//Set mode to LOAD_MASKS. This try to load masks and repoke areas.
-		settingKinectGrid->setMode(LOAD_MASKS);
+		settingKinect.setMode(LOAD_MASKS);
 	}
 
 	/* Local needs to be set to avoid errors with printf + float values.
@@ -200,8 +194,8 @@ int main(int argc, char **argv) {
 		if( rgbmode ){
 			Mat rgbMat(Size(640,480),CV_8UC3,Scalar(0));
 
-			if( settingKinect->m_clipping)
-				device->setRoi(true,settingKinect->m_roi);
+			if( settingKinect.m_kinectProp.clipping)
+				device->setRoi(true,settingKinect.m_kinectProp.roi);
 			else
 				device->setRoi(false,Rect(0,0,0,0));
 
@@ -215,7 +209,7 @@ int main(int argc, char **argv) {
 					cv::imshow("img",rgbMat);
 					break;
 				case SHOW_MASK:
-					cv::imshow("img",rgbMat(settingKinect->m_roi));
+					cv::imshow("img",rgbMat(settingKinect.m_kinectProp.roi));
 			}
 
 
@@ -223,12 +217,12 @@ int main(int argc, char **argv) {
 
 		//get 8 bit depth image
 		}else if(withKinect){
-			FunctionMode mode = settingKinectGrid->getModeAndLock();
+			FunctionMode mode = settingKinect.getModeAndLock();
 
 			switch (mode){
 				case REPOKE_DETECTION:
 					{
-						ia->resetMask(settingKinect, REPOKE);
+						ia->resetMask(&settingKinect, REPOKE);
 						mode = HAND_DETECTION;
 					}
 					break;
@@ -241,27 +235,28 @@ int main(int argc, char **argv) {
 					{
 						mode = ia->hand_detection(); 
 						//find blobs
-						//Mat foo = ia->m_areaMask(settingKinect->m_roi);
-						tracker.trackBlobs(ia->m_filteredMat(settingKinect->m_roi), ia->m_areaMask, true, &settingKinect->m_areas);
+						//Mat foo = ia->m_areaMask(settingKinect.m_kinectProp.roi);
+						tracker.trackBlobs(ia->m_filteredMat(settingKinect.m_kinectProp.roi), ia->m_areaMask, true, &settingKinect.m_kinectProp.areas);
 
 						//send tuio
-						if( settingKinect->m_tuioProtocols[0] )
-							tuio.send_blobs(tracker.getBlobs(), settingKinect->m_areas, settingKinect->m_roi);
-						if( settingKinect->m_tuioProtocols[1] )
-							tuio2.send_blobs(tracker.getBlobs(), settingKinect->m_areas, settingKinect->m_roi);
+						if( settingKinect.m_tuioProtocols[0] )
+							tuio.send_blobs(tracker.getBlobs(), settingKinect.m_areas, settingKinect.m_kinectProp.roi);
+						if( settingKinect.m_tuioProtocols[1] )
+							tuio2.send_blobs(tracker.getBlobs(), settingKinect.m_areas, settingKinect.m_kinectProp.roi);
 					}
 					break;
 				case LOAD_MASKS:
 					{
 						//filename (with extension....)	
-						const char* sname = settingKinectGrid->getString("lastSetting");
+						//const char* sname = settingKinectGrid.getString("lastSetting");
+						const char* sname = "maskTODO";
 						bool loadingFailed = false;
 
 						std::ostringstream frame;
 						frame << sname << "_frame" << ".png";
 						Mat tmpLoadImg0 = cv::imread(frame.str(),0);
 						if(tmpLoadImg0.empty()) {
-							printf("Can't load depth mask %s_depth.png. \n", sname );
+							printf("[Note] Can't load depth mask %s_depth.png. \n", sname );
 							loadingFailed = true;
 						}else{
 							ia->m_areaGrid = tmpLoadImg0;
@@ -271,25 +266,12 @@ int main(int argc, char **argv) {
 						depth << sname << "_depth" << ".png";
 						Mat tmpLoadImg1 = cv::imread(depth.str(),0);
 						if(tmpLoadImg1.empty()) {
-							printf("Can't load depth mask %s_depth.png. \n", sname );
+							printf("[Note] Can't load depth mask %s_depth.png. \n", sname );
 							loadingFailed = true;
 						}else{
 							ia->m_depthMaskWithoutThresh = tmpLoadImg1;
 						}
 
-						/*
-						std::ostringstream area;
-						area << sname << "_area" << ".png";
-						Mat tmpLoadImg2 = cv::imread(area.str(),0);
-						if(tmpLoadImg2.empty()) {
-							printf("Can't load area mask %s_area.png. \n", sname );
-						}else{
-							ia->m_areaMask = tmpLoadImg2;
-						}
-						
-						ia->m_areaCol_ok = false;
-						ia->finishDepthMaskCreation();
-						*/
 						// repoke to generate m_areaMask and eval position+dimensions of areas.
 						if( loadingFailed){
 							mode = HAND_DETECTION;
@@ -305,7 +287,8 @@ int main(int argc, char **argv) {
 				case SAVE_MASKS:
 					{
 						//filename (with extension....)	
-						const char* sname = settingKinectGrid->getString("lastSetting");
+						//const char* sname = settingKinectGrid.getString("lastSetting");
+						const char* sname = "maskTODO";
 
 						std::ostringstream frame;
 						frame << sname << "_frame" << ".png";
@@ -344,34 +327,26 @@ int main(int argc, char **argv) {
 					}
 					break;
 			}
-			settingKinectGrid->unlockMode(mode);
-			/*
-				 _tmpThresh->origin = 1;
-				 _tmpThresh->imageData = (char*) depthf.data;
-				 _newblobresult = new CBlobResult(_tmpThresh, NULL, 0, false);
-
-				 _newblobresult->Filter( *_newblobresult, B_EXCLUDE, CBlobGetArea(), B_GREATER, val_blob_maxsize.internal_value );
-				 _newblobresult->Filter( *_newblobresult, B_EXCLUDE, CBlobGetArea(), B_LESS, val_blob_minsize.internal_value );
-				 */
+			settingKinect.unlockMode(mode);
 
 			//check if webserver get new viewnumber
 			imshowNbr = onion->getView(imshowNbr);
 
 			switch (imshowNbr){
 				case SHOW_DEPTH:
-					cv::imshow("img",ia->m_depthf(settingKinect->m_roi));
+					cv::imshow("img",ia->m_depthf(settingKinect.m_kinectProp.roi));
 					break;
 				case SHOW_AREAS:
-					cv::imshow("img",ia->getColoredAreas()(settingKinect->m_roi) );
+					cv::imshow("img",ia->getColoredAreas()(settingKinect.m_kinectProp.roi) );
 					break;
 				case SHOW_MASK:
-					cv::imshow("img",ia->m_depthMask(settingKinect->m_roi));
+					cv::imshow("img",ia->m_depthMask(settingKinect.m_kinectProp.roi));
 					break;
 				case SHOW_FILTERED:
-					cv::imshow("img",ia->m_filteredMat(settingKinect->m_roi));
+					cv::imshow("img",ia->m_filteredMat(settingKinect.m_kinectProp.roi));
 					break;
 				case SHOW_FRONTMASK:
-					cv::imshow("img",ia->getFrontMask()(settingKinect->m_roi) );
+					cv::imshow("img",ia->getFrontMask()(settingKinect.m_kinectProp.roi) );
 					break;
 				default:
 					break;
@@ -392,12 +367,12 @@ int main(int argc, char **argv) {
 			}
 
 		}else{
-			FunctionMode mode = settingKinectGrid->getModeAndLock();
+			FunctionMode mode = settingKinect.getModeAndLock();
 			if( mode == QUIT ){
 				printf("End main loop\n");
 				die = true;
 			}
-			settingKinectGrid->unlockMode(mode);
+			settingKinect.unlockMode(mode);
 
 			sleep(1);
 		}
@@ -442,9 +417,6 @@ int main(int argc, char **argv) {
 		//wait some time to give img-window enouth time to close.
 		cvWaitKey(10);
 	}
-
-	delete settingKinect;
-	delete settingKinectGrid;
 
 	return EXIT_SUCCESS;
 }

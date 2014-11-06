@@ -51,7 +51,7 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 	img = mat;
 
 	//Gen blob tree structure
-	cv::Rect *roicv = &m_pSettingKinect->m_roi;
+	cv::Rect *roicv = &m_pSettingKinect->m_kinectProp.roi;
 	const uchar* ptr = mat.data;
 
 	/*mat.data points to first entry of the ROI, not of the full matrix.
@@ -118,7 +118,7 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 		temp.back.y = y;
 
 		uint8_t thresh;
-		if( m_pSettingKinect->m_areaThresh ){
+		if( m_pSettingKinect->m_kinectProp.areaThresh ){
 			//Do not use constant thresh. matR already includes this (pointwise) information.
 			thresh = 0;
 		}else if( pareas != NULL){
@@ -127,7 +127,7 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 			if(thresh>252) thresh=0; 
 		}else{
 			//use general back value as thresh.
-			thresh =  m_pSettingKinect->m_marginBack;
+			thresh =  m_pSettingKinect->m_kinectProp.marginBack;
 		}
 		get_tip(r, matR, thresh, &x, &y, &max_depth);
 
@@ -151,7 +151,7 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 		temp.location.y = temp.origin.y = y;
 
 		/* Depth detection. The measurement method is flexible. */
-		if( m_pSettingKinect->m_areaThresh ){
+		if( m_pSettingKinect->m_kinectProp.areaThresh ){
 			/* Mean is ok, because all pixels of the blob are in front of the frame. */
 			max_depth = mean( matR, matR )[0]+4;/*correct blur(1) and area thresh shift (3)*/
 

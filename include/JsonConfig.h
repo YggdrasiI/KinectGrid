@@ -6,9 +6,9 @@
 #ifndef JSONCONFIG_H
 #define JSONCONFIG_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include "string.h"
+#include <cstdlib>
+#include <cstdio>
+#include <string>
 #include "cJSON.h"
 #include "Mutex.h"
 #include "constants.h"
@@ -22,155 +22,127 @@ typedef cJSON* DefaultsType(void);
 class JsonConfig{
 	private:
 		int clearConfig();
-		char *m_tmp_config_str;
+		char *m_tmp_config_str;//store cJSON_Print return val.
 	protected:
 		cJSON* m_pjson_root;
-		Mutex m_pjson_mutex;
+		::Mutex m_json_mutex; // mutex for internal usage
+		::Mutex m_block_all; // mutex for external usage
+
 	public:
+		void lock();
+		void unlock();
 		JsonConfig():
 			m_pjson_root(NULL),
-			m_tmp_config_str(NULL)
+			m_json_mutex(),	
+			m_tmp_config_str(NULL),
+			m_block_all()
 		{
 		};
+
+		~JsonConfig(){
+			clearConfig();
+			if( m_tmp_config_str != NULL ){
+				free(m_tmp_config_str);
+				m_tmp_config_str = NULL;
+			}
+		};
+
+		/*
+		 * Parse json_str to new json struct. 
+		 *
+		 * Calls virtual method update(...) to
+		 * extract the property changes from the json struct.
+		 *
+		 * Set changes on PARSE_AGAIN if you want
+		 * force the call of regenerateConfig().
+		 *
+		 */
+		int setConfig(const char* json_str, int changes=NO);
+
+		/*
+		 * Delete old json string and call genJson()
+		 * to produce new json object. You should alter
+		 * the virtual method genJson() to control the
+		 * json object.
+		 */
+		int regenerateConfig();
+
+		/* regenerate force call of regenerateConfig().
+		 * */
+		char* getConfig(bool regenerate=false);
+		int loadConfigFile(const char* filename);
+		int saveConfigFile(const char* filename);	
+		/* 
+		 * Create minimal json element.
+		 */
+		virtual void loadDefaults();
+		virtual cJSON* genJson();
+		virtual int update(cJSON* new_json, cJSON* old_json, int changes=NO);
+		cJSON* getJSON() {return m_pjson_root;};
 
 		int init(const char* filename="")
 		{
 			return loadConfigFile(filename);
 		};
 
-		~JsonConfig(){
-			clearConfig();
-			if( m_tmp_config_str != NULL ){
-				free( m_tmp_config_str);
-				m_tmp_config_str = NULL;
-			}
-		};
-	
-		int setConfig(const char* json_str, int update);
-		char* getConfig();//const;
-		int loadConfigFile(const char* filename);
-		int saveConfigFile(const char* filename);	
-		/* 
-		 * Create minimal json element.
-		 */
-		virtual cJSON* loadDefaults();
-		virtual int update(cJSON* new_json, cJSON* old_json, int changes);
-		cJSON* getJSON() {return m_pjson_root;};
+	protected:
+		 bool update(cJSON* jsonNew, cJSON* jsonOld,const char* id, int* val);
+		 bool update(cJSON* jsonNew, cJSON* jsonOld,const char* id, double* val);
+		 bool updateCheckbox(cJSON* jsonNew, cJSON* jsonOld,const char* id, bool* val);
 
+	public:
+		 /* Static helper functions */
+		 /*static*/ const char* getString(cJSON* r, const char* string) const;
+		 /*static*/ double getNumber(cJSON* r, const char* string) const;
+		 /*static*/ cJSON* getArrayEntry(cJSON* arr, const char* string) const;
+		 /*static*/ void setString(cJSON* r,const char* string, const char* value);
+
+		 cJSON* jsonDoubleField(const char* id,
+				 double val, double min,
+				 double max, double diff,
+				 bool readonly=0, const char* format="" , const char* parse="" );
+		 cJSON* jsonIntField(const char* id,
+				 int val, int min,
+				 int max, int diff,
+				 bool readonly=0, const char* format="" , const char* parse="" );
+		 cJSON* jsonCheckbox(const char* id,
+				 bool checked,
+				 bool readonly=0, const char* format="" , const char* parse="" );
+		 cJSON* jsonStateField(const char* id,
+				 double val,
+				 const char* format="" , const char* parse="" );
+		 cJSON* jsonStateField(const char* id,
+				 std::string val,
+				 const char* format="" , const char* parse="" );
+		 cJSON* jsonArea(int id,
+				 float x, float y, float depth
+				 //,const char* format="" , const char* parse=""
+				 );
 
 		/*
-		 * Some helper functions.
+		 * Member based variants of helper functions.
 		 */
-		void setString(const char* string, const char* value){
-			m_pjson_mutex.lock();
-			setString(m_pjson_root, string, value);
-			m_pjson_mutex.unlock();
-			return;
-		}
 
-		static void setString(cJSON* r,const char* string, const char* value){
-			//cJSON* old = 	cJSON_GetObjectItem(r,string);
-			cJSON_ReplaceItemInObject(r, string, cJSON_CreateString(value) );
- 			/*if( old != NULL ){
-				cJSON_Delete(old); //already done in ReplaceItem
-				old = NULL;
-			}*/
-			return;
-		}
+		/* Access to string child nodes of root node.*/
+		const char* getString(const char* string) const;
 
-		static const char* getString(cJSON* r, const char* string){
-			cJSON* obj = 	cJSON_GetObjectItem(r,string);
-			if( obj != NULL && obj->type == cJSON_String)
-				return obj->valuestring;
-			else{
-				printf("JsonConfig: Object %s not found.\n",string);
-				static const char* notfound = "not found";
-				return notfound;
-			}
-		}; 
+		/* Access to number child nodes of root node.*/
+		double getNumber(const char* string) const;
 
-		static double getNumber(cJSON* r, const char* string){
-			cJSON* obj = 	cJSON_GetObjectItem(r,string);
-			if( obj != NULL && obj->type == cJSON_Number)
-				return obj->valuedouble;
-			else{
-				printf("JsonConfig: Object %s not found.\n",string);
-				return -1;
-			}
-		};
-
-		static cJSON* getArrayEntry(cJSON* arr, const char* string){
-			for(int i=0,n=cJSON_GetArraySize(arr);i<n;i++){
-				cJSON* tmp = 	cJSON_GetArrayItem(arr,i);
-				cJSON* id = 	cJSON_GetObjectItem(tmp,"id");
-				if(id!=NULL && !strcmp(id->valuestring,string)) return tmp;
-			}
-			return NULL;
-		};
+		void setString(const char* string, const char* value);
 
 		/* Do not trust range limitation of http request.
 		 * Instead, use range limitation of old config.
 		 */
-		static double doubleFieldValue(cJSON* ndf, cJSON* odf){
-			return min(max(getNumber(odf,"min"),getNumber(ndf,"val")),getNumber(odf,"max"));
-		}
-		inline int intFieldValue(cJSON* ndf, cJSON* odf){return (int)doubleFieldValue(ndf,odf); }
-
-		/* Access to string child nodes of root node.*/
-		const char* getString(const char* string)const{
-			return getString(m_pjson_root, string);
-		}
-
-		/* Access to number child nodes of root node.*/
-		const double getNumber(const char* string){
-			return getNumber(m_pjson_root, string);
-		}
+		double doubleFieldValue(cJSON* ndf, cJSON* odf);
+		inline int intFieldValue(cJSON* ndf, cJSON* odf);
 
 };
 /* End JsonConfig class */
 
+//--------------------------------------------------------
+//--------------------------------------------------------
+//--------------------------------------------------------
 
-/*
- * json representation of extended html input field.
- */
-static cJSON* jsonDoubleField(const char* id, double val, double min, double max, double diff){
-	cJSON* df = cJSON_CreateObject();
-	cJSON_AddStringToObject(df, "type", "doubleField");
-	cJSON_AddStringToObject(df, "id", id);
-	cJSON_AddNumberToObject(df, "val", val );
-	cJSON_AddNumberToObject(df, "min", min );
-	cJSON_AddNumberToObject(df, "max", max );
-	cJSON_AddNumberToObject(df, "diff", diff );
 
-	return df;
-}
-static cJSON* jsonIntField(const char* id, int val, int min, int max, int diff){
-	cJSON* df = cJSON_CreateObject();
-	cJSON_AddStringToObject(df, "type", "intField");
-	cJSON_AddStringToObject(df, "id", id);
-	cJSON_AddNumberToObject(df, "val", val );
-	cJSON_AddNumberToObject(df, "min", min );
-	cJSON_AddNumberToObject(df, "max", max );
-	cJSON_AddNumberToObject(df, "diff", diff );
-
-	return df;
-}
-
-static cJSON* jsonCheckbox(const char* id, bool checked){
-	cJSON* df = cJSON_CreateObject();
-	cJSON_AddStringToObject(df, "type", "checkbox2");
-	cJSON_AddStringToObject(df, "id", id);
-	cJSON_AddNumberToObject(df, "val", checked?1:0 );
-
-	return df;
-}
-
-static cJSON* jsonArea(int id, float x, float y, float depth){
-	cJSON* df = cJSON_CreateObject();
-	cJSON_AddNumberToObject(df, "id", id );
-	cJSON_AddNumberToObject(df, "x", x );
-	cJSON_AddNumberToObject(df, "y", y );
-	cJSON_AddNumberToObject(df, "depth", depth );
-	return df;
-}
 #endif

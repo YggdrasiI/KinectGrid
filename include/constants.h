@@ -3,6 +3,13 @@
 
 #include <cv.h>
 
+#define VERBOSE 1
+#ifdef VERBOSE
+#define VPRINT(...) fprintf(stdout, __VA_ARGS__)
+#else
+#define VPRINT(...)
+#endif
+
 /* Resoluton of kinect images */
 //#define KRES_X = 640;
 //#define KRES_Y = 480;
@@ -34,11 +41,22 @@ static const int AREACOLORS[10][3] = {
 //
 
 /* store which changes need attention */
-enum Changes {NO=0,MASK=1,MOTOR=2,
-	CONFIG=4,MARGIN=8,AREAS=16,
-	FRONT_MASK=32,TUIO_PROTOCOL=64,REPOKE=128,
-	BACK_MASK=256,CLIPPING=512,
-	ALL=1023};
+enum Changes {
+	NO=0,
+	MASK=1,
+	MOTOR=2,
+	CONFIG=4,
+	MARGIN=8,
+	AREAS=16,
+	FRONT_MASK=32,
+	TUIO_PROTOCOL=64,
+	REPOKE=128,
+	BACK_MASK=256,
+	CLIPPING=512,
+	PARSE_AGAIN=1024,
+	WEB_INTERFACE=2048,
+	ALL=4095
+};
 
 /*
  * List of possible "states" of the main program.

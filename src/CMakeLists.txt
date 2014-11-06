@@ -14,7 +14,6 @@ set(json_SRCS
 	cJSON.c
 	JsonConfig.cpp	
 	SettingKinect.cpp
-	SettingKinectGrid.cpp
 	)
 ## end json files
 
@@ -23,7 +22,7 @@ set(json_SRCS
 set(server_SRCS
 	OnionServer.cpp
 	index_html.c
-	kinectgrid_settings_js.c
+	kinect_settings_js.c
 	)
 
 # create sourcefile from html template
@@ -33,21 +32,20 @@ add_custom_command(
 	${CMAKE_CURRENT_BINARY_DIR}/index_html.c
 	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/index.html
 	)
+#add_custom_command(
+#	OUTPUT json_settings_editor_js.c
+#	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/json_settings_editor.js
+#	${CMAKE_CURRENT_BINARY_DIR}/json_settings_editor_js.c
+#	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/json_settings_editor.js
+#	)
 add_custom_command(
-	OUTPUT kinectgrid_script_js.c
-	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinectgrid_script.js
-	${CMAKE_CURRENT_BINARY_DIR}/kinectgrid_script_js.c
-	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinectgrid_script.js
-	)
-add_custom_command(
-	OUTPUT kinectgrid_settings_js.c
-	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinectgrid_settings.js
-	${CMAKE_CURRENT_BINARY_DIR}/kinectgrid_settings_js.c
-	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinectgrid_settings.js
+	OUTPUT kinect_settings_js.c
+	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinect_settings.js
+	${CMAKE_CURRENT_BINARY_DIR}/kinect_settings_js.c
+	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinect_settings.js
 	)
 
 add_library (server SHARED ${server_SRCS})
-#add_dependencies(server index_html.c kinectgrid_script_js.c)
 ## end http server
 
 ## Tuio server

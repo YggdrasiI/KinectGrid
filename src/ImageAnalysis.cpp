@@ -49,9 +49,9 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 	if( m_depthMaskCounter < 0){
 		// Use (fullsize) early frames to generate mask
 		m_pdevice->getDepth8UC1(m_depthf, Rect(0,0,KRES_X,KRES_Y),
-				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth);
+				m_pSettingKinect->m_kinectProp.minDepth,m_pSettingKinect->m_kinectProp.maxDepth);
 		if( m_depthMaskCounter > 2-NMASKFRAMES)//deprecated error handling for first frames of device.
-			createMask(m_depthf,m_depthMaskWithoutThresh,/*m_pSettingKinect->m_marginBack,*/m_depthMaskWithoutThresh);
+			createMask(m_depthf,m_depthMaskWithoutThresh,/*m_pSettingKinect->m_kinectProp.marginBack,*/m_depthMaskWithoutThresh);
 		m_depthMaskCounter++;
 
 		if( m_depthMaskCounter == 0 ){
@@ -59,8 +59,8 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 			finishDepthMaskCreation();
 
 			/* Re-enable clipping */
-			if( m_pSettingKinect->m_clipping)
-				m_pdevice->setRoi(true,m_pSettingKinect->m_roi);
+			if( m_pSettingKinect->m_kinectProp.clipping)
+				m_pdevice->setRoi(true,m_pSettingKinect->m_kinectProp.roi);
 
 			printf("Depth mask detection finished.\n");
 			return HAND_DETECTION;
@@ -78,11 +78,11 @@ FunctionMode ImageAnalysis::hand_detection()
 	if( m_depthMaskCounter < 0)
 		return depth_mask_detection();
 
-	Rect roi = m_pSettingKinect->m_roi;
+	Rect roi = m_pSettingKinect->m_kinectProp.roi;
 
 	// Analyse Roi of depth frame
 
-	if(m_pSettingKinect->m_directFiltering){
+	if(m_pSettingKinect->m_kinectProp.directFiltering){
 		Mat fMRoi(m_filteredMat,roi);
 		Mat dMRoi16U(m_depthMask16U,roi);
 		/* Direct evluation of masked deptframe.
@@ -90,9 +90,9 @@ FunctionMode ImageAnalysis::hand_detection()
 		Disadvantages: No depth frame, no bluring.
 		*/
 		//m_pdevice->getDepth8UC1(fMRoi, roi,
-		//		m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth, dMRoi);
+		//		m_pSettingKinect->m_kinectProp.minDepth,m_pSettingKinect->m_kinectProp.maxDepth, dMRoi);
 		while(! m_pdevice->getDepth8UC1_b(fMRoi, roi, m_pSettingKinect->m_rangeMap, dMRoi16U))
-		//while(! m_pdevice->getDepth8UC1_b(fMRoi, roi, m_pSettingKinect->m_minDepth, m_pSettingKinect->m_maxDepth, dMRoi16U))
+		//while(! m_pdevice->getDepth8UC1_b(fMRoi, roi, m_pSettingKinect->m_kinectProp.minDepth, m_pSettingKinect->m_kinectProp.maxDepth, dMRoi16U))
 		{
 			//printf(" Bad, get old frame!\n");
 			usleep(50);		
@@ -103,7 +103,7 @@ FunctionMode ImageAnalysis::hand_detection()
 		Mat fMRoi(m_filteredMat,roi);
 		Mat dMRoi(m_depthMask,roi);
 		while(! m_pdevice->getDepth8UC1(dfRoi, roi,
-				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth))
+				m_pSettingKinect->m_kinectProp.minDepth,m_pSettingKinect->m_kinectProp.maxDepth))
 		{
 			//printf(".");
 			usleep(50);
@@ -121,16 +121,16 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 {
 	/* Too small values lead to flawed detections. We backup the 
 	 * user value and restore it later. */
-	int backupMinBlobSize = m_pSettingKinect->m_minBlobArea;
+	int backupMinBlobSize = m_pSettingKinect->m_kinectProp.minBlobArea;
 
 	switch (m_area_detection_step) {
 	case 2:
 		{// Wait util no blob is detected.
 			//printf("area detection 2\n");
 			hand_detection();
-			m_pSettingKinect->m_minBlobArea = max(backupMinBlobSize,256);
-			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_roi), m_areaMask, true, NULL);
-			m_pSettingKinect->m_minBlobArea = backupMinBlobSize;
+			m_pSettingKinect->m_kinectProp.minBlobArea = max(backupMinBlobSize,256);
+			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_kinectProp.roi), m_areaMask, true, NULL);
+			m_pSettingKinect->m_kinectProp.minBlobArea = backupMinBlobSize;
 			if( tracker->getBlobs().size() == 0 ){
 				m_area_detection_step = 1;
 			}
@@ -154,9 +154,9 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 			//printf("area detection 1\n");
 			//Mat& depth = m_depthMaskWithoutThresh;
 			hand_detection();
-			m_pSettingKinect->m_minBlobArea = max(backupMinBlobSize,256);
-			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_roi), m_areaMask, true, NULL);
-			m_pSettingKinect->m_minBlobArea = backupMinBlobSize;
+			m_pSettingKinect->m_kinectProp.minBlobArea = max(backupMinBlobSize,256);
+			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_kinectProp.roi), m_areaMask, true, NULL);
+			m_pSettingKinect->m_kinectProp.minBlobArea = backupMinBlobSize;
 			std::vector<cBlob>& blobs = tracker->getBlobs();
 
 			for(int i=0;i<blobs.size(); i++){
@@ -178,8 +178,8 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 					//found new blob without area
 					Area area;
 					area.id = m_area_detection_areas.size()+1;
-					area.repoke_x = blobs[i].location.x+m_pSettingKinect->m_roi.x;
-					area.repoke_y = blobs[i].location.y+m_pSettingKinect->m_roi.y;
+					area.repoke_x = blobs[i].location.x+m_pSettingKinect->m_kinectProp.roi.x;
+					area.repoke_y = blobs[i].location.y+m_pSettingKinect->m_kinectProp.roi.y;
 
 					if( ! repoke_step(area) )
 						return AREA_DETECTION;
@@ -201,7 +201,7 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 
 void ImageAnalysis::genFrontMask(){
 	m_areaGrid = Scalar(255/*0*/);
-	Rect roi = m_pSettingKinect->m_roi;
+	Rect roi = m_pSettingKinect->m_kinectProp.roi;
 	Mat agRoi(m_areaGrid,roi);
 	Mat dfRoi(m_depthf,roi);
 	Mat tmp(dfRoi.size(),dfRoi.type());
@@ -209,14 +209,14 @@ void ImageAnalysis::genFrontMask(){
 	int nFrames = 10;
 	for(int i=0;i<nFrames; i++){
 		m_pdevice->getDepth8UC1(dfRoi, roi,
-				m_pSettingKinect->m_minDepth,m_pSettingKinect->m_maxDepth);
+				m_pSettingKinect->m_kinectProp.minDepth,m_pSettingKinect->m_kinectProp.maxDepth);
 		Mat Kernel(Size(9, 9), CV_8UC1); Kernel.setTo(Scalar(1));
 		Mat Kernel2(Size(7, 7), CV_8UC1); Kernel2.setTo(Scalar(1));
 		dilate(dfRoi, tmp, Kernel); 
 		erode(tmp, tmp, Kernel2); 
-		//threshold(dfRoi, dfRoi,255-m_pSettingKinect->m_marginFront,255,THRESH_BINARY);
+		//threshold(dfRoi, dfRoi,255-m_pSettingKinect->m_kinectProp.marginFront,255,THRESH_BINARY);
 		//agRoi = min/*max*/(agRoi,dfRoi);
-		threshold(tmp, tmp,255-m_pSettingKinect->m_marginFront,1,THRESH_BINARY_INV);
+		threshold(tmp, tmp,255-m_pSettingKinect->m_kinectProp.marginFront,1,THRESH_BINARY_INV);
 		agRoi -= tmp;
 	}
 	/* convert agRoi back to 0-255-Img */
@@ -288,13 +288,13 @@ void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 
 	if( changes & MARGIN ){
 		//printf("ImageAnalysis: Change thresh val\n");
-			//addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
+			//addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_kinectProp.marginBack, m_depthMask);
 	}
 	if( changes & TUIO_PROTOCOL ){
 		//TODO, but not here...
 	}
 	if( changes & REPOKE ){
-		std::vector<Area>& areas = m_pSettingKinect->m_areas;
+		std::vector<Area>& areas = m_pSettingKinect->m_kinectProp.areas;
 		if( areas.size() > 0 ){
 			repoke_init();
 			for(int i=0; i<areas.size(); i++){
@@ -316,7 +316,7 @@ void ImageAnalysis::repoke_init(){
 			//reset area mask and set full roi to one big area
 			m_areaMask = Scalar(0);
 			/* Set value in Roi to MAXAREAS+1. (Tracker ignore blobs in area=0) */
-			m_areaMask(m_pSettingKinect->m_roi) = Scalar(MAXAREAS+1);
+			m_areaMask(m_pSettingKinect->m_kinectProp.roi) = Scalar(MAXAREAS+1);
 			m_area_detection_areas.clear();
 
 			genColoredAreas();
@@ -342,7 +342,7 @@ bool ImageAnalysis::repoke_step(Area& area){
 		printf("Area %i to small.\n", area.id);
 		return false;
 	}
-	if( area.area > 0.95*m_pSettingKinect->m_roi.width * m_pSettingKinect->m_roi.height ){
+	if( area.area > 0.95*m_pSettingKinect->m_kinectProp.roi.width * m_pSettingKinect->m_kinectProp.roi.height ){
 		printf("Area %i very big and ignored. Depth mask ok?\n", area.id );
 		return false;
 	}
@@ -389,8 +389,8 @@ void ImageAnalysis::repoke_finish(){
 	genColoredAreas();
 
 	//update depthMask, if depthMask depends from areaMask
-	addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
-	if( m_pSettingKinect->m_areaThresh ){
+	addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_kinectProp.marginBack, m_depthMask);
+	if( m_pSettingKinect->m_kinectProp.areaThresh ){
 		addAreaThresh(m_pSettingKinect->m_areas, m_areaMask, m_depthMask);
 	}
 
@@ -412,7 +412,7 @@ void ImageAnalysis::addAreaThresh(/*Mat& src,*/ std::vector<Area> areas, Mat& ar
 		 * maxDepth value affect the depth unit length. Thus, this values need to be consides.
 		 * */
 		v = Scalar(areas[i].depth-
-				0.5 * (255/(m_pSettingKinect->m_maxDepth-m_pSettingKinect->m_minDepth) )
+				0.5 * (255/(m_pSettingKinect->m_kinectProp.maxDepth-m_pSettingKinect->m_kinectProp.minDepth) )
 				);
 		Mat a = (areaMask == areas[i].id);
 		v.copyTo(dst,a);
@@ -426,8 +426,8 @@ void ImageAnalysis::addAreaThresh(/*Mat& src,*/ std::vector<Area> areas, Mat& ar
  * updated.
  */
 void ImageAnalysis::finishDepthMaskCreation(){
-	addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_marginBack, m_depthMask);
-	if( m_pSettingKinect->m_areaThresh ){
+	addThresh(m_depthMaskWithoutThresh, m_pSettingKinect->m_kinectProp.marginBack, m_depthMask);
+	if( m_pSettingKinect->m_kinectProp.areaThresh ){
 		//add local thresh val for every detected area
 		addAreaThresh(m_pSettingKinect->m_areas, m_areaMask, m_depthMask);
 	}
@@ -436,10 +436,10 @@ void ImageAnalysis::finishDepthMaskCreation(){
 	//m_depthMask = max(m_depthMask,getFrontMask());//this would be bad for hand blobs which overlap the borders
 
 	/* Set up m_depthMask16U for directFiltering mode */
-	if( m_pSettingKinect->m_directFiltering){
+	if( m_pSettingKinect->m_kinectProp.directFiltering){
 		//remap mask to 16UC1 format.
-		int m = m_pSettingKinect->m_minDepth;
-		int M = m_pSettingKinect->m_maxDepth;
+		int m = m_pSettingKinect->m_kinectProp.minDepth;
+		int M = m_pSettingKinect->m_kinectProp.maxDepth;
 		float alphaInv = ( M-m )/( 0.0-255.0 );
 		float betaInv = ( m*0 - M*255.0 )/(0-255);
 		m_depthMask.convertTo(m_depthMask16U, CV_16UC1, alphaInv, betaInv);

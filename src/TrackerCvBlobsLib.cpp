@@ -59,8 +59,8 @@ void TrackerCvBlobsLib::trackBlobs(const Mat &mat, const Mat &areaMask, bool his
 	for (int i = 0; i < blob_result.GetNumBlobs(); i++) {
 		current_blob = blob_result.GetBlob(i);
 
-		x     = XCenter(current_blob)/*+m_pSettingKinect->m_roi.x*/;
-		y     = YCenter(current_blob)/*+m_pSettingkinect->m_roi.y*/;
+		x     = XCenter(current_blob)/*+m_pSettingKinect->m_kinectProp.roi.x*/;
+		y     = YCenter(current_blob)/*+m_pSettingKinect->m_kinectProp.roi.y*/;
 
 //		temp.areaid = areaMask.at<uchar>((int)x+p.x,(int)y+p.y);//?!not works
 		temp.areaid = (uchar) areaImg.imageData[ ((int)x+p.x) + ((int)y+p.y)*areaMask.size().width];//works
@@ -86,7 +86,7 @@ void TrackerCvBlobsLib::trackBlobs(const Mat &mat, const Mat &areaMask, bool his
 		//z = mean( mat(r), mat(r) )[0];/* mean is not good. The blob can include many pixel behind the frame depth*/
 
 		/* Depth detection. The measurement method is flexible. */
-		if( m_pSettingKinect->m_areaThresh ){
+		if( m_pSettingKinect->m_kinectProp.areaThresh ){
 			/* Mean is ok, because all pixels of the blob are in front of the frame. */
 			max_depth = mean( mat(r), mat(r) )[0]+4;/*correct blur(1) and area thresh shift (3)*/
 			//meanStdDev( mat(r), sdepth, sstddev, mat(r) );

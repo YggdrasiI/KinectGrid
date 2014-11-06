@@ -42,10 +42,10 @@ Tracker::Tracker(SettingKinect* pSettingKinect) : m_pSettingKinect(pSettingKinec
 													, m_count_N(40)
 #endif
 {
-	m_pmin_area = &(m_pSettingKinect->m_minBlobArea);
-	m_pmax_area = &(m_pSettingKinect->m_maxBlobArea);
+	m_pmin_area = &(m_pSettingKinect->m_kinectProp.minBlobArea);
+	m_pmax_area = &(m_pSettingKinect->m_kinectProp.maxBlobArea);
 	m_pmax_radius = &m_max_radius;
-	m_pnotDrawBlob = &(m_pSettingKinect->m_directFiltering);/*Avoid drawing of Blob limits. */
+	m_pnotDrawBlob = &(m_pSettingKinect->m_kinectProp.directFiltering);/*Avoid drawing of Blob limits. */
 
 	for(int i=0; i<MAXHANDS; i++) handids[i] = false;
 	last_handid = 0;

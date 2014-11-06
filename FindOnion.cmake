@@ -40,7 +40,7 @@ endif(Onion_BIN_DIR)
 
 if(Onion_INCLUDE_DIR AND Onion_LIBRARY AND Onion_BIN_DIR)
 	set(Onion_FOUND TRUE)
-	set(Onion_LIBS onion onion_extras)
+	set(Onion_LIBS onion onion_extras onioncpp)
 else(Onion_INCLUDE_DIR AND Onion_LIBRARY AND Onion_BIN_DIR)
 	set(Onion_FOUND FALSE)
 endif(Onion_INCLUDE_DIR AND Onion_LIBRARY AND Onion_BIN_DIR)
