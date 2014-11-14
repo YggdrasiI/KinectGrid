@@ -67,7 +67,7 @@ static bool check_regex(const std::string &s, const std::string &pattern){
 
 static bool check_filename(const char *filename){
 	const std::string s(filename);
-	const std::string pattern("^[[:alnum:]]*\\.\\(png|html|js|css\\)$");
+	const std::string pattern("^[[:alnum:]]*\\.\\(jpg|png|html|js|css\\)$");
 	return check_regex(s,pattern);
 }
 
@@ -117,7 +117,7 @@ onion_connection_status OnionServer::getSettingKinect(
 onion_connection_status OnionServer::getJobFolder(
 		Onion::Request &req, Onion::Response &res ){
 
-	std::string &folder = m_b9CreatorSettings.m_b9jDir;
+	std::string &folder = m_settingKinect.m_b9jDir;
 	std::ostringstream json_reply;
 
 	fs::path full_path( fs::initial_path<fs::path>() );
@@ -281,7 +281,7 @@ onion_connection_status OnionServer::index_html( Onion::Request &req, Onion::Res
 	 * onion_dict_free will called twice: in index_html_template and deconstructor.
 	 * Onion::Dict d;
 	 std::string key("LAST_SETTING_FILENAME");
-	 d.add(key,m_b9CreatorSettings.m_configFilename,0);
+	 d.add(key,m_settingKinect.m_configFilename,0);
 	 return index_html_template(d.c_handler(), req.c_handler(), res.c_handler() );
 
 	 => Thus, use pointer, but do not free here.
@@ -296,14 +296,73 @@ onion_connection_status OnionServer::index_html( Onion::Request &req, Onion::Res
 
 /*
  Replace some template variables and send kinect_settings.js
+ The elegant template approach was disabled due the lack of
+ template type detection. In this variant all quotes will be
+ replaced by its html special char encoding (&quot;). This destroys 
+ java script variables.
 */
+/*
 onion_connection_status OnionServer::getSettingKinectWrapped(
 		Onion::Request &req, Onion::Response &res)
 {
 	onion_dict *d=onion_dict_new();//will free'd in template call
-	onion_dict_add( d, "ONION_JSON",
+	onion_dict_add( d, "ONION_JSON_KINECT",
 			m_settingKinect.getConfig(), 0);
 	return kinect_settings_js_template(d, req.c_handler(), res.c_handler());
+}*/
+
+/* Like 'search_file' */
+onion_connection_status OnionServer::getSettingKinectWrapped(
+		Onion::Request &req, Onion::Response &res)
+{
+	const char* path = onion_request_get_fullpath( req.c_handler() );
+#ifdef VERBOSE
+	printf("Request of %s.\n",path);
+#endif
+	std::string filename("./html/");
+	filename.append(path);
+
+	std::ifstream file(filename.c_str());
+	std::string line;
+
+	if( file.is_open()){
+
+		/* Create header with mime type and charset information for several file extensions.
+		 * This is just a workaround. There should be an automatic mechanicm
+		 * in libonion. */
+		int periodPos = filename.find_last_of('.');
+		std::string extension = filename.substr(periodPos+1);
+		std::string key("Content-Type");
+		std::string defaultType("text/html; charset: utf-8");
+
+		std::string mime = m_mimedict.get( extension , defaultType ) ;
+		res.setHeader(key,mime);
+		onion_response_write_headers(res.c_handler());// missing in cpp bindings?
+		//res.writeHeaders();//this was added by me...
+
+		try{
+			/*
+			res.write("json_kinect = ", 14);
+			const char* kinect = m_settingKinect.getConfig(true);
+			size_t len = strlen( kinect );
+			res.write(kinect, (int) len );
+			res.write(";\n", 2 );
+			*/
+
+			while (std::getline(file, line)) {
+				res.write( line.c_str(), line.size() );
+				res.write("\n", 1 );
+			}
+		}//catch ( const boost::iobase::failure &ex )
+		catch ( const std::exception & ex ){
+			std::cerr << "Can not read " << filename << std::endl;
+			res.write( "<h1>Error while reading File.</h1>", 34);
+		}
+	}else{
+		res.write( "<h1>File not found.</h1>", 34);
+	}
+
+	return OCS_PROCESSED;
 }
 
 
@@ -316,12 +375,13 @@ OnionServer::OnionServer(SettingKinect &settingKinect ):
 	m_url(m_onion),
 	m_mimedict(),
 	m_mimes(),
-	m_urls(),
-	m_view(-1),
+	//m_urls(),
+	m_view(VIEW_NONE),
 	m_settingKinect(settingKinect) {
 		//m_onion.setTimeout(5000);
 
 		// Store used urls
+		/*
 		m_urls.push_back( "" );
 		m_urls.push_back("index.html");
 		m_urls.push_back("kinect_settings.js");
@@ -330,6 +390,7 @@ OnionServer::OnionServer(SettingKinect &settingKinect ):
 		m_urls.push_back("preview.png");
 		m_urls.push_back("update");
 		m_urls.push_back("^.*$");
+		*/
 
 		// Store used mime types
 		m_mimes.push_back("html");
@@ -340,12 +401,15 @@ OnionServer::OnionServer(SettingKinect &settingKinect ):
 		m_mimes.push_back("application/javascript; charset: utf-8");
 		m_mimes.push_back("png");
 		m_mimes.push_back("image/png");
+		m_mimes.push_back("jpg");
+		m_mimes.push_back("image/jpeg");
 
 		//Set mime types dict
 		m_mimedict.add( m_mimes[0], m_mimes[1], 0);
 		m_mimedict.add( m_mimes[2], m_mimes[3], 0);
 		m_mimedict.add( m_mimes[4], m_mimes[5], 0);
 		m_mimedict.add( m_mimes[6], m_mimes[7], 0);
+		m_mimedict.add( m_mimes[8], m_mimes[9], 0);
 
 
 		//add default signal handler.
@@ -360,6 +424,29 @@ OnionServer::OnionServer(SettingKinect &settingKinect ):
 
 	}
 
+void OnionServer::setupUrls() {
+	m_url.add<OnionServer>("", this, &OnionServer::index_html );
+	m_url.add<OnionServer>("index.html", this, &OnionServer::index_html );
+
+	/** Dynamic content **/
+	/* Send data */
+	m_url.add<OnionServer>("kinect_settings.js", this, &OnionServer::getSettingKinectWrapped );
+	m_url.add<OnionServer>("settings", this, &OnionServer::getSettingKinect );
+	m_url.add<OnionServer>("messages", this, &OnionServer::getPrinterMessages );
+	//m_url.add<OnionServer>("preview.png", this, &OnionServer::preview );
+	m_url.add<OnionServer>("preview.jpg", this, &OnionServer::preview );
+
+	/* Recive data */
+	m_url.add<OnionServer>("update", this, &OnionServer::updateData );
+
+	//	m_url.add<OnionServer>("", this, &OnionServer::getJobFolderWrapped );
+	//	m_url.add<OnionServer>("", this, &OnionServer::getJobFolder );
+
+	/** Static content **/
+	/* Send data, should be the last added case. */
+	m_url.add<OnionServer>("^.*$", this, &OnionServer::search_file );
+}
+
 int OnionServer::start_server() {
 
 	std::string host(m_settingKinect.getString("host"));
@@ -368,25 +455,7 @@ int OnionServer::start_server() {
 	m_onion.setHostname(host);
 	m_onion.setPort(port);
 
-	m_url.add<OnionServer>(m_urls[0], this, &OnionServer::index_html );
-	m_url.add<OnionServer>(m_urls[1], this, &OnionServer::index_html );
-
-	/** Dynamic content **/
-	/* Send data */
-	m_url.add<OnionServer>(m_urls[2], this, &OnionServer::getSettingKinectWrapped );
-	m_url.add<OnionServer>(m_urls[3], this, &OnionServer::getSettingKinect );
-	m_url.add<OnionServer>(m_urls[4], this, &OnionServer::getPrinterMessages );
-	m_url.add<OnionServer>(m_urls[5], this, &OnionServer::preview );
-	
-	/* Recive data */
-	m_url.add<OnionServer>(m_urls[6], this, &OnionServer::updateData );
-
-//	m_url.add<OnionServer>(m_urls[4], this, &OnionServer::getJobFolderWrapped );
-//	m_url.add<OnionServer>(m_urls[5], this, &OnionServer::getJobFolder );
-
-	/** Static content **/
-	/* Send data, should be the last added case. */
-	m_url.add<OnionServer>(m_urls[7], this, &OnionServer::search_file );
+	setupUrls();
 
 	//start loop as thread  (O_DETACH_LISTEN flag is set.)
 	//m_onion.listen();//loop
@@ -401,6 +470,19 @@ int OnionServer::stop_server()
 	return i;
 }
 
+/* The user can select a new view over the webinterface (thread A), but this
+ * thread can not set the view variable (mainly used in thread B) of the setting
+ * struct without blocking for a unknown amount of time.
+ * Thus, the webinterface caches new values locally. This will be read by thread B 
+ * later.
+ * If no new view was selected, the input value will be reflected. 
+ */
+View OnionServer::getView(View in){
+	if(m_view < 0) return in;
+	View ret = m_view;
+	return ret;
+};
+
 /* return value marks, if reply string contains data which should
  * return to the web client:
  * -2: No data written into reply. Input generate error. Currently, it's not handled.
@@ -410,8 +492,9 @@ int OnionServer::stop_server()
 bool OnionServer::updateWebserver(
 		Onion::Request *preq, int actionid, Onion::Response *pres ){
 	VPRINT("Actionid: %i \n", actionid);
+
 	switch(actionid){
-		case 4:
+		case 40:
 			{ /* Command Message */
 				const char* json_str = onion_request_get_post(preq->c_handler(), "cmd");
 				std::string reply;
@@ -429,27 +512,9 @@ bool OnionServer::updateWebserver(
 				return true;
 			}
 			break;
-		case 3:
-			{ /* Quit */
-				std::string reply("quit");
-				pres->write(reply.c_str(), reply.size() );
 
-				printf("Quitting...\n");
-				m_settingKinect.lock();
-				//m_settingKinect.m_die = true;
-				m_settingKinect.setMode(QUIT);
-				m_settingKinect.unlock();
-
-				return true;
-			}
-			break;
-		default:
-			break;
-	}
-
-	switch(actionid){
 		case 9:{  //reset config values to defaults.
-						 m_settingKinect.loadConfigFile(NULL);
+						 m_settingKinect.loadConfigFile("");
 						 std::string reply("ok");
 						 pres->write(reply.c_str(), reply.size() );
 						 return true;
@@ -458,7 +523,11 @@ bool OnionServer::updateWebserver(
 		case 8:{  //quit programm
 						 std::string reply("quit");
 						 pres->write(reply.c_str(), reply.size() );
+						 VPRINT("Quitting...\n");
+						 m_settingKinect.lock();
+						 //m_settingKinect.m_die = true;
 						 m_settingKinect.setMode(QUIT);
+						 m_settingKinect.unlock();
 						 return true;
 					 }
 					 break;
@@ -478,8 +547,8 @@ bool OnionServer::updateWebserver(
 					 break;
 		case 5:{ //select view
 						 //m_view = atoi( onion_request_get_queryd(req,"view","0") );
-						 m_view = atoi( onion_request_get_post(preq->c_handler(),"view") );
-						 VPRINT("Set view to %i.\n",m_view);
+						 m_view = (View) atoi( onion_request_get_post(preq->c_handler(),"view") );
+						 VPRINT("Set view to %i.\n",(int)m_view);
 						 std::string reply("ok");
 						 pres->write(reply.c_str(), reply.size() );
 						 return true;
@@ -504,27 +573,27 @@ bool OnionServer::updateWebserver(
 						 pres->write(reply.c_str(), reply.size() );
 						 return true;
 					 }
-			break;
+					 break;
 		case 2:{
-						 const char* filename = onion_request_get_post(preq->c_handler(), "filename");
-						 VPRINT("Save new settingKinectGrid: %s\n",filename);
-						 if( check_configFilename(filename) ){
-							 m_settingKinect.saveConfigFile(filename);
-							 //m_settingKinect.setString("lastSetting",filename);
+						 const char* configFilename = onion_request_get_post(preq->c_handler(), "configFilename");
+						 VPRINT("Save new settingKinectGrid: %s\n",configFilename);
+						 if( check_configFilename(configFilename) ){
+							 m_settingKinect.saveConfigFile(configFilename);
+							 //m_settingKinect.setString("lastSetting",configFilename);
 							 //m_settingKinect.saveConfigFile("settingKinectGrid.ini");
 						 }else{
-						 	VPRINT("Filename not allowed\n");
+							 VPRINT("Filename not allowed\n");
 						 }
 						 std::string reply("ok");
 						 pres->write(reply.c_str(), reply.size() );
 						 return true;
 					 }
-			break;
+					 break;
 		case 1:{
-						 const char* filename = onion_request_get_post(preq->c_handler(), "filename");
-						 VPRINT("Load new settingKinectGrid: %s\n",filename);
-						 if( check_configFilename(filename) ){
-							 m_settingKinect.loadConfigFile(filename);
+						 const char* configFilename = onion_request_get_post(preq->c_handler(), "configFilename");
+						 VPRINT("Load new settingKinectGrid: %s\n",configFilename);
+						 if( check_configFilename(configFilename) ){
+							 m_settingKinect.loadConfigFile(configFilename);
 						 }else{
 							 printf("Filename not allowed\n");
 						 }
@@ -533,11 +602,11 @@ bool OnionServer::updateWebserver(
 						 pres->write(reply.c_str(), reply.size() );
 						 return true;
 					 }
-			break;
-		//case 0: // this case will be handled in webserverUpdateConfig
+					 break;
+					 //case 0: // this case will be handled in webserverUpdateConfig
 		default:{
 						}
-			break;
+						break;
 	}
 
 	return false;

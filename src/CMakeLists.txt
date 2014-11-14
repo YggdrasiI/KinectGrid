@@ -38,12 +38,12 @@ add_custom_command(
 #	${CMAKE_CURRENT_BINARY_DIR}/json_settings_editor_js.c
 #	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/json_settings_editor.js
 #	)
-add_custom_command(
-	OUTPUT kinect_settings_js.c
-	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinect_settings.js
-	${CMAKE_CURRENT_BINARY_DIR}/kinect_settings_js.c
-	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinect_settings.js
-	)
+#add_custom_command(
+#	OUTPUT kinect_settings_js.c
+#	COMMAND ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinect_settings.js
+#	${CMAKE_CURRENT_BINARY_DIR}/kinect_settings_js.c
+#	DEPENDS ${OTEMPLATE} ${CMAKE_SOURCE_DIR}/html/kinect_settings.js
+#	)
 
 add_library (server SHARED ${server_SRCS})
 ## end http server

@@ -78,11 +78,11 @@ class OnionServer{
 		 * references to string. Thus we need
 		 * to omit local variables.
 		 * */
-		std::vector<std::string> m_urls;
+		//std::vector<std::string> m_urls;
 		std::vector<std::string> m_mimes;
 
 		SettingKinect &m_settingKinect;
-		int m_view;
+		View m_view;
 	public:
 		OnionServer(SettingKinect &settingKinect );
 		
@@ -115,13 +115,10 @@ class OnionServer{
 		 * later.
 		 * If no new view was selected, the input value will be reflected. 
 		 */
-		int getView(int in){
-			if(m_view < 0) return in;
-			int ret = m_view;
-			m_view = -1;
-			return ret;
-		};
+		View getView(View in);
 
+	private:
+		void setupUrls();
 
 		/* Handler for webinterface requests */
 		onion_connection_status index_html( Onion::Request &req, Onion::Response &res);

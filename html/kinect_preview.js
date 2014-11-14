@@ -15,26 +15,9 @@ function reloadImage(manual){
 
 	if( !manual && $("#previewRefresh").prop("checked") != true ) return true;
 
-	//var scale = $("#previewScale").val();//to early change
 	var scale = $("#previewScale").prop("zoomval");
+	var d = new Date();
 	if( isNaN(scale) ) scale = 50;
-	d = new Date();
-
-	/* //Does not  work. Input has wrong coding
-		 send("preview.png","scale="+scale,
-		 function(data){
-		 if( data == "noNewImage" ){
-		 $("#info").empty().fadeIn(0).append("No new image").fadeOut(1000);
-		 }else{
-		 $("#previewImg").attr("src", "");
-	//$("#info").empty().fadeIn(0).append("Load new image").fadeOut(1000);
-	$("#info").empty().append( utf8_to_b64(data) );
-	//	$("#previewImg").attr("src", "data:image/png;base64,"+utf8_to_b64(data)+"=" );
-	//$("#previewImg").attr("src", "data:image/png;base64,"+data );
-	//$("#previewImg").attr("src", "data:image/png,"+encodeURI(data) );
-	//$("#previewImg").attr("src", "data:image/png;base64,"+encodeURI(data) );
-	} });
-	 */
 
 	var newImg = new Image();
 	newImg.onload = function(){
@@ -46,10 +29,10 @@ function reloadImage(manual){
 		}
 	};
 
-	newImg.src = "preview.png?scale="+scale+"#"+d.getTime();
+	newImg.src = "preview.jpg?scale="+scale+"&force=1#"+d.getTime();
 
 	if(manual){
-		refreshIntervall = window.setInterval("reloadImage(false)", 500);
+		refreshIntervall = window.setInterval("reloadImage(false)", 2*500);
 	}
 
 	return true;

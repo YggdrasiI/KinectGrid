@@ -62,9 +62,41 @@ enum Changes {
  * List of possible "states" of the main program.
  * I.e. hand detection mode, area detection mode, ...
  */
-enum FunctionMode{ HAND_DETECTION, AREA_DETECTION, AREA_DETECTION_START,
+enum FunctionMode{
+	HAND_DETECTION=0,
+	AREA_DETECTION,
+	AREA_DETECTION_START,
 	AREA_DETECTION_END,
-	DEPTH_MASK_DETECTION, REPOKE_DETECTION, SAVE_MASKS, LOAD_MASKS, QUIT };
+	DEPTH_MASK_DETECTION,
+	REPOKE_DETECTION,
+	SAVE_MASKS,
+	LOAD_MASKS,
+	QUIT,
+	RGB,
+	NUM_FUNCTION_MODES  
+};
+
+// Selection of output image
+enum View {
+	VIEW_NONE=0,
+	VIEW_DEPTH,
+	VIEW_MASK,
+	VIEW_FILTERED,
+	VIEW_AREAS,
+	VIEW_FRONTMASK,
+	VIEW_RGB,
+	NUM_VIEWS
+};
+
+// Selection of output device
+enum DisplayMode {
+	DISPLAY_MODE_NONE=0,
+	DISPLAY_MODE_CV, // use OpenCV highgui for drawing window
+	DISPLAY_MODE_WEB, //For webinterface 
+	DISPLAY_MODE_DIRECTFB, //for non-X11 env, not implemented
+	NUM_DISPLAY_MODES
+};
+
 
 class Area{
 	public:

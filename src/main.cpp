@@ -32,9 +32,6 @@
 //#include <time.h>
 #include <sys/time.h>
 
-// Selection of output image
-enum Show {SHOW_NONE=0,SHOW_DEPTH=1,SHOW_MASK=2,SHOW_FILTERED=3,SHOW_AREAS=4,SHOW_FRONTMASK};
-
 // for FPS estimation.
 class Fps
 {
@@ -105,37 +102,72 @@ public:
 
 int main(int argc, char **argv) {
 	bool die(false);
-  bool withKinect(true);
-	int imshowNbr = SHOW_NONE; 
 	string filename("snapshot");
 	string suffix(".png");
 	int iter(0);
 	Fps fps;
 
-	bool sleepmode(false);
-	bool rgbmode(false);
-	if( argc > 1){
-		int wk = atoi(argv[1]);
-		if(wk==0) withKinect = false;
-		if(wk==1) sleepmode = true;
-		if(wk==2) rgbmode = true; /* just for debugging libfreenect */
+  bool withKinect(true);
+	bool rgbMode(false);
+	bool sleepMode(false);
+	uint32_t sleepSeconds = 0;
+	DisplayMode displayMode = DISPLAY_MODE_NONE;
+	std::string configfile("default_settings.json");
+
+	for( int i=0; i<argc; ++i ){
+		if( strcmp("--noKinect",argv[i]) == 0 ){
+			withKinect = false;
+			continue;
+		}
+		if( strcmp("--sleep",argv[i]) == 0 ){
+			sleepMode = true;
+			continue;
+		}
+		if( strcmp("--rgb",argv[i]) == 0 ){
+			rgbMode = true;
+			continue;
+		}
+		if( strcmp("--display",argv[i]) == 0 ){
+			displayMode = DISPLAY_MODE_CV;
+			if( i+1<argc ){
+				if( strcmp("web", argv[i+1]) == 0){
+					displayMode = DISPLAY_MODE_WEB;
+				}
+				if( strcmp("x11", argv[i+1]) == 0){
+					displayMode = DISPLAY_MODE_CV;
+				}
+				if( strcmp("directfb", argv[i+1]) == 0){
+					displayMode = DISPLAY_MODE_NONE; //todo
+				}
+				if( strncmp("--", argv[i+1],2) != 0){
+					++i;
+				}
+			}
+			continue;
+		}
+		if( strcmp("--config",argv[i]) == 0 ){
+			if( i+1<argc ){
+				if( strncmp("--", argv[i+1],2) == 0){
+					configfile = argv[i+1];
+				}else{
+					++i;
+				}
+			}
+			continue;
+		}
 	}
 
-	time_t last_blob_detection = time(NULL);
-
 	//Load & Create settings
-	SettingKinect settingKinect;
-	settingKinect.init("default_settings.json");
-	/*
-	if (settingKinect.init( settingKinectGrid->getString("lastSetting") )){
-		//Kinect settings did not found.
-		printf("File %s was not found. Use default values.\n", 
-				settingKinectGrid.getString("lastSetting") );
-	}*/
+	SettingKinect settingKinect(withKinect);
+	settingKinect.init(configfile.c_str());
+
+	if( !withKinect ) settingKinect.m_displayMode = DISPLAY_MODE_NONE;
+	if( rgbMode ) settingKinect.m_view = VIEW_RGB;
+
 
 	//init onion server thread
-	OnionServer* onion = new OnionServer(settingKinect); 
-	onion->start_server();
+	OnionServer onion(settingKinect); 
+	onion.start_server();
 
 	MyTuioServer tuio(
 			settingKinect.getString("tuio2Dcur_host"),
@@ -155,6 +187,11 @@ int main(int argc, char **argv) {
 #else
 	TrackerCvBlobsLib tracker(&settingKinect);
 #endif
+	View &eView = settingKinect.m_view;
+	time_t last_blob_detection = time(NULL);
+
+	settingKinect.m_displayMode = displayMode;
+	eView = VIEW_DEPTH;//for debugging
 
 	if(withKinect){
 		freenect = new Freenect::Freenect;
@@ -168,7 +205,11 @@ int main(int argc, char **argv) {
 		settingKinect.updateSig.connect(boost::bind(&MyFreenectDevice::update,device, _1, _2));
 		settingKinect.updateSig.connect(boost::bind(&ImageAnalysis::resetMask,ia, _1, _2));
 
-		if( rgbmode )
+		onion.updateSignal.connect(
+				boost::bind(&ImageAnalysis::getDisplayedImage, ia, _1, _2, _3)
+				);
+
+		if( rgbMode )
 			device->startVideo();
 		else
 			device->startDepth();
@@ -181,8 +222,12 @@ int main(int argc, char **argv) {
 
 		namedWindow("img",CV_WINDOW_AUTOSIZE);
 
-		//Set mode to LOAD_MASKS. This try to load masks and repoke areas.
-		settingKinect.setMode(LOAD_MASKS);
+		if( rgbMode ){
+			settingKinect.setMode(RGB);
+		}else{
+			//Set mode to LOAD_MASKS. This try to load masks and repoke areas.
+			settingKinect.setMode(LOAD_MASKS);
+		}
 	}
 
 	/* Local needs to be set to avoid errors with printf + float values.
@@ -191,35 +236,23 @@ int main(int argc, char **argv) {
 
 	while (!die) {
 
-		if( rgbmode ){
-			Mat rgbMat(Size(640,480),CV_8UC3,Scalar(0));
+		if( withKinect ){
 
-			if( settingKinect.m_kinectProp.clipping)
-				device->setRoi(true,settingKinect.m_kinectProp.roi);
-			else
-				device->setRoi(false,Rect(0,0,0,0));
-
-			while( !device->getVideo(rgbMat) ){
-				usleep(50);
-			}
-
-			imshowNbr = onion->getView(imshowNbr);			
-			switch (imshowNbr){
-				case SHOW_DEPTH:
-					cv::imshow("img",rgbMat);
-					break;
-				case SHOW_MASK:
-					cv::imshow("img",rgbMat(settingKinect.m_kinectProp.roi));
-			}
-
-
-			fps.next(stdout);
-
-		//get 8 bit depth image
-		}else if(withKinect){
 			FunctionMode mode = settingKinect.getModeAndLock();
-
 			switch (mode){
+				case RGB:	
+					{
+						if( settingKinect.m_kinectProp.clipping)
+							device->setRoi(true,settingKinect.m_kinectProp.roi);
+						else
+							device->setRoi(false,Rect(0,0,0,0));
+
+						while( !device->getVideo(ia->m_rgb) ){
+							usleep(50);
+						}
+						mode = RGB;
+					}
+					break;
 				case REPOKE_DETECTION:
 					{
 						ia->resetMask(&settingKinect, REPOKE);
@@ -236,7 +269,7 @@ int main(int argc, char **argv) {
 						mode = ia->hand_detection(); 
 						//find blobs
 						//Mat foo = ia->m_areaMask(settingKinect.m_kinectProp.roi);
-						tracker.trackBlobs(ia->m_filteredMat(settingKinect.m_kinectProp.roi), ia->m_areaMask, true, &settingKinect.m_kinectProp.areas);
+						tracker.trackBlobs(ia->m_filteredMat(settingKinect.m_kinectProp.roi), ia->m_areaMask, true, &settingKinect.m_areas);
 
 						//send tuio
 						if( settingKinect.m_tuioProtocols[0] )
@@ -313,7 +346,7 @@ int main(int argc, char **argv) {
 					break;
 				case AREA_DETECTION_START:
 					ia->m_area_detection_step = 0;
-					imshowNbr = SHOW_AREAS;
+					eView = VIEW_AREAS;
 				case AREA_DETECTION:
 					{
 						mode = ia->area_detection(&tracker);
@@ -330,43 +363,54 @@ int main(int argc, char **argv) {
 			settingKinect.unlockMode(mode);
 
 			//check if webserver get new viewnumber
-			imshowNbr = onion->getView(imshowNbr);
+			eView = onion.getView(eView);
 
-			switch (imshowNbr){
-				case SHOW_DEPTH:
-					cv::imshow("img",ia->m_depthf(settingKinect.m_kinectProp.roi));
-					break;
-				case SHOW_AREAS:
-					cv::imshow("img",ia->getColoredAreas()(settingKinect.m_kinectProp.roi) );
-					break;
-				case SHOW_MASK:
-					cv::imshow("img",ia->m_depthMask(settingKinect.m_kinectProp.roi));
-					break;
-				case SHOW_FILTERED:
-					cv::imshow("img",ia->m_filteredMat(settingKinect.m_kinectProp.roi));
-					break;
-				case SHOW_FRONTMASK:
-					cv::imshow("img",ia->getFrontMask()(settingKinect.m_kinectProp.roi) );
-					break;
-				default:
-					break;
+			//Check if rgb mode force other view.
+			if( rgbMode && eView == VIEW_DEPTH ) eView = VIEW_RGB;
+
+			if( settingKinect.m_displayMode == DISPLAY_MODE_CV ) {
+				switch (eView){
+					case VIEW_DEPTH:
+						cv::imshow("img",ia->m_depthf(settingKinect.m_kinectProp.roi));
+						break;
+					case VIEW_AREAS:
+						cv::imshow("img",ia->getColoredAreas()(settingKinect.m_kinectProp.roi) );
+						break;
+					case VIEW_MASK:
+						cv::imshow("img",ia->m_depthMask(settingKinect.m_kinectProp.roi));
+						break;
+					case VIEW_FILTERED:
+						cv::imshow("img",ia->m_filteredMat(settingKinect.m_kinectProp.roi));
+						break;
+					case VIEW_FRONTMASK:
+						cv::imshow("img",ia->getFrontMask()(settingKinect.m_kinectProp.roi) );
+						break;
+					case VIEW_RGB:
+						cv::imshow("img",ia->m_rgb(settingKinect.m_kinectProp.roi));
+						break;
+					default:
+						break;
+				}
 			}
 
 			fps.next(stdout);
 
 			//if mode is HAND_DETECTION and long time no blob was detected, sleep.
-			if( sleepmode && mode == HAND_DETECTION ){
+			if( sleepMode && mode == HAND_DETECTION ){
 				if( tracker.getBlobs().size() < 1 ){
 					if( time(NULL) - last_blob_detection  > 10 ){
-						//printf("Sleep mode....\n");
-						cvWaitKey(2000);
+						VPRINT("Sleep mode, wait 2 seconds for next frame...\n");
+						//cvWaitKey(2000);
+						sleepSeconds = 2;
 					}
 				}else{
 					last_blob_detection = time(NULL);
+					sleepSeconds = 0;
 				}
 			}
 
-		}else{
+
+		}else{ //without Kinect
 			FunctionMode mode = settingKinect.getModeAndLock();
 			if( mode == QUIT ){
 				printf("End main loop\n");
@@ -374,26 +418,34 @@ int main(int argc, char **argv) {
 			}
 			settingKinect.unlockMode(mode);
 
-			sleep(1);
+			sleep(1+sleepSeconds);
 		}
 
-		char k = cvWaitKey(10);
-		if( k == 27 ){
-			printf("End main loop\n");
-			die = true;
-			break;
+		//ia->m_png_redraw = true;
+
+		// Display images
+		if( settingKinect.m_displayMode == DISPLAY_MODE_CV ) {
+			char k = cvWaitKey(10+1000*sleepSeconds);
+			if( k == 27 ){
+				printf("End main loop\n");
+				die = true;
+				break;
+			}
+			if( k == 8 ) {
+				/*
+					 std::ostringstream file;
+					 file << filename << i_snap << suffix;
+					 cv::imwrite(file.str(),ia->m_rgb);
+					 i_snap++;
+					 */
+			}
+			if( k > 48 && k<58 ){ // '1'<=k<='9'
+				eView = (View) (k-48);
+			}
+
 		}
-		if( k == 8 ) {
-			/*
-				 std::ostringstream file;
-				 file << filename << i_snap << suffix;
-				 cv::imwrite(file.str(),rgbMat);
-				 i_snap++;
-				 */
-		}
-		if( k > 48 && k<58 ){ // '1'<=k<='9'
-			imshowNbr = k-48;			
-		}
+
+
 
 		if(iter >= 2000000) break;
 		iter++;
@@ -402,10 +454,10 @@ int main(int argc, char **argv) {
 	printf("Quitting KinectGrid...\n");
 
 	/* Clean up objects */
-	delete onion;
+	onion.stop_server();
 
 	if(withKinect){
-		if(rgbmode)
+		if(rgbMode)
 			device->stopVideo();
 		else
 			device->stopDepth();

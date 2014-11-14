@@ -4,14 +4,19 @@
 
 using namespace std;
 
-SettingKinect::SettingKinect() :
+SettingKinect::SettingKinect(bool withKinect) :
 	JsonConfig(),
+	m_mode(HAND_DETECTION),
+	m_view(VIEW_NONE),
 	m_mode_mutex(),
 	m_queues(),
 	m_host(),
 	m_port(),
+	m_configFilename(),
 	m_tuio2Dcur_host(),
-	m_tuio25Dblb_host()
+	m_tuio25Dblb_host(),
+	m_displayMode(DISPLAY_MODE_NONE),
+	m_withKinect(withKinect)
 {
 	loadDefaults();
 }
@@ -58,13 +63,13 @@ cJSON *SettingKinect::genJson()
 	cJSON_AddItemToArray(html, jsonDoubleField("kinectMotorAngle",
 				m_kinectProp.kinectMotorAngle,-16,16,5) );
 	cJSON_AddItemToArray(html, jsonIntField("minDepth",
-				m_kinectProp.minDepth,0,2048,100) );
+				m_kinectProp.minDepth,0,2047,100) );
 	cJSON_AddItemToArray(html, jsonIntField("maxDepth",
-				m_kinectProp.maxDepth,0,2048,100) );
-	cJSON_AddItemToArray(html, jsonDoubleField("minBlobArea",
+				m_kinectProp.maxDepth,0,2047,100) );
+	cJSON_AddItemToArray(html, jsonIntField("minBlobArea",
 				m_kinectProp.minBlobArea,16,4096*4,100) );
-	cJSON_AddItemToArray(html, jsonDoubleField("maxBlobArea",
-				m_kinectProp.maxBlobArea,16,4096*8,100) );
+	cJSON_AddItemToArray(html, jsonIntField("maxBlobArea",
+				m_kinectProp.maxBlobArea,16,4096*8,250) );
 	cJSON_AddItemToArray(html, jsonIntField("marginLeft",
 				m_kinectProp.marginLeft,0,KRES_X-1,100) );
 	cJSON_AddItemToArray(html, jsonIntField("marginRight",
@@ -88,13 +93,21 @@ cJSON *SettingKinect::genJson()
 	cJSON_AddItemToArray(html, jsonCheckbox("clipping",
 				m_kinectProp.clipping) );
 
-	cJSON_AddItemToArray(html, jsonStateField("currentMode",m_mode,"percent","percent") );//in Percent
+	cJSON_AddItemToArray(html, jsonStateField("viewState",m_view,"token","token") );
+	cJSON_AddItemToArray(html, jsonStateField("modeState",m_mode,"token","token") );
 	cJSON_AddItemToArray(html, jsonStateField("tuio2Dcur_host",m_tuio2Dcur_host) );
 	cJSON_AddItemToArray(html, jsonStateField("tuio25Dblb_host",m_tuio25Dblb_host) );
 	cJSON_AddItemToArray(html, jsonStateField("tuio2Dcur_port",m_tuio2Dcur_port) );
 	cJSON_AddItemToArray(html, jsonStateField("tuio25Dblb_port",m_tuio25Dblb_port) );
 
 	cJSON_AddItemToObject(root, "html", html);
+
+	
+	cJSON* areas = cJSON_CreateArray();	
+	for(int i=0; i<m_areas.size(); i++){
+		cJSON_AddItemToArray(areas, jsonArea(m_areas[i].id,m_areas[i].repoke_x,m_areas[i].repoke_y,m_areas[i].depth) );
+	}
+	cJSON_AddItemToObject(root, "areas", areas);
 
 	return root;
 };

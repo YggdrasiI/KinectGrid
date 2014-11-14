@@ -6,15 +6,14 @@
 <link rel="stylesheet" type="text/css" href="style.css" />
 <style>
 </style>
-<!--<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>-->
 <script type="text/javascript" src="jquery_1.7.1_jquery.min.js"></script>
 <script type="text/javascript" src="jquery.mousewheel.min.js"></script>
-<!--<script type="text/javascript" src="jquery.dform-0.2.0.min.js"></script>-->
 <script type="text/javascript" src="json2.min.js"></script>
 <script type="text/javascript" src="kinect_settings.js"></script>
-<script type="text/javascript" src="kinect_script.js"></script>
+<script type="text/javascript" src="json_settings_editor.js"></script>
+<script type="text/javascript" src="kinect_preview.js"></script>
 <script type="text/javascript">
-	json_b9creator = null;
+	json_kinect = null;
 	refreshIntervall = null;
 
 	/* This function checks the existance of a json struct
@@ -23,26 +22,26 @@
 	 */
 	function refresh2(update){
 		if( window.opener !== null && !window.opener.closed &&
-				typeof(window.opener.json_b9creator) === "object" ){
-			json_b9creator = window.opener.json_b9creator;
-			if(update) update_fields(json_b9creator);
-			else create_fields(json_b9creator);
+				typeof(window.opener.json_kinect) === "object" ){
+			json_kinect = window.opener.json_kinect;
+			if(update) update_fields(json_kinect);
+			else create_fields(json_kinect);
 
 		}else{
 			send("settings","",
 					function(data){
-					json_b9creator = JSON.parse(data);//change global var
-					if(update) update_fields(json_b9creator);
-					else create_fields(json_b9creator);
+					json_kinect = JSON.parse(data);//change global var
+					if(update) update_fields(json_kinect);
+					else create_fields(json_kinect);
 					}
 			);
 		}
 	}
 
-/* Moreover, check opener.json_b9creator existens on creation, too. */
+/* Moreover, check opener.json_kinect existens on creation, too. */
 $(function(){
 		refresh2(false);
-		//refreshIntervall = window.setInterval("refresh2(true)", 1000);
+		refreshIntervall = window.setInterval("refresh2(true)", 1000);
 		});
 
 </script>
@@ -64,13 +63,14 @@ $(function(){
 			<input type="button" value="Refit" onclick="repoke()" title="Try to find areas on previous saved positions" />
 			</p>
 		</div>
-		<h1>View</h1>
+		<h1>View
+		</h1>
 		<input type="button" onclick="setView(1)" value="Raw depth image" />
 		<input type="button" onclick="setView(2)" value="Depth mask" />
 		<input type="button" onclick="setView(3)" value="Hand,Blob view" />
 		<input type="button" onclick="setView(4)" value="Areas" />
 		<input type="button" onclick="setView(5)" value="Frame" />
-		<input type="button" onclick="setView(6)" value="No image refresh (saves cpu time)" />
+		<input type="button" onclick="setView(0)" value="No redraw (saves cpu time)" />
 		<h1>Load/Save Masks</h1>
 		<input type="button" onclick="loadMasks()" value="Load masks" />
 		<input type="button" onclick="saveMasks()" value="Save masks" />
@@ -78,27 +78,53 @@ $(function(){
 		<p>Filename pattern: {Configname}_[depth|area].png</p>
 		<h1>End program</h1>
 		<input type="button" onclick="quit()" value="Quit" />
+			<div class="prop" id="modeState"></div>
+			<div class="prop" id="viewState"></div>
+			<div class="prop" id="tuio2Dcur_host"></div>
+			<div class="prop" id="tuio2Dcur_port"></div>
+			<div class="prop" id="tuio25Dblb_host"></div>
+			<div class="prop" id="tuio25Dblb_port"></div>
 	</div>
+
 	<div class="containerL">
 		<h1>Variables<a style="font-size:70%;float:right;" href="javascript:resetConfig();">(Reset values)</a></h1>
-		<div id="settingKinectForm">AAA</div>
-		<div class="prop" id="kinectMotorAngle"></div>
-		<div class="prop" id="minDepth"></div>
-		<div class="prop" id="maxDepth"></div>
-		<div class="prop" id="minBloabArea"></div>
-		<div class="prop" id="maxBlobArea"></div>
-		<div class="prop" id="marginLeft"></div>
-		<div class="prop" id="marginRight"></div>
-		<div class="prop" id="marginTop"></div>
-		<div class="prop" id="marginBottom"></div>
-		<div class="prop" id="marginFront"></div>
-		<div class="prop" id="marginBack"></div>
-		<div class="prop" id="TUIO_2Dcur"></div>
-		<div class="prop" id="TUIO_25Dblb"></div>
-		<div class="prop" id="areaThresh"></div>
-		<div class="prop" id="directFiltering"></div>
-		<div class="prop" id="clipping"></div>
+		<div id="settingKinectForm"> </div>
+			<div class="prop" id="kinectMotorAngle"></div>
+			<div class="prop" id="minDepth"></div>
+			<div class="prop" id="maxDepth"></div>
+			<div class="prop" id="minBlobArea"></div>
+			<div class="prop" id="maxBlobArea"></div>
+			<div class="prop" id="marginLeft"></div>
+			<div class="prop" id="marginRight"></div>
+			<div class="prop" id="marginTop"></div>
+			<div class="prop" id="marginBottom"></div>
+			<div class="prop" id="marginFront"></div>
+			<div class="prop" id="marginBack"></div>
+			<div class="prop" id="TUIO_2Dcur"></div>
+			<div class="prop" id="TUIO_25Dblb"></div>
+			<div class="prop" id="areaThresh"></div>
+			<div class="prop" id="directFiltering"></div>
+			<div class="prop" id="clipping"></div>
 	</div>
+
+	<div class="containerL preview" id="previewContainer" >
+		<h1><a href="preview.html">Preview</a></h1>
+		<p>
+		<span style="padding-left:3em" >Automatic refresh: <input id="previewRefresh" type="checkbox" checked="no" /> 
+			Scale: <select id="previewScale">
+				<option value="100">100%</option>
+				<option value="50" selected>50%</option>
+				<option value="25" >25%</option>
+			</select>
+		</span>
+		<span id="info"></span>
+		</p>
+		<span id="previewImg" onClick="reloadImage(true)" title="Click to reload.">
+			<!--<img src="preview.png?scale=50&force=1" />-->
+			<img src="preview.jpg?scale=50&force=1" />
+		</span>
+	</div>
+
 	<div class="containerL" id="desc_calibration">
 		<h1>Calibration</h1>
 		Note that the raw depth values (0-2048) will be flipped: 255=close points, 0=distant points.
@@ -114,7 +140,7 @@ $(function(){
 			</li>
 			<li>Select front mask image
 			<ol>
-				<li>Select front mask view (press '5')</li>
+				<li>Select frame mask view (press '5')</li>
 				<li>Raise <i>marginFront</i> till the frame is white and all other parts still black.</li>
 			</ol>
 			This black/white-image will used to find the 'holes' of your frame. Ensure that the areas are full enclosed.
@@ -148,26 +174,14 @@ $(function(){
 		directFiltering: Skip depthFrame evaluation to avoid some memcpy. (For ARM, Slower on x86.)<br>
 	</div>
 
+	<!--
 	<hr style="clear:both;margin-top:3em;" />
 
 	<div class="containerL">
 		<h1>Log</h1>
 		<div class="prop" id="serialMessages"></div>
 	</div>
-	<div class="containerR preview" id="previewContainer" xxx="{{ONION_LINE_BREAK_FIX}}">
-		<h1>Preview</h1>
-		<p>Blub
-		<span style="padding-left:3em" >Automatic refresh: <input id="previewRefresh" type="checkbox" checked="checked" /> 
-			Scale: <select id="previewScale">
-				<option value="100">100%</option>
-				<option value="50" selected>50%</option>
-				<option value="25" >25%</option>
-			</select>
-		</span>
-		<span id="info"></span>
-		</p>
-		<span id="previewImg" onClick="reloadImage(true)" title="Click to reload."><img src="preview.png?scale=50&force=1" /></span>
-	</div>
+	-->
 
 	<hr style="clear:both;margin-top:3em;" />
 

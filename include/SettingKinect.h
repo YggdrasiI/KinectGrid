@@ -37,7 +37,6 @@ struct KinectProperties{
 	bool directFiltering;
 	bool clipping;
 	cv::Rect roi;
-	std::vector<Area> areas;
 };
 
 
@@ -47,6 +46,7 @@ class SettingKinect: public JsonConfig{
 	protected:
 		::Mutex m_mode_mutex;
 	public:
+		View m_view;
 		std::string m_host;
 		std::string m_port;
 		bool m_tuioProtocols[2];
@@ -55,6 +55,8 @@ class SettingKinect: public JsonConfig{
 		int m_tuio2Dcur_port;
 		int m_tuio25Dblb_port;
 		std::vector<Area> m_areas;
+		DisplayMode m_displayMode;
+		bool m_withKinect;
 
 		KinectProperties m_kinectProp;
 
@@ -90,7 +92,7 @@ class SettingKinect: public JsonConfig{
 		bool updateCheckbox(cJSON* jsonNew, cJSON* jsonOld,const char* id, bool* val);
 
 	public:
-		SettingKinect();
+		SettingKinect(bool withKinect);
 		~SettingKinect();
 
 		void loadDefaults();

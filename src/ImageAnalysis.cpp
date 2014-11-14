@@ -1,5 +1,9 @@
 #include <assert.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <jpeglib.h>
+#include <onion/extras/png.h>
+#include <onion/extras/jpeg.h>
 #include "ImageAnalysis.h"
 
 ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingKinect):
@@ -12,17 +16,24 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 	m_depthMask16U  (Size(KRES_X,KRES_Y),CV_16UC1),// = (m_depthMask - b)/a
 	m_filteredMat  (Size(KRES_X,KRES_Y),CV_8UC1),
 	m_areaMask  (Size(KRES_X,KRES_Y),CV_8UC1), //mask of areas, ids=0,1,..., offcut=255
-//	m_areaCol  (Size(KRES_X,KRES_Y),CV_8UC3),
+	m_rgb  (Size(KRES_X,KRES_Y),CV_8UC3),
 	m_areaGrid  (Size(KRES_X,KRES_Y),CV_8UC1), //binary image of obstacles
 	m_area_detection_mask  (Size(KRES_X+2,KRES_Y+2),CV_8UC1),
   m_areaCol_ok(false),
 	m_area_detection_step(0),
+	m_png_redraw(false),
+	m_png_scale(-1),
+	m_png_imgC1  (Size(KRES_X,KRES_Y),CV_8UC1),
+	m_png_imgC3  (Size(KRES_X,KRES_Y),CV_8UC3),
+	m_png_mutex(),
 	m_pdevice(pdevice),
 	m_depthMaskCounter(-NMASKFRAMES)//use -depthMaskCounter Frames as mask
 {
 	m_depthMask = Scalar(255);//temporary full mask
 	m_areaMask = Scalar(0);
 	m_areaGrid = Scalar(255);
+
+	m_rgb = imread("/dev/shm/test.png");
 }
 
 ImageAnalysis::~ImageAnalysis()
@@ -252,13 +263,12 @@ void ImageAnalysis::genColoredAreas(){
 Mat ImageAnalysis::getColoredAreas(){
 	if( !m_areaCol_ok ) genColoredAreas();
 
-	Mat ret(Size(640,480),CV_8UC3);
 
 	IplImage gray = m_depthf;
-	IplImage rgb = ret;
-	cvMerge(&gray, &gray, &gray, NULL, &rgb);
-	addWeighted(ret,0.5f,m_areaCol,0.5f,0,ret);
-	return ret;
+	IplImage rgb = m_rgb;
+	cvMerge(&gray, &gray, &gray, NULL, &m_rgb);
+	addWeighted(m_rgb,0.5f,m_areaCol,0.5f,0,m_rgb);
+	return m_rgb;
 }
 
 Mat& ImageAnalysis::getFrontMask(){
@@ -294,7 +304,7 @@ void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 		//TODO, but not here...
 	}
 	if( changes & REPOKE ){
-		std::vector<Area>& areas = m_pSettingKinect->m_kinectProp.areas;
+		std::vector<Area>& areas = m_pSettingKinect->m_areas;
 		if( areas.size() > 0 ){
 			repoke_init();
 			for(int i=0; i<areas.size(); i++){
@@ -396,8 +406,6 @@ void ImageAnalysis::repoke_finish(){
 
 	//set m_areas and update jSON description of m_areas.
 	m_pSettingKinect->setAreas(m_area_detection_areas);
-	//m_pSettingKinect->m_areas.clear();//überflüssig
-	//m_pSettingKinect->m_areas = m_area_detection_areas;//copy vector 
 }
 /*
  * Set for each area the pixels to area.depth. Position of areas will extract from areaMask.
@@ -445,4 +453,212 @@ void ImageAnalysis::finishDepthMaskCreation(){
 		m_depthMask.convertTo(m_depthMask16U, CV_16UC1, alphaInv, betaInv);
 	}
 	m_depthMaskCounter = 0;
+}
+
+
+typedef Vec<uchar, 4> VT;
+
+//jpeg images currently require forked version of onion.
+#define USE_JPEG
+#define JPEG_QUALITY 80
+
+bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion::Response *pres){
+
+	switch(actionid){
+		case 10:
+			{ /* Generate png image */
+				int scale = atoi( onion_request_get_queryd(preq->c_handler(),"scale","100") );
+				const char *force = onion_request_get_queryd(preq->c_handler(),"force","0");
+
+				//check if png generation is forced
+				if( *force == '1' ) m_png_redraw = true;
+				m_png_mutex.lock();
+				//here, m_png_redraw could be false (second image request at the same time).
+
+				VPRINT("redraw: %i, scale: %i, newscale: %i", m_png_redraw?1:0, m_png_scale, scale);
+
+				if( !m_png_redraw && scale==m_png_scale ){
+					//There was no change between the last sended image.
+					//std::string reply = "noNewImage";
+					//onion_response_write(res, reply.c_str(), reply.size() ); 
+					unsigned char image[4];
+					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
+#ifdef USE_JPEG
+					onion_jpeg_response( image , 4, JCS_EXT_RGBX, 1, 1, JPEG_QUALITY, pres->c_handler() );
+#else
+					onion_png_response( image, 4, 1, 1, pres->c_handler() );
+#endif
+					m_png_mutex.unlock();
+					return true;
+				}
+
+
+				if( /*m_pSettingKinect->m_withKinect == false ||*/
+						m_pSettingKinect->m_displayMode != DISPLAY_MODE_WEB ||
+						m_pSettingKinect->m_view == VIEW_NONE){
+					//Display is not active
+					//generate 1x1 pixel
+					unsigned char image[4];
+					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
+#ifdef USE_JPEG
+					onion_jpeg_response( image , 4, JCS_EXT_RGBX, 1, 1, JPEG_QUALITY, pres->c_handler() );
+#else
+					onion_png_response( image, 4, 1, 1, pres->c_handler() );
+#endif
+					m_png_mutex.unlock();
+					m_png_redraw = false;
+					return true;
+				}
+
+
+				VPRINT("(PNG) View: %i\n", m_pSettingKinect->m_view);
+				int channels = 1;//4=RGBA, -4=ABRG 
+				Mat* png = NULL;
+				switch (m_pSettingKinect->m_view){
+					case VIEW_RGB:
+						channels=4;
+						std::swap( m_rgb, m_png_imgC3);
+						png=&m_png_imgC3;
+					case VIEW_AREAS:
+						channels=4;
+						std::swap( m_areaCol, m_png_imgC3);
+						png=&m_png_imgC3;
+						break;
+					case VIEW_MASK:
+						std::swap( m_depthMask, m_png_imgC1);
+						png=&m_png_imgC1;
+						break;
+					case VIEW_FILTERED:
+						std::swap( m_filteredMat, m_png_imgC1);
+						png=&m_png_imgC1;
+						break;
+					case VIEW_FRONTMASK:
+						std::swap( m_areaGrid, m_png_imgC1);
+						png=&m_png_imgC1;
+						break;
+					case VIEW_DEPTH:
+					default:
+						std::swap( m_depthf, m_png_imgC1);
+						png=&m_png_imgC1;
+						break;
+				}
+
+
+				Rect roi = m_pSettingKinect->m_kinectProp.roi;
+
+				if( png == NULL || png->empty() /*|| png->size().width == 0 || png->size().height == 0*/ ){
+					//Image contains no data
+					//generate 1x1 pixel
+					unsigned char image[4];
+					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
+#ifdef USE_JPEG
+					onion_jpeg_response( image , 4, JCS_EXT_RGBX, 1, 1, JPEG_QUALITY, pres->c_handler() );
+#else
+					onion_png_response( image, 4, 1, 1, pres->c_handler() );
+#endif
+					m_png_mutex.unlock();
+					m_png_redraw = false;
+					return true;
+				}
+
+				if( scale == 100 ){
+					//copy pixels and generate file for this subimage 
+					unsigned char image[channels*roi.width*roi.height];
+					Mat pngRoi(*png,roi);
+					if( channels == 4 ){
+						unsigned char *dst_it = image;
+						MatConstIterator_<VT> it = pngRoi.begin<VT>(),
+							it_end = pngRoi.end<VT>();
+						for( ; it != it_end; ++it, ++dst_it ) {
+							const VT pix = *it;
+							//bgr => rgba	
+							*dst_it = pix[2];
+							++dst_it;
+							*dst_it = pix[1];
+							++dst_it;
+							*dst_it = pix[0];
+							++dst_it;
+							*dst_it = 255;
+						}
+					}else{
+						MatConstIterator_<uchar> it = pngRoi.begin<uchar>();
+						const MatConstIterator_<uchar> it_end = pngRoi.end<uchar>();
+						unsigned char *dst_it = image;
+						for( ; it != it_end; ++it, ++dst_it ) { 
+							*dst_it = *it; 
+						}
+
+					}
+#ifdef USE_JPEG
+							onion_jpeg_response( (unsigned char*) image , channels, channels==1?JCS_GRAYSCALE:JCS_EXT_RGBX, roi.width, roi.height, JPEG_QUALITY, pres->c_handler() );
+#else
+							onion_png_response( (unsigned char*) image , channels, roi.width, roi.height, pres->c_handler() );
+#endif
+
+					VPRINT("image with dimensions %ix%i and %i channels sended.\n", roi.width, roi.height, channels);
+				}else{
+							roi.width = (roi.width/4)*4;
+							roi.height = (roi.height/4)*4;
+							Mat pngRoi(*png,roi);
+							//rescale to 50% or 25%				
+							int w2 = roi.width*scale/100;
+							int h2 = roi.height*scale/100;
+							uint8_t incW = roi.width/w2;
+							uint8_t incH = incW;//roi.height/h2;
+
+							unsigned char image[channels*w2*h2];
+
+							if( channels == 4 ){
+								MatConstIterator_<VT> it = pngRoi.begin<VT>();
+								uint8_t *pimage = (uint8_t*) image;
+								uint8_t *nextRowImage = pimage + w2 * 4;
+								for( int i=0 ; i<h2; ++i ){
+									for( ; pimage<nextRowImage; ++pimage, it+=incW ){
+										const	VT pix = *it;
+										*pimage = pix[2];
+										++pimage;
+										*pimage = pix[1];
+										++pimage;
+										*pimage = pix[0];
+										++pimage;
+										*pimage = 255;
+									}
+									nextRowImage += w2 * 4;
+									it+=roi.width*(incH-1);
+								}
+							}else{
+								//uint32_t *pdata = (uint32_t*) data_ptr;//4*char, ARGB
+								MatConstIterator_<uchar> it = pngRoi.begin<uchar>();
+
+								uint8_t *pimage = (uint8_t*) image;
+								uint8_t *nextRowImage = pimage + w2;
+								for( int i=0 ; i<h2; ++i ){
+									for( ; pimage<nextRowImage; ++pimage, it+=incW ){
+										*pimage = *it;
+									}
+									nextRowImage += w2;
+									it+=roi.width*(incH-1);
+								}
+							}
+
+#ifdef USE_JPEG
+							onion_jpeg_response( (unsigned char*) image , channels, channels==1?JCS_GRAYSCALE:JCS_EXT_RGBX, w2, h2, JPEG_QUALITY, pres->c_handler() );
+#else
+							onion_png_response( (unsigned char*) image , channels, w2, h2, pres->c_handler() );
+#endif
+							VPRINT("image with dimensions %ix%i sended.\n", w2, h2);
+						}
+
+						m_png_mutex.unlock();
+						m_png_redraw = false;
+						m_png_scale  = scale;
+
+						return true;
+					}
+			break;
+		default:
+			break;
+	}
+
+	return false; 
 }

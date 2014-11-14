@@ -3,36 +3,35 @@
  * entryes (first key) with strings.
  * */
 TOKENS = {
-	"projectorStatus" : {2 : "?" , 0 : "Off" , 1 : "On" },
-	"resetStatus" : {0 : "Not required." , 1 : "Required.", 2 : "Error" },
-	"displayStatus" : {0 : "Off." , 1 : "On." },
+	"modeState" : [
+	"HAND_DETECTION",
+	"AREA_DETECTION",
+	"AREA_DETECTION_START",
+	"AREA_DETECTION_END",
+	"DEPTH_MASK_DETECTION",
+	"REPOKE_DETECTION",
+	"SAVE_MASKS",
+	"LOAD_MASKS",
+	"QUIT",
+	"RGB",
+	"NUM_FUNCTION_MODES"  
+	],
 
-	//s/\([^ \t]*\)=\([^,]*\)\(,*\)/\2 : "\1"\3
-	"jobState" : {
-		0 : "RESET",
-		1 : "INIT",
-		2 : "FIRST_LAYER",
-		4 : "NEXT_LAYER",
-		8 : "OVERCURING",
-		16 : "SETTLE",
-		32 : "BREATH",
-		64 : "WAIT_ON_R_MESS",
-		128 : "IDLE",
-		256 : "PAUSE",
-		512 : "FINISH",
-		1024 : "CURING",
-		2048 : "START_STATE",
-		4096 : "ERROR",
-		8192 : "WAIT_ON_ZERO_HEIGHT"
-	},
+	"viewState" : [
+		"VIEW_NONE",
+		"VIEW_DEPTH",
+		"VIEW_MASK",
+		"VIEW_FILTERED",
+		"VIEW_AREAS",
+		"VIEW_FRONTMASK",
+		"VIEW_RGB",
+		"NUM_VIEWS" 
+	], 
 
 	/* Label and Description for some property names */
 	"props" : {
-		"maxLayer" : { "label" : "Max Layer:", "desc" : "Lower this value to cut of slices." },
-		"minLayer" : { "label" : "Min Layer:", "desc" : "Raiser this value to cut of slices." },
-		"positionX" : { "label" : "Horizontal position:", "desc" : "" },
-		"positionY" : { "label" : "Vertical position:", "desc" : "" },
-		"scale" : { "label" : "Scale factor (xy):", "desc" : "Scale of vector based svg image.\nAttention! This scale will NOT applied in z-Direction." }
+		"date" : { "label" : "Date", "desc" : "Creation time." },
+		"withMask" : { "label" : "Masks:", "desc" : "Setting includes predifined masks (for frameless mode)." },
 	}
 }
 
@@ -43,8 +42,9 @@ TEXTAREA_MAX_LINES = 300;
 
 /* Backup of last state. Used in format_state */
 last_state = -1;
-/* Flag enable prompts to avoid missclicks on
- * the webinterface during printing */
+
+/* Flag enable prompts to avoid clicks by accident.
+ */
 request_confirmation = false;
 
 /* Number of open job files */
@@ -85,6 +85,12 @@ function cu_fields(obj,prefix){
 					pnode = $("#"+o.id);
 					pnode.prop("json", o);
 					(window[prefix+"_"+o.type])(o, pnode );
+
+					if( prefix == "create" ){
+						propName = $('<span>'+o.id+': </span>');
+						propName.addClass("propName");
+						pnode.prepend(propName);
+					}
 				}else{
 					//alert("Can not "+prefix+" field "+o.id+".");
 				}
@@ -221,10 +227,57 @@ function create_intField(obj, pnode){
 		return false;
 	});
 
+	function gen_change_button_handler(speed, text, cssClass){
+		button = $('<input type="button" value="'+text+'" />');
+		button.addClass(cssClass);
+		button.bind('click', 
+				function(event) {
 
+					var o = pnode.prop("json");
+					if(o.readonly) return false;
+
+					var prevVal = parse(o,inputfield.val());
+					var nextVal = prevVal + parseInt(speed*o.diff);
+
+					//cut low and high values
+					nextVal = o.min>nextVal ? o.min:((nextVal<o.max)?nextVal:o.max);
+
+					var nextValStr = format(o,nextVal);
+
+					//check if new value is valid.
+					if(check_intField(o, nextValStr)){
+						inputfield.val(nextValStr);
+						//send updated values to server
+						var o = pnode.prop("json");
+						if( o.val != nextVal ) inputfield.trigger('change');
+					}
+					return false;
+				});
+		return button;
+	}
+
+	m1 = gen_change_button_handler(-1, "−−−", "propBtn" );
+	m2 = gen_change_button_handler(-0.1, "−−", "propBtn" );
+	m3 = gen_change_button_handler(-0.01, "−", "propBtn" );
+	m4 = gen_change_button_handler( 0.01, "+", "propBtn" );
+	m5 = gen_change_button_handler( 0.1, "++", "propBtn" );
+	m6 = gen_change_button_handler( 1, "+++", "propBtn" );
+
+	container = $('<div />');
+	container.addClass('propContainer');
+
+	container.prepend( m3 );
+	container.prepend( m2 );
+	container.prepend( m1 );
 	ret.append( inputfield );
-	pnode.append( ret );
+	container.append( ret );
+	container.append( m4 );
+	container.append( m5 );
+	container.append( m6 );
+
+	pnode.append( container );
 }
+
 
 function update_intField(obj){
 	var val = format(obj,obj.val);
@@ -391,10 +444,55 @@ function create_doubleField(obj, pnode){
 		return false;
 	});
 
+	function gen_change_button_handler(speed, text, cssClass){
+		button = $('<input type="button" value="'+text+'" />');
+		button.addClass(cssClass);
+		button.bind('click', 
+				function(event) {
 
+					var o = pnode.prop("json");
+					if(o.readonly) return false;
+
+					var prevVal = parse(o,inputfield.val());
+					var nextVal = Math.round( 100*(prevVal + speed*o.diff) )/100;
+
+					//cut low and high values
+					nextVal = o.min>nextVal ? o.min:((nextVal<o.max)?nextVal:o.max);
+
+					var nextValStr = format(o,nextVal);
+
+					//check if new value is valid.
+					if(check_doubleField(o, nextValStr)){
+						inputfield.val(nextValStr);
+						//send updated values to server
+						var o = pnode.prop("json");
+						if( o.val != nextVal ) inputfield.trigger('change');
+					}
+					return false;
+				});
+		return button;
+	}
+
+	m1 = gen_change_button_handler(-1, "---", "propBtn" );
+	m2 = gen_change_button_handler(-0.1, "--", "propBtn" );
+	m3 = gen_change_button_handler(-0.01, "-", "propBtn" );
+	m4 = gen_change_button_handler( 0.01, "+", "propBtn" );
+	m5 = gen_change_button_handler( 0.1, "++", "propBtn" );
+	m6 = gen_change_button_handler( 1, "+++", "propBtn" );
+
+	container = $('<div />');
+	container.addClass('propContainer');
+
+	container.prepend( m3 );
+	container.prepend( m2 );
+	container.prepend( m1 );
 	ret.append( inputfield );
-	pnode.append( ret );
+	container.append( ret );
+	container.append( m4 );
+	container.append( m5 );
+	container.append( m6 );
 
+	pnode.append( container );
 }
 
 function update_doubleField(obj){
@@ -693,9 +791,20 @@ function unloadFile(fileindex){
 }
 
 
+/*
+function loadConfig(){
+	filename = document.getElementById("configFilename").value;
+	send("update?actionid=1","filename="+filename);
+}
+
+function saveConfig(){
+	filename = document.getElementById("configFilename").value;
+	send("update?actionid=2","filename="+filename);
+}*/
+
 function loadConfig(){
 
-	ok = !request_confirmation || confirm("Printing... Are you sure?");
+	ok = !request_confirmation || confirm("Load Config File... Are you sure?");
 	if( !ok ) return;
 	
 	var configFilename = $('#configFilename').val();
@@ -843,16 +952,13 @@ function format_hhmmss(o,val){
 /* Send current json struct to server and refresh displayed values.
 */
 function send_setting(){
-	//l = json_b9creator["html"].length;
-	//alert(JSON.stringify (json_b9creator["html"][l-1]["filearray"] ));
-	//alert(JSON.stringify (json_b9creator ));
-	send("update?actionid=0","b9CreatorSettings="+JSON.stringify(json_b9creator), null);
+	send("update?actionid=0","kinectSettings="+JSON.stringify(json_kinect), null);
 
 	if(false)
 		send("settings","",
 				function(data){
-					json_b9creator = JSON.parse(data);//change global var
-					update_fields(json_b9creator);
+					json_kinect = JSON.parse(data);//change global var
+					update_fields(json_kinect);
 				}
 				);
 }
@@ -882,7 +988,7 @@ function send(url,val, handler){
 	$.post(url, val, function(data){
 		//alert("Get reply\n"+data);
 		if( data == "reload" ){
-			alert("Reload Page");
+			//alert("Reload Page");
 			window.location.reload();
 		}else{
 			//reparse data
@@ -917,58 +1023,39 @@ function toggleDisplay(button){
 			);
 }
 
-
-/* Start, stop or pause printing job
- * Require two buttons and update the button labels.
- * Possible commands:
-	 * print="init": init printer (required for start)
-	 * print="start": start print
-	 * print=="pause" : pause print
-	 * print="toggle": toggle print
-	 * print=="abort": stop print
- * */
-function jobManagerCmd(cmd,button1id, button2id){
-	//var map = {"init":0,"start":1,"toggle":2,"pause":3,"abort":4};
-	var bt1 = $("#"+button1id);
-	var bt2 = $("#"+button2id);
-	//send("update?actionid=6","print="+map[cmd],
-	send("update?actionid=6","print="+cmd,
-			function(data){
-				//It's not ness to listen on return value anymore.
-				//The labels of the buttons will updated by jobState value.
-				return;
-				/* data return state of printer */
-				if( data == "print" ){
-					/*printing...*/
-					bt1.val("Pause");
-					bt2.val("Abort");
-				}else if(data == "pause"){
-					/*paused...*/
-					bt1.val("Resume");
-					bt2.val("Abort");
-				}else if(data == "idle"){
-					/*stoped/idle...*/
-					bt1.val("Print");
-					bt2.val("Abort");
-				}else{
-					bt1.val("Command was not sucessfull.\n Server returns: \n"+data);
-				}
-			}
-			);
+function areaDetection(i){
+	send("update?actionid=3","start="+i);
 }
 
-/* Abort printing job. Same structure as jobManagerPrint.*/
-function goToFillLevel(){
-	ok = !request_confirmation || confirm("Printing... Are you sure?");
-	if( ok )
-		sendCmd('G630')
+function repoke(){
+	send("update?actionid=4","");
+}
+
+function setView(i){
+	send("update?actionid=5","view="+i);
+}
+
+function saveMasks(){
+	send("update?actionid=6","");
+}
+
+function loadMasks(){
+	send("update?actionid=7","");
 }
 
 
-function quitServerApp(){
-	ok = !request_confirmation || confirm("Quit TinyPrint Server?");
+function quit(){
+	ok = !request_confirmation || confirm("Quit KinectGrid?");
 	if( ok )
-		send("update?actionid=3","",null);
+		send("update?actionid=8","");
+}
+
+function resetConfig(){
+	ok = !request_confirmation || confirm("Reset Values... Are you sure?");
+	if( !ok ) return;
+
+	send("update?actionid=9","");
+	//setTimeout(function(){ window.location.reload(); }, 2000);
 }
 
 /* Send serial command */
@@ -994,7 +1081,7 @@ function parse(o,s){
 
 //modifiy children of html node (no rekursion implemented)
 function modifyJson(id,val){
-	$.each(	json_b9creator.html, function(index,v){
+	$.each(	json_kinect.html, function(index,v){
 		if(v.id==id){ v.val=val; }
 	});
 }
