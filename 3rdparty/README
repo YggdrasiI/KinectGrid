@@ -1,5 +1,5 @@
 This libraries are required to run KinectGrid. 
-Onion requires the manuall installation by you.
+Onion requires the manual installation by you.
 The other ones are already included and
 noted for the sake of completeness.
 
@@ -13,17 +13,16 @@ noted for the sake of completeness.
 	cd onion
 	mkdir build
 	cd build
-	cmake -DCMAKE_INSTALL_PREFIX=../../../lib/onion ..
+  cmake -DCMAKE_INSTALL_PREFIX=../../../lib/onion -DONION_EXAMPLES=0 -DONION_USE_SSL=0 -DONION_USE_SQLITE3=0 -DONION_USE_SYSTEMD=0 -DONION_USE_PAM=0 -DONION_USE_PNG=0 ..
 	make
 	make install
 
+
+
 	Remarks:
-	If you want install the lib on your system omit the above CMAKE_INSTALL_PREFIX argument.
+	If you want install the lib on your system remove the above CMAKE_INSTALL_PREFIX argument.
 
-	Disable compiling of examples and tests (i.e just
-	comment the last two lines in CMakeLists.txt) if make causes trouble.
-
-	Known Problems: (If you not edit CMakeLists.txt)
+	Known Problems: 
 	• make throws
 		'onion/src/onion/poller.c:453: error: 
 		 ignoring return value of ‘write’, declared with attribute warn_unused_result'
@@ -35,15 +34,7 @@ noted for the sake of completeness.
 
 
 
-======= 2) dform (Convert json to html formular) ====
-	git clone https://github.com/daffl/jquery.dform.git
-
-	Copy the Script
-		jquery.dform/dist/jquery.dform-0.2.0.min.js
-	to ${CMAKE_ROOT_DIR}/html
-
-
-======= 3) json2.js and jsmin =======================
+======= 2) json2.js and jsmin =======================
 	https://github.com/douglascrockford/JSON-js.git
 	https://github.com/douglascrockford/JSMin.git
 

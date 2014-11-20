@@ -1,7 +1,18 @@
+0. Install all libs noted in DEPENDENCIES
+	Note that the clipping feature requires a modified version 
+	of libfreenect, see https://github.com/YggdrasiI/libfreenect
+	Clipping reduce the cpu usage and could improve the performace on low
+	end systems.
 
-1. Go to 3rdparty directory and follow the instrutions 
-   to compile onion.
-	 All dependiecies: See DEPENDENCIES.
+1. Install the onion library: 
+	cd 3rdparty
+	git clone https://github.com/davidmoreno/onion.git
+	cd onion
+	mkdir build
+	cd build
+  cmake -DCMAKE_INSTALL_PREFIX=../../../lib/onion -DONION_EXAMPLES=0 -DONION_USE_SSL=0 -DONION_USE_SQLITE3=0 -DONION_USE_SYSTEMD=0 -DONION_USE_PAM=0 -DONION_USE_PNG=0 ..
+	make
+	make install
 
 2. Compile KinectGrid:
 	mkdir build

@@ -100,6 +100,18 @@ public:
 		}
 };
 
+void print_help(){
+	printf(
+			"--config [filename]: Load settings from filename.\n"
+			"--display [x11|web]: Select output for images.\n"
+			"--sleep:    Reduce refresh rate of blob detection if no activity was noticed.\n"
+			"--rgb:      Start Kinect with video mode (Debugging)\n"
+			"--noKinect: Omit kinect usage and just start webserver (Debugging)\n"
+			"--help/-h:  Show this help text\n\n"
+			);
+}
+
+
 int main(int argc, char **argv) {
 	bool die(false);
 	string filename("snapshot");
@@ -115,6 +127,10 @@ int main(int argc, char **argv) {
 	std::string configfile("default_settings.json");
 
 	for( int i=0; i<argc; ++i ){
+		if( strcmp("-h",argv[i]) == 0 || strcmp("--help",argv[i]) == 0 ){
+			print_help();
+			return 0;
+		}
 		if( strcmp("--noKinect",argv[i]) == 0 ){
 			withKinect = false;
 			continue;

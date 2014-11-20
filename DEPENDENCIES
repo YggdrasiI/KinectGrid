@@ -1,6 +1,19 @@
+List of used libraries:
+
 OpenCV 2.3	(image analyse)
-cvblobslib (blob detection, deprecated lib)
 libfreenect (kinect driver)
 libonion		(webserver)
-libboost (signal support, sudo apt-get install libboost-signals-dev)
+libboost (for signal functionality)
 oscpack (OSC implementation)
+
+=======
+
+List of packages (Ubuntu)
+
+sudo apt-get install \
+libfreenect-dev \
+liblo-dev libboost-signals-dev libpng-dev libjpeg-turbo8-dev \
+opencv-core2.3 opencv-core-dev opencv-highgui2.3 opencv-highgui-dev \
+libopencv-gpu-dev libopencv-contrib-dev libopencv-contrib2.3 \
+libhighgui-dev libcv-dev
+

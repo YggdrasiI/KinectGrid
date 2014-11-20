@@ -9,7 +9,7 @@ Even on ARM platforms (I.e. beagleboard) are 30 fps reached.
 
 Known Problems:
  Kinect sensor did not shutdown if KinectGrid terminated with Ctrl+C.
- Solution: Press ESC in the application window.
+ Solution: Press ESC in the application window or quit application over the webinterface.
 
 
  Websocket did not work and terminal prints out
