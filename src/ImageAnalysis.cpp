@@ -32,8 +32,6 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 	m_depthMask = Scalar(255);//temporary full mask
 	m_areaMask = Scalar(0);
 	m_areaGrid = Scalar(255);
-
-	m_rgb = imread("/dev/shm/test.png");
 }
 
 ImageAnalysis::~ImageAnalysis()
@@ -266,7 +264,7 @@ Mat ImageAnalysis::getColoredAreas(){
 
 	IplImage gray = m_depthf;
 	IplImage rgb = m_rgb;
-	cvMerge(&gray, &gray, &gray, NULL, &m_rgb);
+	cvMerge(&gray, &gray, &gray, NULL, &rgb);
 	addWeighted(m_rgb,0.5f,m_areaCol,0.5f,0,m_rgb);
 	return m_rgb;
 }

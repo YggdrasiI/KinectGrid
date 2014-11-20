@@ -1,17 +1,18 @@
 /*
- * Tracker with own  blob detection  lib.
+ * Tracker which use own/fast blob detection lib.
  */
 
 #ifndef TRACKER2_H
 #define TRACKER2_H
 
 #include "Tracker.h"
-#include "blobtree.h" //blobtree lib header
+#include "threshtree.h" 
 
 
 class Tracker2: public Tracker {
 	private:
 		Blobtree *m_blob;
+		ThreshtreeWorkspace *m_workspace;
 
 	public:
 		Tracker2(SettingKinect* pSettingKinect);

@@ -5,25 +5,34 @@
 
 #include "Tracker2.h"
 
-Tracker2::Tracker2(double min_area, double max_area, double max_radius) : Tracker(min_area, max_area, max_radius){
-	m_blob = blobtree_create();
+Tracker2::Tracker2(double min_area, double max_area, double max_radius) :
+	Tracker(min_area, max_area, max_radius),
+	m_workspace(NULL),
+	m_blob(NULL)
+{
+  threshtree_create_workspace( KRES_X, KRES_Y, &m_workspace );
+	blobtree_create(&m_blob);
 	blobtree_set_grid(m_blob, 4,4);
-	blobtree_set_filter(m_blob, F_DEPTH_MIN, 1);//depth=0 => background
-	blobtree_set_filter(m_blob, F_DEPTH_MAX, 1);//depth=1 => blobs
+	blobtree_set_filter(m_blob, F_TREE_DEPTH_MIN, 1);//depth=0 => background
+	blobtree_set_filter(m_blob, F_TREE_DEPTH_MAX, 1);//depth=1 => blobs
 }
 
-Tracker2::Tracker2(SettingKinect* pSettingKinect) : Tracker(pSettingKinect)
+Tracker2::Tracker2(SettingKinect* pSettingKinect) :
+	Tracker(pSettingKinect),
+	m_workspace(NULL),
+	m_blob(NULL)
 {
-	m_blob = blobtree_create();
+  threshtree_create_workspace( KRES_X, KRES_Y, &m_workspace );
+	blobtree_create(&m_blob);
 	blobtree_set_grid(m_blob, 4,4);
-	blobtree_set_filter(m_blob, F_DEPTH_MIN, 1);//depth=0 => background
-	blobtree_set_filter(m_blob, F_DEPTH_MAX, 1);//depth=1 => blobs
+	blobtree_set_filter(m_blob, F_TREE_DEPTH_MIN, 1);//depth=0 => background
+	blobtree_set_filter(m_blob, F_TREE_DEPTH_MAX, 1);//depth=1 => blobs
 }
 
 Tracker2::~Tracker2()
 {
-	blobtree_destroy(m_blob);
-	m_blob = NULL;
+	blobtree_destroy(&m_blob);
+  threshtree_destroy_workspace( &m_workspace );
 }
 
 void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std::vector<Area> *pareas)
@@ -59,7 +68,7 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 	 * */
 	BlobtreeRect roi0 = {0,0,roicv->width,roicv->height };
 
-	blobtree_find_blobs(m_blob, ptr, s.width, s.height-p.y, roi0, 1);
+	threshtree_find_blobs(m_blob, ptr, s.width, s.height-p.y, roi0, 1, m_workspace);
 	blobtree_set_filter(m_blob, F_AREA_MIN, min_area);
 	blobtree_set_filter(m_blob, F_AREA_MAX, max_area);
 
@@ -79,7 +88,7 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 	Node *curNode = blobtree_first(m_blob);
 	while( curNode != NULL ){
 		//printf("Check node %i\n", curNode->data.id);
-	  roi = &curNode->data.roi;
+	  roi = &((Blob*)curNode->data)->roi;
 		x     = roi->x + roi->width/2;
 		y     = roi->y + roi->height/2;
 
