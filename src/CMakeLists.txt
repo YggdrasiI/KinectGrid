@@ -22,7 +22,7 @@ set(json_SRCS
 set(server_SRCS
 	OnionServer.cpp
 	index_html.c
-	kinect_settings_js.c
+	#kinect_settings_js.c
 	)
 
 # create sourcefile from html template
