@@ -1,0 +1,69 @@
+@charset "UTF-8";
+/*@charset "ISO-8859-1";*/
+
+	body {
+		background-color:#DDD;
+		padding:0px;
+		margin: 0px;
+	}
+	h1 { font-size:120%; }
+	a { text-decoration:none; }
+
+	#div { border: 1px solid blue; }
+
+	.containerL, .containerR, .preview { 
+		padding:1em;
+		/*border:1px solid black;*/
+	}
+
+	.containerL {float:left; width:42em; }
+	.containerR {float:right; width:42em; }
+
+	.containerL spanX, .containerR spanX { width:10em; }
+	.containerL input, .containerR input { text-align:center;}
+	.containerL [type="button"], .containerR input[type="button"] { width:10em; }
+
+	div.prop {
+		margin-right:1em;
+		/*width:100%;*/
+		/*text-align:right;*/
+		color:black;
+		font-weight:bold;
+		/*display:inline-block;*/
+	}
+	div.prop spanX {
+		width:12em;
+		text-align:left;
+	}
+
+	div.propContainer { display:inline-block; }
+	div.propContainer .propBtn[type="button"] {
+		width:2.3em;
+		font-weight:bold;
+		font-size:70%;
+		visibility:hidden;
+	}
+	div.propContainer:hover .propBtn[type="button"] { visibility:visible; }
+
+
+	.red * input { background-color:red; }
+	.readonly * input { background-color:#CCCCCC; }
+	.json_input {
+		text-align:center;
+		color:green;
+		width:10em;
+		display:inline-block;
+		/*display:inline;/*make width useless*/
+		padding-right:0em;
+	}
+
+	.preview {
+		/*float:left;*/
+		/*width:52em;*/
+		/*	clear:left;*/
+	}
+
+	span.propName { margin-right:1em; width:13em; text-align:right;color:blue;display:inline-block;}
+
+	div#desc_calibration ol > li { margin-bottom:1em; }
+	div#desc_calibration ol * ol { list-style-type:lower-roman; }

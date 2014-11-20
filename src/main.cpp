@@ -236,7 +236,9 @@ int main(int argc, char **argv) {
 		 */
 		//cvStartWindowThread();
 
-		namedWindow("img",CV_WINDOW_AUTOSIZE);
+		if( settingKinect.m_displayMode == DISPLAY_MODE_CV ) {
+			namedWindow("img",CV_WINDOW_AUTOSIZE);
+		}
 
 		if( rgbMode ){
 			settingKinect.setMode(RGB);

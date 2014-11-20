@@ -54,6 +54,7 @@ endif(CENTER_ADJUSTMENT)
 include_directories(
 		${CMAKE_SOURCE_DIR}/include
 		${Freenect_INCLUDE_DIR}
+		/usr/include/libusb-1.0
 	)
 link_directories (
 	${Freenect_LIBRARY}
