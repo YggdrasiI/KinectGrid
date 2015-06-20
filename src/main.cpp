@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
 	Fps fps;
 
 	// Handle input arguments
-	for( int i=0; i<argc; ++i ){
+	for( int i=1; i<argc; ++i ){
 		if( strcmp("-h",argv[i]) == 0 || strcmp("--help",argv[i]) == 0 ){
 			print_help();
 			return 0;
@@ -219,11 +219,8 @@ int main(int argc, char **argv) {
 		//Set Signals
 		settingKinect.updateSig.connect(boost::bind(&MyFreenectDevice::update,device, _1, _2));
 		settingKinect.updateSig.connect(boost::bind(&ImageAnalysis::resetMask,ia, _1, _2));
-
 		if( settingKinect.m_displayMode == DISPLAY_MODE_WEB ) {
-			onion.updateSignal.connect(
-					boost::bind(&ImageAnalysis::getDisplayedImage, ia, _1, _2, _3)
-					);
+			onion.updateSignal.connect( boost::bind(&ImageAnalysis::getDisplayedImage, ia, _1, _2, _3));
 		}
 
 		if( rgbMode )
@@ -306,7 +303,7 @@ int main(int argc, char **argv) {
 						frame << sname << "_frame" << ".png";
 						Mat tmpLoadImg0 = cv::imread(frame.str(),0);
 						if(tmpLoadImg0.empty()) {
-							printf("[Note] Can't load depth mask %s_depth.png. \n", sname );
+							printf("[Note] Can't load frame mask '%s'.\n", frame.str().c_str() );
 							loadingFailed = true;
 						}else{
 							ia->m_areaGrid = tmpLoadImg0;
@@ -316,8 +313,9 @@ int main(int argc, char **argv) {
 						depth << sname << "_depth" << ".png";
 						Mat tmpLoadImg1 = cv::imread(depth.str(),0);
 						if(tmpLoadImg1.empty()) {
-							printf("[Note] Can't load depth mask %s_depth.png. \n", sname );
+							printf("[Note] Can't load depth mask '%s'.\n", depth.str().c_str() );
 							loadingFailed = true;
+							ia->m_depthMaskWithoutThresh = Scalar(0);
 						}else{
 							ia->m_depthMaskWithoutThresh = tmpLoadImg1;
 						}

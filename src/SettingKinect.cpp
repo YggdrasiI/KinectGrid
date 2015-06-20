@@ -245,7 +245,8 @@ int SettingKinect::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 	unlock();
 
 	//call update signal
-	updateSettings(changes);	
+	//updateSettings(changes);	
+	updateSig(this,changes);
 
 	return changes!=NO?1:0;
 }
