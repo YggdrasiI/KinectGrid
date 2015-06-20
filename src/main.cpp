@@ -165,14 +165,14 @@ int main(int argc, char **argv) {
 		}
 		if( strcmp("-c",argv[i]) == 0 || strcmp("--config",argv[i]) == 0 ){
 			if( i+1<argc ){
-				if( strncmp("--", argv[i+1],2) == 0){
+				if( strncmp("--", argv[i+1],2) != 0){
 					configfile = argv[i+1];
-				}else{
 					++i;
 				}
 			}
 			continue;
 		}
+		std::cout << "Unknown command line option: " << argv[i] << std::endl;
 	}
 
 	//Load & Create settings
