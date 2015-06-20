@@ -64,8 +64,6 @@ class SettingKinect: public JsonConfig{
 		/* Update signal. Will send at the end of update(...) */
 		boost::signals2::signal<void (SettingKinect* pSettingKinect, int)> updateSig; 
 
-		//boost::signals2::signal<void (int changes)> updateSettings;
-
 		/* This object owns his own mutexes.
 			This could cause deadlocks if some mutexes will enwinded... 
 			*/

@@ -218,17 +218,10 @@ bool MyFreenectDevice::getDepth(Mat& output)
 	}
 }
 
-/*void MyFreenectDevice::setSettingKinect(SettingKinect* sk){
-	if(sk==NULL) return;
-	m_pSettingKinect=sk;
-	m_pSettingKinect->setDevice(this);
-	update();
-}*/
-
 void MyFreenectDevice::update(SettingKinect* pSettingKinect, int changes){
 	// Set vertical Position
 	if( changes &  MOTOR ){
-		printf("MyFreenectDevice: Set motor degree\n");
+		std::cout << "MyFreenectDevice: Set motor degree" << std::endl;
 		setTiltDegrees(pSettingKinect->m_kinectProp.kinectMotorAngle);
 	}
 	if( changes &  CLIPPING|MARGIN ){

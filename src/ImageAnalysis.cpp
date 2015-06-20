@@ -95,8 +95,9 @@ FunctionMode ImageAnalysis::hand_detection()
 
 	Rect roi = m_pSettingKinect->m_kinectProp.roi;
 
-	// Analyse Roi of depth frame
+	m_png_mutex.trylock(); //Block png creation (avoid flickering)
 
+	// Analyse Roi of depth frame
 	if(m_pSettingKinect->m_kinectProp.directFiltering){
 		Mat fMRoi(m_filteredMat,roi);
 		Mat dMRoi16U(m_depthMask16U,roi);
@@ -128,6 +129,8 @@ FunctionMode ImageAnalysis::hand_detection()
 		//filter image
 		filter(dfRoi,dMRoi,80,fMRoi);
 	}
+
+	m_png_mutex.unlock();
 
 	return HAND_DETECTION;
 }
