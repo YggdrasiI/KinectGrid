@@ -52,10 +52,12 @@ cJSON *SettingKinect::genJson()
 
 	cJSON_AddItemToObject(root, "host", cJSON_CreateString(m_host.c_str() ));
 	cJSON_AddItemToObject(root, "port", cJSON_CreateString(m_port.c_str() ));
-	cJSON_AddItemToObject(root, "tuio2Dcur_host", cJSON_CreateString("127.0.0.1"));
-	cJSON_AddItemToObject(root, "tuio25Dblb_host", cJSON_CreateString("127.0.0.1"));
-	cJSON_AddItemToObject(root, "tuio2Dcur_port", cJSON_CreateNumber(3333));
-	cJSON_AddItemToObject(root, "tuio25Dblb_port", cJSON_CreateNumber(3335));
+	cJSON_AddItemToObject(root, "tuio2Dcur_host", cJSON_CreateString(m_tuio2Dcur_host.c_str()));
+	cJSON_AddItemToObject(root, "tuio25Dblb_host", cJSON_CreateString(m_tuio25Dblb_host.c_str()));
+	cJSON_AddItemToObject(root, "tuio2Dcur_port", cJSON_CreateNumber(m_tuio2Dcur_port));
+	cJSON_AddItemToObject(root, "tuio25Dblb_port", cJSON_CreateNumber(m_tuio25Dblb_port));
+	cJSON_AddItemToObject(root, "masks", cJSON_CreateString("masks"));
+	cJSON_AddItemToObject(root, "display", cJSON_CreateNumber(m_displayMode));
 
 	/* Sub node. This values will transmitted to the web interface */
 	cJSON *html = cJSON_CreateArray();	
@@ -93,6 +95,7 @@ cJSON *SettingKinect::genJson()
 	cJSON_AddItemToArray(html, jsonCheckbox("clipping",
 				m_kinectProp.clipping) );
 
+	// This field we be ignored if the user changes them on the website.
 	cJSON_AddItemToArray(html, jsonStateField("viewState",m_view,"token","token") );
 	cJSON_AddItemToArray(html, jsonStateField("modeState",m_mode,"token","token") );
 	cJSON_AddItemToArray(html, jsonStateField("tuio2Dcur_host",m_tuio2Dcur_host) );
@@ -120,6 +123,7 @@ void SettingKinect::loadDefaults()
 	m_tuio25Dblb_host = "127.0.0.1"; 
 	m_tuio2Dcur_port = 3333;
 	m_tuio25Dblb_port = 3335;
+	m_masks = "masks"; 
 	m_tuioProtocols[0] = false;
 	m_tuioProtocols[1] = false;
 	m_kinectProp.kinectMotorAngle=0.0;
@@ -158,6 +162,7 @@ int SettingKinect::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 		m_tuio25Dblb_host = JsonConfig::getString(jsonNew,"tuio25Dblb_host");
 		m_tuio2Dcur_port = JsonConfig::getNumber(jsonNew,"tuio2Dcur_port");
 		m_tuio25Dblb_port = JsonConfig::getNumber(jsonNew,"tuio25Dblb_port");
+		m_masks = JsonConfig::getString(jsonNew,"masks");
 	}
 
 	if( nhtml != NULL){

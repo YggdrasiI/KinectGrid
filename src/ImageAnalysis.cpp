@@ -6,6 +6,11 @@
 #include <onion/extras/jpeg.h>
 #include "ImageAnalysis.h"
 
+#ifdef USE_JPEG
+#define JPEG_QUALITY 80
+#endif
+
+
 ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingKinect):
 	m_pSettingKinect(pSettingKinect),
 //	m_depthMat(Size(KRES_X,KRES_Y),CV_16UC1),
@@ -456,19 +461,15 @@ void ImageAnalysis::finishDepthMaskCreation(){
 
 typedef Vec<uchar, 4> VT;
 
-//jpeg images currently require forked version of onion.
-#define USE_JPEG
-#define JPEG_QUALITY 80
-
 bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion::Response *pres){
 
 	switch(actionid){
 		case 10:
-			{ /* Generate png image */
+			{ /* Generate image */
 				int scale = atoi( onion_request_get_queryd(preq->c_handler(),"scale","100") );
 				const char *force = onion_request_get_queryd(preq->c_handler(),"force","0");
 
-				//check if png generation is forced
+				//check if image generation is forced
 				if( *force == '1' ) m_png_redraw = true;
 				m_png_mutex.lock();
 				//here, m_png_redraw could be false (second image request at the same time).
@@ -515,28 +516,29 @@ bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion:
 				switch (m_pSettingKinect->m_view){
 					case VIEW_RGB:
 						channels=4;
-						std::swap( m_rgb, m_png_imgC3);
+						cv::swap( m_rgb, m_png_imgC3);
 						png=&m_png_imgC3;
 					case VIEW_AREAS:
 						channels=4;
-						std::swap( m_areaCol, m_png_imgC3);
-						png=&m_png_imgC3;
+						//cv::swap( m_areaCol, m_png_imgC3);
+						getColoredAreas();
+						png=&m_rgb;
 						break;
 					case VIEW_MASK:
-						std::swap( m_depthMask, m_png_imgC1);
-						png=&m_png_imgC1;
+						//cv::swap( m_depthMask, m_png_imgC1);
+						png=&m_depthMask;
 						break;
 					case VIEW_FILTERED:
-						std::swap( m_filteredMat, m_png_imgC1);
+						cv::swap( m_filteredMat, m_png_imgC1);
 						png=&m_png_imgC1;
 						break;
 					case VIEW_FRONTMASK:
-						std::swap( m_areaGrid, m_png_imgC1);
-						png=&m_png_imgC1;
+						//cv::swap( m_areaGrid, m_png_imgC1);
+						png=&m_areaGrid;
 						break;
 					case VIEW_DEPTH:
 					default:
-						std::swap( m_depthf, m_png_imgC1);
+						cv::swap( m_depthf, m_png_imgC1);
 						png=&m_png_imgC1;
 						break;
 				}
@@ -544,9 +546,9 @@ bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion:
 
 				Rect roi = m_pSettingKinect->m_kinectProp.roi;
 
+				// Return empty file if selected image does not contain data.
 				if( png == NULL || png->empty() /*|| png->size().width == 0 || png->size().height == 0*/ ){
-					//Image contains no data
-					//generate 1x1 pixel
+					//generate 1x1 pixel image
 					unsigned char image[4];
 					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
 #ifdef USE_JPEG
@@ -560,10 +562,12 @@ bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion:
 				}
 
 				if( scale == 100 ){
-					//copy pixels and generate file for this subimage 
+					/* copy pixels and generate file for this subimage */
 					unsigned char image[channels*roi.width*roi.height];
 					Mat pngRoi(*png,roi);
+
 					if( channels == 4 ){
+						/* Four channel image  */
 						unsigned char *dst_it = image;
 						MatConstIterator_<VT> it = pngRoi.begin<VT>(),
 							it_end = pngRoi.end<VT>();
@@ -579,6 +583,7 @@ bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion:
 							*dst_it = 255;
 						}
 					}else{
+						/* Grayscale image  */
 						MatConstIterator_<uchar> it = pngRoi.begin<uchar>();
 						const MatConstIterator_<uchar> it_end = pngRoi.end<uchar>();
 						unsigned char *dst_it = image;
@@ -595,6 +600,7 @@ bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion:
 
 					VPRINT("image with dimensions %ix%i and %i channels sended.\n", roi.width, roi.height, channels);
 				}else{
+							/* Same as above but copy subset of all pixel */
 							roi.width = (roi.width/4)*4;
 							roi.height = (roi.height/4)*4;
 							Mat pngRoi(*png,roi);

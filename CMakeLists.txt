@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 2.6)
 OPTION(LIBFREENECT_OPT_CLIPPING "Enable clipping option. Require modified libfreenect driver." OFF)
 OPTION(MYBLOB "Use own lib for blob detection" ON)
 OPTION(CENTER_ADJUSTMENT "Extended search of maximal depth of blob and better midpoint detection." ON)
+OPTION(WEB_DISPLAY_USES_JPEG "Encode images as JPEG instead of PNG." ON)
 
 #set(PG_FLAGS "-O2 -pg -g -fno-omit-frame-pointer -DNDEBUG -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls ")
 
@@ -24,7 +25,8 @@ set(Boost_USE_STATIC_LIBS        OFF)
 #set(Boost_USE_MULTITHREADED      ON)
 #set(Boost_USE_STATIC_RUNTIME    OFF)
 #set(Boost_DEBUG TRUE)
-find_package(Boost COMPONENTS signals regex system REQUIRED)
+find_package(Boost COMPONENTS regex system REQUIRED)
+#find_package(Boost COMPONENTS signals2 REQUIRED)# not required, it is just a header.
 
 ## end required and optional packages
 

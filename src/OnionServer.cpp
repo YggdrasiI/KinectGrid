@@ -216,7 +216,7 @@ onion_connection_status OnionServer::preview(
 		Onion::Request &req, Onion::Response &res ){
 	int actionid = 10;
 	if( ! updateSignal(&req, actionid, &res) ){
-		//signals did not write into response. Write default reply.
+		//signals did not wrote into response. Write default reply.
 		std::string reply("Could not generate Image.");
 		res.write( reply.c_str(), reply.size() );
 	}

@@ -10,7 +10,7 @@ function reloadImage(manual){
 
 	if(manual){
 		//clear pending refresh
-		window.clearInterval(refreshIntervall);
+		window.clearInterval(refreshInterval_previewImage);
 	}
 
 	if( !manual && $("#previewRefresh").prop("checked") != true ) return true;
@@ -22,9 +22,9 @@ function reloadImage(manual){
 	var newImg = new Image();
 	newImg.onload = function(){
 		if( newImg.width < 2 ){
-			if(manual) $("#info").empty().fadeIn(0).append("No new image").fadeOut(1000);
+			if(manual) $("#info").empty().fadeIn(0).append("No new image").fadeOut(400);
 		}else{
-			if(manual) $("#info").empty().fadeIn(0).append("Load new image").fadeOut(1000);
+			if(manual) $("#info").empty().fadeIn(0).append("Load new image").fadeOut(400);
 			$("#previewImg").empty().append($(newImg));
 		}
 	};
@@ -32,7 +32,7 @@ function reloadImage(manual){
 	newImg.src = "preview.jpg?scale="+scale+"&force=1#"+d.getTime();
 
 	if(manual){
-		refreshIntervall = window.setInterval("reloadImage(false)", 2*500);
+		refreshInterval_previewImage = window.setInterval("reloadImage(false)", 2*500);
 	}
 
 	return true;
@@ -50,4 +50,4 @@ $(function(){
 
 });
 
-refreshIntervall = window.setInterval("reloadImage(false)", 500);
+refreshInterval_previewImage = window.setInterval("reloadImage(false)", 2*500);

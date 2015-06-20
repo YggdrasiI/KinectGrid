@@ -35,6 +35,13 @@ TOKENS = {
 	}
 }
 
+DISPLAY_MODES = {
+	"DISPLAY_MODE_NONE" : 0,
+	"DISPLAY_MODE_CV" : 1, // use OpenCV highgui for drawing window
+	"DISPLAY_MODE_WEB": 2, //For webinterface 
+	"DISPLAY_MODE_DIRECTFB" : 3, //for non-X11 env, not implemented
+}
+
 /* maximal number of lines in the messages
  * textarea.
  * */
@@ -63,6 +70,15 @@ function create_fields(json){
  */
 function update_fields(json){
 	cu_fields(json,"update");
+
+	// show preview image if available
+	if( json.display == DISPLAY_MODES["DISPLAY_MODE_WEB"] ){
+		$("#web_preview").css({"display":"block"});
+		$("#no_web_preview").css({"display":"none"});
+	}else{
+		$("#web_preview").css({"display":"none"});
+		$("#no_web_preview").css({"display":"block"});
+	}
 }
 
 function cu_fields(obj,prefix){
