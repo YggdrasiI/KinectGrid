@@ -6,7 +6,7 @@
 #include <cxcore.h>
 #include <highgui.h>
 
-#include <boost/signal.hpp>
+#include <boost/signals2/signal.hpp>
 #include <boost/bind.hpp>
 
 //for usleep
@@ -102,40 +102,42 @@ public:
 
 void print_help(){
 	printf(
-			"--config [filename]: Load settings from filename.\n"
-			"--display [x11|web]: Select output for images.\n"
-			"--sleep:    Reduce refresh rate of blob detection if no activity was noticed.\n"
+			"--config/-c [filename]: Load settings from filename.\n"
+			"--display/-d [x11|web]: Select output for images.\n"
+			"--sleep/-s:    Reduce refresh rate of blob detection if no activity was noticed.\n"
 			"--rgb:      Start Kinect with video mode (Debugging)\n"
-			"--noKinect: Omit kinect usage and just start webserver (Debugging)\n"
+			"--no-kinect: Omit kinect usage and just start webserver (Debugging)\n"
 			"--help/-h:  Show this help text\n\n"
 			);
 }
 
 
 int main(int argc, char **argv) {
-	bool die(false);
-	string filename("snapshot");
-	string suffix(".png");
-	int iter(0);
-	Fps fps;
 
+	// Main state variables
+	bool die(false);
   bool withKinect(true);
 	bool rgbMode(false);
 	bool sleepMode(false);
+
 	uint32_t sleepSeconds = 0;
 	DisplayMode displayMode = DISPLAY_MODE_NONE;
 	std::string configfile("default_settings.json");
+	string filename("snapshot");
+	string suffix(".png");
+	Fps fps;
 
+	// Handle input arguments
 	for( int i=0; i<argc; ++i ){
 		if( strcmp("-h",argv[i]) == 0 || strcmp("--help",argv[i]) == 0 ){
 			print_help();
 			return 0;
 		}
-		if( strcmp("--noKinect",argv[i]) == 0 ){
+		if( strcmp("--no-kinect",argv[i]) == 0 || strcmp("--noKinect",argv[i]) == 0 ){
 			withKinect = false;
 			continue;
 		}
-		if( strcmp("--sleep",argv[i]) == 0 ){
+		if( strcmp("-s",argv[i]) == 0 || strcmp("--sleep",argv[i]) == 0 ){
 			sleepMode = true;
 			continue;
 		}
@@ -143,7 +145,7 @@ int main(int argc, char **argv) {
 			rgbMode = true;
 			continue;
 		}
-		if( strcmp("--display",argv[i]) == 0 ){
+		if( strcmp("-d",argv[i]) == 0 || strcmp("--display",argv[i]) == 0 ){
 			displayMode = DISPLAY_MODE_CV;
 			if( i+1<argc ){
 				if( strcmp("web", argv[i+1]) == 0){
@@ -161,7 +163,7 @@ int main(int argc, char **argv) {
 			}
 			continue;
 		}
-		if( strcmp("--config",argv[i]) == 0 ){
+		if( strcmp("-c",argv[i]) == 0 || strcmp("--config",argv[i]) == 0 ){
 			if( i+1<argc ){
 				if( strncmp("--", argv[i+1],2) == 0){
 					configfile = argv[i+1];
@@ -194,8 +196,6 @@ int main(int argc, char **argv) {
 
 
 	ImageAnalysis* ia;
-	//Freenect::Freenect freenect;
-	//MyFreenectDevice& device = freenect.createDevice<MyFreenectDevice>(0); 
 	Freenect::Freenect* freenect;
 	MyFreenectDevice* device;
 #ifdef MYBLOB
@@ -211,7 +211,6 @@ int main(int argc, char **argv) {
 
 	if(withKinect){
 		freenect = new Freenect::Freenect;
-		/* wie kann ich mir den umweg über mydevice sparen?!*/
 		MyFreenectDevice& mydevice = freenect->createDevice<MyFreenectDevice>(0); 
 		device = &mydevice;
 
@@ -221,9 +220,11 @@ int main(int argc, char **argv) {
 		settingKinect.updateSig.connect(boost::bind(&MyFreenectDevice::update,device, _1, _2));
 		settingKinect.updateSig.connect(boost::bind(&ImageAnalysis::resetMask,ia, _1, _2));
 
-		onion.updateSignal.connect(
-				boost::bind(&ImageAnalysis::getDisplayedImage, ia, _1, _2, _3)
-				);
+		if( settingKinect.m_displayMode == DISPLAY_MODE_WEB ) {
+			onion.updateSignal.connect(
+					boost::bind(&ImageAnalysis::getDisplayedImage, ia, _1, _2, _3)
+					);
+		}
 
 		if( rgbMode )
 			device->startVideo();
@@ -252,6 +253,7 @@ int main(int argc, char **argv) {
 	 * Gtk:Window changes locale...*/
 	setlocale(LC_NUMERIC, "C");
 
+	// Main loop
 	while (!die) {
 
 		if( withKinect ){
@@ -285,8 +287,6 @@ int main(int argc, char **argv) {
 				case HAND_DETECTION:
 					{
 						mode = ia->hand_detection(); 
-						//find blobs
-						//Mat foo = ia->m_areaMask(settingKinect.m_kinectProp.roi);
 						tracker.trackBlobs(ia->m_filteredMat(settingKinect.m_kinectProp.roi), ia->m_areaMask, true, &settingKinect.m_areas);
 
 						//send tuio
@@ -299,9 +299,8 @@ int main(int argc, char **argv) {
 				case LOAD_MASKS:
 					{
 						//filename (with extension....)	
-						//const char* sname = settingKinectGrid.getString("lastSetting");
-						const char* sname = "maskTODO";
-						bool loadingFailed = false;
+						const char* sname = settingKinect.getString("masks");
+						bool loadingFailed(false);
 
 						std::ostringstream frame;
 						frame << sname << "_frame" << ".png";
@@ -324,13 +323,12 @@ int main(int argc, char **argv) {
 						}
 
 						// repoke to generate m_areaMask and eval position+dimensions of areas.
-						if( loadingFailed){
+						if( loadingFailed ){
 							mode = HAND_DETECTION;
 						}else{
 							//set some flags to avoid possible new evaluation of front/depth mask.
 							ia->m_maskFront_ok = true;
 							ia->finishDepthMaskCreation(); //set m_depthMaskCounter to zero;
-
 							mode = REPOKE_DETECTION;
 						}
 					}
@@ -338,8 +336,7 @@ int main(int argc, char **argv) {
 				case SAVE_MASKS:
 					{
 						//filename (with extension....)	
-						//const char* sname = settingKinectGrid.getString("lastSetting");
-						const char* sname = "maskTODO";
+						const char* sname = settingKinect.getString("masks");
 
 						std::ostringstream frame;
 						frame << sname << "_frame" << ".png";
@@ -383,9 +380,10 @@ int main(int argc, char **argv) {
 			//check if webserver get new viewnumber
 			eView = onion.getView(eView);
 
-			//Check if rgb mode force other view.
+			// Replace depth view with rgb view if rgb mode is on.
 			if( rgbMode && eView == VIEW_DEPTH ) eView = VIEW_RGB;
 
+			// Display images
 			if( settingKinect.m_displayMode == DISPLAY_MODE_CV ) {
 				switch (eView){
 					case VIEW_DEPTH:
@@ -418,7 +416,6 @@ int main(int argc, char **argv) {
 				if( tracker.getBlobs().size() < 1 ){
 					if( time(NULL) - last_blob_detection  > 10 ){
 						VPRINT("Sleep mode, wait 2 seconds for next frame...\n");
-						//cvWaitKey(2000);
 						sleepSeconds = 2;
 					}
 				}else{
@@ -435,13 +432,11 @@ int main(int argc, char **argv) {
 				die = true;
 			}
 			settingKinect.unlockMode(mode);
-
-			sleep(1+sleepSeconds);
 		}
 
 		//ia->m_png_redraw = true;
 
-		// Display images
+		// Idle and wait on user input
 		if( settingKinect.m_displayMode == DISPLAY_MODE_CV ) {
 			char k = cvWaitKey(10+1000*sleepSeconds);
 			if( k == 27 ){
@@ -461,12 +456,10 @@ int main(int argc, char **argv) {
 				eView = (View) (k-48);
 			}
 
+		}else{
+			sleep(1+sleepSeconds);
 		}
 
-
-
-		if(iter >= 2000000) break;
-		iter++;
 	}
 
 	printf("Quitting KinectGrid...\n");

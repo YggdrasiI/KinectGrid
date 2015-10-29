@@ -10,7 +10,7 @@
 #include <onion/response.hpp>
 #include <onion/request.hpp>
 
-#include <boost/signal.hpp>
+#include <boost/signals2/signal.hpp>
 #include <boost/regex.hpp> 
 //#include <boost/bind.hpp>
 
@@ -54,16 +54,17 @@ class SettingKinect: public JsonConfig{
 		std::string m_tuio25Dblb_host;
 		int m_tuio2Dcur_port;
 		int m_tuio25Dblb_port;
+		std::string m_masks;
 		std::vector<Area> m_areas;
 		DisplayMode m_displayMode;
 		bool m_withKinect;
 
 		KinectProperties m_kinectProp;
 
-		boost::signal<void (SettingKinect* pSettingKinect, int)> updateSig; //alt?!
+		boost::signals2::signal<void (SettingKinect* pSettingKinect, int)> updateSig; //alt?!
 
 		/* Update signal. Will send at the end of update(...) */
-		boost::signal<void (int changes)> updateSettings;
+		boost::signals2::signal<void (int changes)> updateSettings;
 
 		/* This object owns his own mutexes.
 			This could cause deadlocks if some mutexes will enwinded... 

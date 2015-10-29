@@ -1,10 +1,11 @@
 List of used libraries:
 
-OpenCV 2.3	(image analyse)
+OpenCV >= 2.3	(image analyse)
 libfreenect (kinect driver)
 libonion		(webserver)
 libboost (for signal functionality)
 oscpack (OSC implementation)
+libjpeg8 or libpng
 
 =======
 
