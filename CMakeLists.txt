@@ -14,12 +14,15 @@ set(EXTRA_CXX_FLAGS "-std=c++0x ${PG_FLAGS}")
 set(EXTRA_CXX_FLAGS_DEBUG "-std=c++0x ")
 
 ## required and optional packages
-#set(CMAKE_MODULE_PATH ${CMAKE_ROOT}/Modules ${CMAKE_SOURCE_DIR})
-#set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
-find_package(OpenCV REQUIRED)
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 find_package(Freenect REQUIRED)
 find_package(Onion REQUIRED)
+
+#set(OpenCV_DIR "/usr/include/opencv")
+#find_package(OpenCV REQUIRED)
+set(OpenCV_INCLUDE_DIR "/usr/include/opencv")
+set(OpenCV_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
+set(OpenCV_LIBS "opencv_core -lopencv_highgui -lopencv_imgproc") # Available in 2.4.3: calib3d contrib core features2d flann gpu highgui imgproc legacy ml objdetect video
 
 set(Boost_USE_STATIC_LIBS        OFF)
 #set(Boost_USE_MULTITHREADED      ON)
@@ -57,18 +60,17 @@ include_directories(
 		${CMAKE_SOURCE_DIR}/include
 		${Freenect_INCLUDE_DIR}
 		/usr/include/libusb-1.0
+		${Boost_INCLUDE_DIR}
+		${OpenCV_INCLUDE_DIR}
 	)
 link_directories (
-	${Freenect_LIBRARY}
-	${Onion_LIBRARY}
+	${Freenect_LIBRARY_PATH}
+	${OpenCV_LIBRARY_PATH}
+	${Onion_LIBRARY_PATH}
 	${${CMAKE_PROJECT_NAME}_BINARY_DIR}/lib/cvblobslib
 	${Boost_LIBRARY_DIRS}
 	) 
 ## end add include dis and lib dirs of above packages
-
-
-
-#SET(LIBS ${LIBS} ${OpenCV_LIBS} ${Freenect_LIBS})
 
 # CMake soll auch in diesen Verzeichnissen weitersuchen
 add_subdirectory(lib)

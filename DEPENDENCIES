@@ -1,21 +1,19 @@
 List of used libraries:
 
+libonion		(webserver; no package available, see INSTALL for compiling)
 OpenCV >= 2.3	(image analyse)
 libfreenect (kinect driver)
-libonion		(webserver)
 libboost (for signal functionality)
 oscpack (OSC implementation)
 libjpeg8 or libpng
 
 =======
 
-List of packages (Ubuntu)
+List of packages (Ubuntu, not minimal)
 
 sudo apt-get install \
 libfreenect-dev \
 liblo-dev libboost-signals-dev libboost-regex-dev libboost-system-dev \
 libpng-dev libjpeg-turbo8-dev \
-opencv-core2.3 opencv-core-dev opencv-highgui2.3 opencv-highgui-dev \
-libopencv-gpu-dev libopencv-contrib-dev libopencv-contrib2.3 \
-libhighgui-dev libcv-dev
+libopencv-core-dev libopencv-imgproc-dev libopencv-highgui-dev
 

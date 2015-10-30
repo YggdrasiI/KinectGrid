@@ -6,13 +6,13 @@ find_path(Freenect_INCLUDE_DIR
 		/usr/include/libfreenect
 		/usr/local/include/libfreenect
 		/opt/local/include/libfreenect
-	PATH_SUFFIXES
-		libfreenect
+		#PATH_SUFFIXES
+		#libfreenect
 )
 
-find_library(Freenect_LIBRARY
+find_path(Freenect_LIBRARY_PATH
 	NAMES
-		freenect
+		libfreenect.so
 	PATHS
 		/usr/lib
 		/usr/local/lib64
@@ -20,17 +20,18 @@ find_library(Freenect_LIBRARY
 		/opt/local/lib
 )
 
-if(Freenect_INCLUDE_DIR AND Freenect_LIBRARY)
+if(Freenect_INCLUDE_DIR AND Freenect_LIBRARY_PATH)
 	set(Freenect_FOUND TRUE)
 	set(Freenect_LIBS freenect)
-else(Freenect_INCLUDE_DIR AND Freenect_LIBRARY)
+else(Freenect_INCLUDE_DIR AND Freenect_LIBRARY_PATH)
 	set(Freenect_FOUND FALSE)
-endif(Freenect_INCLUDE_DIR AND Freenect_LIBRARY)
+endif(Freenect_INCLUDE_DIR AND Freenect_LIBRARY_PATH)
 
 if(Freenect_FOUND)
-	message(STATUS " Lib: ${Freenect_LIBS}")
+	message(STATUS " Lib: freenect")
 	message(STATUS " - Includes: ${Freenect_INCLUDE_DIR}")
-	message(STATUS " - Libraries: ${Freenect_LIBRARY}")
+	message(STATUS " - Link: ${Freenect_LIBS}")
+	message(STATUS " - Library path: ${Freenect_LIBRARY_PATH}")
 else(Freenect_FOUND)
 	message(FATAL_ERROR "Could not find libfreenect")
 endif(Freenect_FOUND)

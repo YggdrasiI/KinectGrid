@@ -157,22 +157,27 @@ int main(int argc, char **argv) {
 				if( strcmp("directfb", argv[i+1]) == 0){
 					displayMode = DISPLAY_MODE_NONE; //todo
 				}
-				if( strncmp("--", argv[i+1],2) != 0){
+				if( strncmp("-", argv[i+1], 1) != 0){
+					printf("Unknown argument for %s: %s.\n", argv[i], argv[i+1]);
 					++i;
+				}else{
+					printf("Missing argument for %s.\n", argv[i]);
 				}
 			}
 			continue;
 		}
-		if( strcmp("-c",argv[i]) == 0 || strcmp("--config",argv[i]) == 0 ){
+		if( strcmp("-c", argv[i]) == 0 || strcmp("--config", argv[i]) == 0 ){
 			if( i+1<argc ){
-				if( strncmp("--", argv[i+1],2) == 0){
+				if( strncmp("-", argv[i+1], 1) != 0){
 					configfile = argv[i+1];
 				}else{
+					printf("Missing argument for %s.\n", argv[i]);
 					++i;
 				}
 			}
 			continue;
 		}
+		std::cout << "Unknown command line option: " << argv[i] << std::endl;
 	}
 
 	//Load & Create settings
@@ -318,6 +323,7 @@ int main(int argc, char **argv) {
 						if(tmpLoadImg1.empty()) {
 							printf("[Note] Can't load depth mask %s_depth.png. \n", sname );
 							loadingFailed = true;
+							ia->m_depthMaskWithoutThresh = Scalar(0);
 						}else{
 							ia->m_depthMaskWithoutThresh = tmpLoadImg1;
 						}
