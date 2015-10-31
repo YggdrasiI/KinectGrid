@@ -50,4 +50,4 @@ $(function(){
 
 });
 
-refreshInterval_previewImage = window.setInterval("reloadImage(false)", 2*500);
+//refreshInterval_previewImage = window.setInterval("reloadImage(false)", 2*500);

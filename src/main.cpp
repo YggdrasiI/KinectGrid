@@ -323,13 +323,14 @@ int main(int argc, char **argv) {
 						if(tmpLoadImg1.empty()) {
 							printf("[Note] Can't load depth mask %s_depth.png. \n", sname );
 							loadingFailed = true;
-							ia->m_depthMaskWithoutThresh = Scalar(0);
+							//ia->m_depthMaskWithoutThresh = Scalar(0);
 						}else{
 							ia->m_depthMaskWithoutThresh = tmpLoadImg1;
 						}
 
 						// repoke to generate m_areaMask and eval position+dimensions of areas.
 						if( loadingFailed ){
+							ia->resetMask(&settingKinect, FRONT_MASK);
 							mode = HAND_DETECTION;
 						}else{
 							//set some flags to avoid possible new evaluation of front/depth mask.

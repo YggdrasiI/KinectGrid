@@ -415,11 +415,11 @@ void approx_areas(const Tree * const tree, Node * const startnode,
 			continue;
 		}
 
-		printf("Id: %u Roi: (%u,%u,%u,%u)\n",data->id,
-				data->roi.x, data->roi.y, data->roi.width, data->roi.height);
+		//printf("Id: %u Roi: (%u,%u,%u,%u)\n",data->id,
+		//		data->roi.x, data->roi.y, data->roi.width, data->roi.height);
 		const unsigned int N_C = number_of_coarse_roi(&data->roi, stepwidth, stepheight);
 		const unsigned int A_C = (data->roi.width*data->roi.height);
-		printf("N_C=%u, A_C=%u\n\n", N_C, A_C);
+		//printf("N_C=%u, A_C=%u\n\n", N_C, A_C);
 
 
 		/* Update parent node. N_C,A_C of this level is part of N_F, A_F from parent*/
