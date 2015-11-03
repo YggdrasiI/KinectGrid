@@ -588,9 +588,14 @@ int ImageAnalysis::getWebDisplayImage(Onion::Request *preq, int actionid, Onion:
 						break;
 					case VIEW_DEPTH:
 					default:
-						std::swap( m_depthf, m_png_imgC1);
-						//m_png_imgC1 = m_depthf;
-						png=&m_png_imgC1;
+						if(m_pSettingKinect->m_kinectProp.directFiltering){
+							// depth image constant and no swapping required.
+							png=&m_depthf;
+						}else{
+							std::swap( m_depthf, m_png_imgC1);
+							//m_png_imgC1 = m_depthf;
+							png=&m_png_imgC1;
+						}
 						break;
 				}
 
