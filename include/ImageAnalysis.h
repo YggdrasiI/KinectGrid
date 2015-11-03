@@ -52,7 +52,7 @@ class ImageAnalysis{
 		void resetMask(SettingKinect* pSettingKinect, int changes);
 		void genFrontMask();
 		void genColoredAreas();
-		Mat getColoredAreas();
+		Mat &getColoredAreas();
 		Mat &getFrontMask();
 		void finishDepthMaskCreation();
 		// general signal handling of this object.
@@ -69,7 +69,7 @@ class ImageAnalysis{
 
 
 
-/******** some usefull opencv based functions. *********/
+/******** some useful opencv based functions. *********/
 
 /*
  * 
@@ -80,7 +80,7 @@ inline void addThresh(Mat& src, int nthresh, Mat& dst){
 
 static void createMask(Mat& src, Mat& oldMask,/* int nthresh,*/ Mat& mask){
 
-	//Increase dark (near) parts to filter contur errors.
+	//Increase dark (near) parts to filter contour errors.
 	Mat Kernel(Size(3, 3), CV_8UC1);
 	Kernel.setTo(Scalar(1));
 	dilate(src, mask, Kernel); 

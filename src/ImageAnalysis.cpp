@@ -25,6 +25,7 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 	m_areaGrid  (Size(KRES_X,KRES_Y),CV_8UC1), //binary image of obstacles
 	m_area_detection_mask  (Size(KRES_X+2,KRES_Y+2),CV_8UC1),
   m_areaCol_ok(false),
+	m_maskFront_ok(false),
 	m_area_detection_step(0),
 	m_png_redraw(false),
 	m_png_scale(-1),
@@ -68,7 +69,7 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 		// Use (fullsize) early frames to generate mask
 		m_pdevice->getDepth8UC1(m_depthf, Rect(0,0,KRES_X,KRES_Y),
 				m_pSettingKinect->m_kinectProp.minDepth,m_pSettingKinect->m_kinectProp.maxDepth);
-		if( m_depthMaskCounter > 2-NMASKFRAMES)//deprecated error handling for first frames of device.
+		if( m_depthMaskCounter > 2-NMASKFRAMES)//deprecated filtering of first frames
 			createMask(m_depthf,m_depthMaskWithoutThresh,/*m_pSettingKinect->m_kinectProp.marginBack,*/m_depthMaskWithoutThresh);
 		m_depthMaskCounter++;
 
@@ -98,8 +99,9 @@ FunctionMode ImageAnalysis::hand_detection()
 
 	Rect roi = m_pSettingKinect->m_kinectProp.roi;
 
-	// Analyse Roi of depth frame
+	m_png_mutex.trylock(); //Block png creation (avoid flickering)
 
+	// Analyse Roi of depth frame
 	if(m_pSettingKinect->m_kinectProp.directFiltering){
 		Mat fMRoi(m_filteredMat,roi);
 		Mat dMRoi16U(m_depthMask16U,roi);
@@ -131,6 +133,8 @@ FunctionMode ImageAnalysis::hand_detection()
 		//filter image
 		filter(dfRoi,dMRoi,80,fMRoi);
 	}
+
+	m_png_mutex.unlock();
 
 	return HAND_DETECTION;
 }
@@ -267,7 +271,7 @@ void ImageAnalysis::genColoredAreas(){
 }
 
 
-Mat ImageAnalysis::getColoredAreas(){
+Mat& ImageAnalysis::getColoredAreas(){
 	if( !m_areaCol_ok ) genColoredAreas();
 
 
@@ -289,6 +293,8 @@ Mat& ImageAnalysis::getFrontMask(){
 void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 	if( changes & FRONT_MASK ){
 		m_maskFront_ok = false;
+		//std::cout << "Generation of front mask" << std::endl;
+		//genFrontMask();
 	}
 
 	if( changes & (MASK|MOTOR|CONFIG) ){
@@ -447,6 +453,7 @@ void ImageAnalysis::finishDepthMaskCreation(){
 		addAreaThresh(m_pSettingKinect->m_areas, m_areaMask, m_depthMask);
 	}
 
+	//getFrontMask();
 	/* Debug 2014, add frame as mask. This is required for directFiltering mask. */
 	//m_depthMask = max(m_depthMask,getFrontMask());//this would be bad for hand blobs which overlap the borders
 
@@ -562,7 +569,9 @@ int ImageAnalysis::getWebDisplayImage(Onion::Request *preq, int actionid, Onion:
 						break;
 					case VIEW_AREAS:
 						channels=4;
-						png=&m_areaCol;
+						//png=&m_areaCol;
+						getColoredAreas();
+						png=&m_rgb;
 						break;
 					case VIEW_MASK:
 						//std::swap( m_depthMask, m_png_imgC1);
@@ -575,9 +584,7 @@ int ImageAnalysis::getWebDisplayImage(Onion::Request *preq, int actionid, Onion:
 						png=&m_png_imgC1;
 						break;
 					case VIEW_FRONTMASK:
-						//std::swap( m_areaGrid, m_png_imgC1);
-						//m_png_imgC1 = m_areaGrid;
-						png=&m_areaGrid;
+						png=&getFrontMask();
 						break;
 					case VIEW_DEPTH:
 					default:

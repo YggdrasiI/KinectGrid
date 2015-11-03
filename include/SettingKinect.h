@@ -61,10 +61,8 @@ class SettingKinect: public JsonConfig{
 
 		KinectProperties m_kinectProp;
 
-		boost::signals2::signal<void (SettingKinect* pSettingKinect, int)> updateSig; //alt?!
-
 		/* Update signal. Will send at the end of update(...) */
-		boost::signals2::signal<void (int changes)> updateSettings;
+		boost::signals2::signal<void (SettingKinect* pSettingKinect, int)> updateSig; 
 
 		/* This object owns his own mutexes.
 			This could cause deadlocks if some mutexes will enwinded... 
