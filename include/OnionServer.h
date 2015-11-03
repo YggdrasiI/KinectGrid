@@ -94,7 +94,8 @@ struct http_signal_mixer
 				return T();
 
 			VPRINT("http sig %i, ", *first);
-			T ret_value = *first++;
+			T ret_value = *first;
+			++first;
 			while (first != last) {
 				VPRINT(" %i, ", *first);
 				if( ret_value < (T)0 ){
@@ -154,7 +155,7 @@ class OnionServer{
 		 * Signal returns false, if no signall handler wrote into res.
 		 * For each actionid should only one signal handler wrote into the response struture res.
 		 *	*/
-		boost::signals2::signal<bool (Onion::Request *preq, int actionid, Onion::Response *pres ),
+		boost::signals2::signal<int (Onion::Request *preq, int actionid, Onion::Response *pres ),
 			//maximum<int> > updateSignal;
 			http_signal_mixer<int> > updateSignal;
 

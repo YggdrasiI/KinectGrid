@@ -98,8 +98,8 @@ class SettingKinect: public JsonConfig{
 		cJSON* genJson();
 		int update(cJSON* jsonNew, cJSON* jsonOld, int changes=NO);//override virtual method
 
-		/* Will called if website send data */
-		bool webserverUpdateConfig(Onion::Request *preq, int actionid, Onion::Response *pres);
+		/* Will called if webserver fetch data.*/
+		int webserverUpdateConfig(Onion::Request *preq, int actionid, Onion::Response *pres);
 
 		/* Overwrite two methodes to save filename */
 		int loadConfigFile(const char* filename){

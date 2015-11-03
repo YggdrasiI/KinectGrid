@@ -488,9 +488,6 @@ int main(int argc, char **argv) {
 
 	printf("Quitting KinectGrid...\n");
 
-	/* Clean up objects */
-	onion.stop_server();
-
 	if(withKinect){
 		if(rgbMode)
 			device->stopVideo();
@@ -504,6 +501,12 @@ int main(int argc, char **argv) {
 		//wait some time to give img-window enouth time to close.
 		cvWaitKey(10);
 	}
+
+	/* Clean up objects */
+	sleep(1);
+	onion.stop_server();
+	sleep(1);
+
 
 	return EXIT_SUCCESS;
 }

@@ -301,7 +301,7 @@ bool SettingKinect::updateRoi(int x, int y, int width, int height){
 	VPRINT("Roi: (%i,%i,%i,%i)\n",m_kinectProp.roi.x,m_kinectProp.roi.y,m_kinectProp.roi.width,m_kinectProp.roi.height);
 }
 
-bool SettingKinect::webserverUpdateConfig(Onion::Request *preq, int actionid, Onion::Response *pres){
+int SettingKinect::webserverUpdateConfig(Onion::Request *preq, int actionid, Onion::Response *pres){
 	if( actionid == HTTP_ACTION_UPDATE_CONFIG ){
 		VPRINT("update kinectSettings values\n");
 		const char* json_str = onion_request_get_post(preq->c_handler(), "kinectSettings");
@@ -311,9 +311,9 @@ bool SettingKinect::webserverUpdateConfig(Onion::Request *preq, int actionid, On
 		}
 		std::string reply = "ok";
 		pres->write( reply.c_str(), reply.size() ); 
-		return true;
+		return 0;
 	}
-return false;
+return -3;
 }
 
 
