@@ -62,6 +62,59 @@ struct maximum
 		}
 };
 
+// Signal return value combiner. 
+/*
+ * -3: No data written into reply, but input processed successful.
+ * -2: No data written into reply. Input generate state which require reloading of web page.
+ * -1: No data written into reply. Input has generate error. (Currently not used.)
+ *  0: data written into reply
+ *  1: two signals wrote data. The output is likely unuseable
+ *  2: data written, but undefined error occours.
+ *
+ * Transition map:
+ * (i,j) => max(i,j), i∈[-3,…,-1], j∈[-3,…,0]
+ * (0,j) => 0, j < 0
+ * (0,0) => 1
+ * (0,1) => 1
+ * (1,0) => 1
+ * (1,2) => 2
+ * (2,j) => 2
+ */
+template<typename T>
+struct http_signal_mixer
+{
+	typedef T result_type;
+
+	template<typename InputIterator>
+		T operator()(InputIterator first, InputIterator last) const
+		{
+			// If there are no slots to call, just return the
+			// default-constructed value
+			if (first == last)
+				return T();
+
+			VPRINT("http sig %i, ", *first);
+			T ret_value = *first++;
+			while (first != last) {
+				VPRINT(" %i, ", *first);
+				if( ret_value < (T)0 ){
+					if (ret_value < *first)
+						ret_value = *first;
+				}else if( ret_value == (T)0){
+					if ( (T)0 <= *first ){
+						ret_value = (T)1;
+					}
+				}else{ // ret_value > 0
+					ret_value = std::max<T>(ret_value, *first);
+				}
+				++first;
+			}
+
+			VPRINT(" => %i\n", ret_value);
+			return ret_value;
+		}
+};
+
 class OnionServer{
 	private:	
 		pthread_t m_pthread;
@@ -101,10 +154,12 @@ class OnionServer{
 		 * Signal returns false, if no signall handler wrote into res.
 		 * For each actionid should only one signal handler wrote into the response struture res.
 		 *	*/
-		boost::signals2::signal<bool (Onion::Request *preq, int actionid, Onion::Response *pres ), maximum<bool> > updateSignal;
+		boost::signals2::signal<bool (Onion::Request *preq, int actionid, Onion::Response *pres ),
+			//maximum<int> > updateSignal;
+			http_signal_mixer<int> > updateSignal;
 
 		/* Update signal handler of this class.*/
-		bool updateWebserver(Onion::Request *preq, int actionid, Onion::Response *pres);
+		int updateWebserver(Onion::Request *preq, int actionid, Onion::Response *pres);
 
 		/* The user can select a new view over the webinterface (thread A), but this
 		 * thread can not set the view variable (mainly used in thread B) of the setting

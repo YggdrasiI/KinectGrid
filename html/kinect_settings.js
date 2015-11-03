@@ -29,5 +29,10 @@ $(function(){
 */
 
 
-//refreshIntervall = window.setInterval("refresh()", 1000);
+//refreshTimeout = window.setTimeout("refresh()", 1000);
+
+//=====================================
+json_kinect = null;
+refreshTimeout = null;
+server_online = true;
 

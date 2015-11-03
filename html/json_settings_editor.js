@@ -35,17 +35,41 @@ TOKENS = {
 	}
 }
 
+/* (C++)  DISPLAY_MODE_[m] <=> (JS) DISPLAY_MODES[m] */
 DISPLAY_MODES = {
-	"DISPLAY_MODE_NONE" : 0,
-	"DISPLAY_MODE_CV" : 1, // use OpenCV highgui for drawing window
-	"DISPLAY_MODE_WEB": 2, //For webinterface 
-	"DISPLAY_MODE_DIRECTFB" : 3, //for non-X11 env, not implemented
+	"NONE" : 0,
+	"CV" : 1, // use OpenCV highgui for drawing window
+	"WEB": 2, //For webinterface 
+	"DIRECTFB" : 3, //for non-X11 env, not implemented
 }
+
+/* (C++) HTTP_ACTION_[m] <=> (JS) HTTP_ACTIONS[m] */
+HTTP_ACTIONS = {
+	"UPDATE_CONFIG" : 0,
+	"LOAD_CONFIG" : 1,
+	"SAVE_CONFIG" : 2,
+	"SET_AREA_DETECTION" : 3,
+	"REPOKE" : 4,
+	"SELECT_VIEW" : 5,
+	"SAVE_MASKS" : 6,
+	"LOAD_MASKS" : 7,
+	"QUIT_PROGRAM" : 8,
+	"RESET_CONFIG" : 9,
+	"GET_PREVIEW_IMAGE" : 10,
+	"REGENERATE_MASKS" : 12,
+}
+
 
 /* maximal number of lines in the messages
  * textarea.
  * */
 TEXTAREA_MAX_LINES = 300;
+
+/* Period between reload of settings */
+REFRESH_INTERVAL_MS = 1000
+
+/* Period between reload of settings if previous connection attemt failed. */
+REFRESH_INTERVAL_MS_OFFLINE = 5000
 
 /* Backup of last state. Used in format_state */
 last_state = -1;
@@ -54,8 +78,11 @@ last_state = -1;
  */
 request_confirmation = false;
 
-/* Number of open job files */
+/* Number of open job files, unused. */
 open_files = 0;
+
+/* Init setTimeout reference holder */
+if( typeof refreshTimeout == 'undefined' ) refreshTimeout = null; 
 
 /* Fill in json values on desired
  * positions on the page. Raw values
@@ -72,7 +99,7 @@ function update_fields(json){
 	cu_fields(json,"update");
 
 	// show preview image if available
-	if( json.display == DISPLAY_MODES["DISPLAY_MODE_WEB"] ){
+	if( json.display == DISPLAY_MODES["WEB"] ){
 		$("#web_preview").css({"display":"block"});
 		$("#no_web_preview").css({"display":"none"});
 	}else{
@@ -705,7 +732,8 @@ function update_filesField(obj){
 
 /*
  * Convert json_files into drop down list
- */
+ * unused
+ * */
 function create_jobFileList(){
 	pnode = $("#fileBrowserList");
 
@@ -724,6 +752,9 @@ function create_jobFileList(){
 	filling_jobFileList( "fileBrowserListSelection" , json_job_files.content );
 }
 
+/*
+ * unused
+ * */
 function filling_jobFileList( id, objArr ){
 	selectfield =  $('#'+id);
 	$('#'+id+" option").remove();
@@ -738,6 +769,7 @@ function filling_jobFileList( id, objArr ){
 
 /*
  * Update files list.
+ * unused.
  * */
 function update_jobFileList(){
 	send("files","",
@@ -749,7 +781,7 @@ function update_jobFileList(){
 }
 
 /*
- *
+ * unused
  * */
 function loadFile(button){
 
@@ -773,7 +805,7 @@ function loadFile(button){
 			);
 }
 
-
+//unused
 function create_jobTimingStates(){
 	/*
 		 send("jobtimings","",
@@ -788,6 +820,9 @@ function create_jobTimingStates(){
 }
 
 
+/*
+ * unused 
+ */
 function unloadFile(fileindex){
 	//its possible to load the same job twice.
 	//thus, we do not use the filename to identify files.
@@ -807,24 +842,13 @@ function unloadFile(fileindex){
 }
 
 
-/*
-function loadConfig(){
-	filename = document.getElementById("configFilename").value;
-	send("update?actionid=1","filename="+filename);
-}
-
-function saveConfig(){
-	filename = document.getElementById("configFilename").value;
-	send("update?actionid=2","filename="+filename);
-}*/
-
 function loadConfig(){
 
 	ok = !request_confirmation || confirm("Load Config File... Are you sure?");
 	if( !ok ) return;
 	
 	var configFilename = $('#configFilename').val();
-	send("update?actionid=1","configFilename="+configFilename,
+	send("update?actionid="+HTTP_ACTIONS["LOAD_CONFIG"],"configFilename="+configFilename,
 			function(data){
 				if( data == "ok" ) window.location.reload();
 				else /*if( data == "error" )*/ alert("Loading failed");
@@ -834,13 +858,16 @@ function loadConfig(){
 
 function saveConfig(){
 	var configFilename = $('#configFilename').val();
-	send("update?actionid=2","configFilename="+configFilename,
+	send("update?actionid="+HTTP_ACTIONS["SAVE_CONFIG"],"configFilename="+configFilename,
 			function(data){
 				if( data == "error" ) alert("Saveing failed");
 			}
 			);
 }
 
+/*
+ * unused
+ */
 function resetPrinter(){
 	ok = !request_confirmation || confirm("Printing... Are you sure?");
 	if( !ok ) return;
@@ -968,7 +995,7 @@ function format_hhmmss(o,val){
 /* Send current json struct to server and refresh displayed values.
 */
 function send_setting(){
-	send("update?actionid=0","kinectSettings="+JSON.stringify(json_kinect), null);
+	send("update?actionid="+HTTP_ACTIONS["UPDATE_CONFIG"],"kinectSettings="+JSON.stringify(json_kinect), null);
 
 	if(false)
 		send("settings","",
@@ -980,21 +1007,65 @@ function send_setting(){
 }
 
 /*
- * refresh raw message window */
-function refresh(){
+ * refresh settings */
+function refresh(update){
 	send("settings","",
 			function(data){
 				json_kinect = JSON.parse(data);//change global var
-				update_fields(json_kinect);
+				if(update) update_fields(json_kinect);
+				else create_fields(json_kinect);
 			}
 			);
 
-	send("messages","",
-			function(data){
-				json_messages = JSON.parse(data);//change global var
-				update_fields(json_messages);
-			}
-			);
+	/*
+		 send("messages","",
+		 function(data){
+		 json_messages = JSON.parse(data);//change global var
+		 if(update) update_fields(json_messages);
+		 else create_fields(json_messages);
+		 }
+		 );
+	 */
+
+	if( server_online ){
+		window.clearTimeout(refreshTimeout);
+		refreshTimeout = window.setTimeout("refresh2(true)", REFRESH_INTERVAL_MS);
+	}else{
+		window.clearTimeout(refreshTimeout);
+		refreshTimeout = window.setTimeout("refresh2(true)", REFRESH_INTERVAL_MS_OFFLINE);
+	}
+}
+
+/* like refresh, but this function checks the existance of a json struct
+	 in the parent window and use this values if possible.
+	 This reduce the loading calls of 'settings'.
+ */
+function refresh2(update){
+
+	//Test
+	if( !server_online ){
+		// skip all automatic connection attempts till manual atction 
+		// (i.e button pressing) fetch a file from the server.
+		window.clearTimeout(refreshTimeout);
+		refreshTimeout = window.setTimeout("refresh2(true)", REFRESH_INTERVAL_MS_OFFLINE);
+		return;
+	}
+
+	if( window.opener !== null && !window.opener.closed &&
+			typeof(window.opener.json_kinect) === "object" ){
+		json_kinect = window.opener.json_kinect;
+		if(update) update_fields(json_kinect);
+		else create_fields(json_kinect);
+
+		window.clearTimeout(refreshTimeout);
+		if( server_online ){
+			refreshTimeout = window.setTimeout("refresh2(true)", REFRESH_INTERVAL_MS);
+		}else{
+			refreshTimeout = window.setTimeout("refresh2(true)", REFRESH_INTERVAL_MS_OFFLINE);
+		}
+	}else{
+		refresh(update);
+	}
 }
 
 //send complete json struct
@@ -1002,20 +1073,27 @@ function send(url,val, handler){
 	//Add space to avoid empty second arg!
 	if(val == "") val = " ";
 	$.post(url, val, function(data){
-		//alert("Get reply\n"+data);
-		if( data == "reload" ){
+			//alert("Get reply\n"+data);
+			server_online = true;
+			if( data == "reload" ){
 			//alert("Reload Page");
 			window.location.reload();
-		}else{
+			}else{
 			//reparse data
 			if( handler != null ) handler(data);
-		}
-	});
-
+			}
+			}).fail(function (xhr, textStatus, errorThrown){
+				// catch net::ERR_CONNECTION_REFUSED. The cpu usage increases
+				// permanently if the script opens a big number of connections.
+				server_online = false;
+				});
 	return true;
 }
 
 
+/*
+ * unused
+ */
 function toggleDisplay(button){
 
 	ok = !request_confirmation || confirm("Printing... Are you sure?");
@@ -1040,46 +1118,48 @@ function toggleDisplay(button){
 }
 
 function areaDetection(i){
-	send("update?actionid=3","start="+i);
+	send("update?actionid="+HTTP_ACTIONS["AREA_DETECTION"],"start="+i);
 }
 
 function repoke(){
-	send("update?actionid=4","");
+	send("update?actionid="+HTTP_ACTIONS["REPOKE"],"");
 }
 
 function manual_mask_generation(){
-	send("update?actionid=12","");
+	send("update?actionid="+HTTP_ACTIONS["REGENERATE_MASKS"],"");
 }
 
 
 function setView(i){
-	send("update?actionid=5","view="+i);
+	send("update?actionid="+HTTP_ACTIONS["SELECT_VIEW"],"view="+i);
 }
 
 function saveMasks(){
-	send("update?actionid=6","");
+	send("update?actionid="+HTTP_ACTIONS["SAVE_MASKS"],"");
 }
 
 function loadMasks(){
-	send("update?actionid=7","");
+	send("update?actionid="+HTTP_ACTIONS["LOAD_MASKS"],"");
 }
 
 
 function quit(){
 	ok = !request_confirmation || confirm("Quit KinectGrid?");
 	if( ok )
-		send("update?actionid=8","");
+		send("update?actionid="+HTTP_ACTIONS["QUIT_PROGRAM"],"");
 }
 
 function resetConfig(){
 	ok = !request_confirmation || confirm("Reset Values... Are you sure?");
 	if( !ok ) return;
 
-	send("update?actionid=9","");
-	//setTimeout(function(){ window.location.reload(); }, 2000);
+	send("update?actionid="+HTTP_ACTIONS["RESET_CONFIG"],"");
 }
 
 /* Send serial command */
+/*
+ * unused
+ */
 function sendCmd(str){
 	send("update?actionid=4","cmd="+str,null);
 }
@@ -1122,3 +1202,4 @@ function deepCopy(p,c) {
 function openWindow(url){
 	var w = window.open('index2.html');
 }
+

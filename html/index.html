@@ -6,43 +6,17 @@
 <link rel="stylesheet" type="text/css" href="style.css" />
 <style>
 </style>
-<script type="text/javascript" src="jquery_1.7.1_jquery.min.js"></script>
+<script type="text/javascript" src="jquery-1.11.3.min.js"></script>
 <script type="text/javascript" src="jquery.mousewheel.min.js"></script>
 <script type="text/javascript" src="json2.min.js"></script>
 <script type="text/javascript" src="kinect_settings.js"></script>
 <script type="text/javascript" src="json_settings_editor.js"></script>
 <script type="text/javascript" src="kinect_preview.js"></script>
 <script type="text/javascript">
-	json_kinect = null;
-	refreshInterval = null;
 
-	/* This function checks the existance of a json struct
-		 in the parent window and use this values if possible.
-		 This reduce the loading calls of 'settings'.
-	 */
-	function refresh2(update){
-		if( window.opener !== null && !window.opener.closed &&
-				typeof(window.opener.json_kinect) === "object" ){
-			json_kinect = window.opener.json_kinect;
-			if(update) update_fields(json_kinect);
-			else create_fields(json_kinect);
-
-		}else{
-			send("settings","",
-					function(data){
-					json_kinect = JSON.parse(data);//change global var
-					if(update) update_fields(json_kinect);
-					else create_fields(json_kinect);
-					}
-			);
-		}
-	}
-
-/* Moreover, check opener.json_kinect existens on creation, too. */
+// Fetch values after page loading 
 $(function(){
 		refresh2(false);
-		window.clearInterval(refreshInterval)
-		refreshInterval = window.setInterval("refresh2(true)", 1000);
 		});
 
 </script>
@@ -62,22 +36,26 @@ $(function(){
 			</p>
 			<p>
 			<input type="button" value="Regen. Masks" onclick="manual_mask_generation()" title="Force regeneration of masks." />
-			<input type="button" value="Refit" onclick="repoke()" title="Try to find areas on previous saved positions." />
+			<input type="button" value="Refit Areas" onclick="repoke()" title="Try to find areas on previous saved positions." />
 			</p>
 		</div>
 		<h1>View
 		</h1>
 		<input type="button" onclick="setView(1)" value="Raw depth image" />
 		<input type="button" onclick="setView(2)" value="Depth mask" />
-		<input type="button" onclick="setView(3)" value="Hand,Blob view" />
+		<input type="button" onclick="setView(5)" value="Frame mask" />
 		<input type="button" onclick="setView(4)" value="Areas" />
-		<input type="button" onclick="setView(5)" value="Frame" />
+		<input type="button" onclick="setView(3)" value="Hand,Blob view" />
 		<input type="button" onclick="setView(0)" value="No redraw (saves cpu time)" />
 		<h1>Load/Save Masks</h1>
 		<input type="button" onclick="loadMasks()" value="Load masks" />
 		<input type="button" onclick="saveMasks()" value="Save masks" />
-		<p>Frameless mode: If your frame is not present you can load former depth and area mask.</p>
-		<p>Filename pattern: {Configname}_[depth|area].png</p>
+		<h3>Prefix of mask image names</h3>
+		<div class="prop" id="masks"></div>
+		<p>The masks could be used for a frameless mode: Firstly, setup your environment and detect all areas. Secondly, save the depth and area mask.</p>
+		<p>The filename pattern is {above prefix}_[depth|area].png</p>
+		<p>If your frame is not present you can load the former depth and area mask.<br />
+		Moreover, the masks will loaded at startup if present.</p>
 		<h1>End program</h1>
 		<input type="button" onclick="quit()" value="Quit" />
 			<div class="prop" id="modeState"></div>
@@ -113,18 +91,24 @@ $(function(){
 		<h1><a href="preview.html">Preview</a></h1>
 		<div id="web_preview" style="display:none">
 			<p>
-			<span style="padding-left:3em" >Automatic refresh: <input id="previewRefresh" type="checkbox" checked="no" /> 
-				Scale: <select id="previewScale">
+			<span style="padding-left:3em" >Automatic refresh: <input id="previewRefresh" type="checkbox" xchecked="checked" /> 
+				Input scale: <select id="previewScaleIn">
 					<option value="100">100%</option>
 					<option value="50" selected>50%</option>
 					<option value="25" >25%</option>
 				</select>
-			</span>
+				Output scale: <select id="previewScaleOut">
+					<option value="400" >400%</option>
+					<option value="200" >200%</option>
+					<option value="100" selected>100%</option>
+					<option value="50" >50%</option>
+					<option value="25" >25%</option>
+				</select>
+			</span><br />
 			<span id="info"></span>
 			</p>
 			<span id="previewImg" onClick="reloadImage(true)" title="Click to reload.">
-				<!--<img src="preview.png?scale=50&force=1" />-->
-				<img src="preview.jpg?scale=50&force=1" />
+				<img src="preview.image?scale=50&force=1" width="300px" />
 			</span>
 		</div>
 		<div id="no_web_preview" style="display:block">

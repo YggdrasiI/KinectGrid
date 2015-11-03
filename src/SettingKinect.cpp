@@ -56,7 +56,7 @@ cJSON *SettingKinect::genJson()
 	cJSON_AddItemToObject(root, "tuio25Dblb_host", cJSON_CreateString(m_tuio25Dblb_host.c_str()));
 	cJSON_AddItemToObject(root, "tuio2Dcur_port", cJSON_CreateNumber(m_tuio2Dcur_port));
 	cJSON_AddItemToObject(root, "tuio25Dblb_port", cJSON_CreateNumber(m_tuio25Dblb_port));
-	cJSON_AddItemToObject(root, "masks", cJSON_CreateString("masks"));
+	cJSON_AddItemToObject(root, "masks", cJSON_CreateString(m_masks.c_str() ));
 	cJSON_AddItemToObject(root, "display", cJSON_CreateNumber(m_displayMode));
 
 	/* Sub node. This values will transmitted to the web interface */
@@ -102,6 +102,7 @@ cJSON *SettingKinect::genJson()
 	cJSON_AddItemToArray(html, jsonStateField("tuio25Dblb_host",m_tuio25Dblb_host) );
 	cJSON_AddItemToArray(html, jsonStateField("tuio2Dcur_port",m_tuio2Dcur_port) );
 	cJSON_AddItemToArray(html, jsonStateField("tuio25Dblb_port",m_tuio25Dblb_port) );
+	cJSON_AddItemToArray(html, jsonStateField("masks",m_masks) );
 
 	cJSON_AddItemToObject(root, "html", html);
 
@@ -125,7 +126,7 @@ void SettingKinect::loadDefaults()
 	m_tuio25Dblb_port = 3335;
 	m_masks = "masks"; 
 	m_tuioProtocols[0] = false;
-	m_tuioProtocols[1] = false;
+	m_tuioProtocols[1] = true;
 	m_kinectProp.kinectMotorAngle=0.0;
 	m_kinectProp.minDepth=0;
 	m_kinectProp.maxDepth=2047;
@@ -300,7 +301,7 @@ bool SettingKinect::updateRoi(int x, int y, int width, int height){
 }
 
 bool SettingKinect::webserverUpdateConfig(Onion::Request *preq, int actionid, Onion::Response *pres){
-	if( actionid == 0 ){
+	if( actionid == HTTP_ACTION_UPDATE_CONFIG ){
 		VPRINT("update kinectSettings values\n");
 		const char* json_str = onion_request_get_post(preq->c_handler(), "kinectSettings");
 		if( json_str != NULL){

@@ -91,16 +91,19 @@ else(MYBLOB)
 	set(main_SRCS ${main_SRCS} TrackerCvBlobsLib.cpp)
 endif(MYBLOB)
 
-if(WEB_DISPLAY_USES_JPEG)
-	add_definitions(-DUSE_JPEG)
-endif(WEB_DISPLAY_USES_JPEG)
-	
-# Die auführbare Datei. Anstatt der Variablen können
-# auch noch zusätzliche Dateien angegeben werden
+# Main executable
 add_executable (main ${main_SRCS} )
 
-# Die ausführbare Datei wird gegen diese Bibliotheken gelinkt.
-target_link_libraries(main server tuio ${OpenCV_LIBS} ${Freenect_LIBS} ${Onion_LIBS} ${Boost_LIBRARIES} pthread jpeg)
+# Linking
+target_link_libraries(main server tuio ${OpenCV_LIBS} ${Freenect_LIBS} ${Onion_LIBS} ${Boost_LIBRARIES} pthread )
+
+if(WEB_DISPLAY_USES_JPEG)
+	add_definitions(-DWEB_DISPLAY_USES_JPEG)
+	target_link_libraries(main jpeg)
+else(WEB_DISPLAY_USES_JPEG)
+	target_link_libraries(main png)
+endif(WEB_DISPLAY_USES_JPEG)
+
 #add_dependencies(main server)
 if(MYBLOB)
 	target_link_libraries(main threshtree)

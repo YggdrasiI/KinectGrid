@@ -55,7 +55,10 @@ class ImageAnalysis{
 		Mat getColoredAreas();
 		Mat &getFrontMask();
 		void finishDepthMaskCreation();
-		bool getDisplayedImage(Onion::Request *preq, int actionid, Onion::Response *pres);
+		// general signal handling of this object.
+		int http_actions(Onion::Request *preq, int actionid, Onion::Response *pres);
+		// extra signal for web display mode
+		int getWebDisplayImage(Onion::Request *preq, int actionid, Onion::Response *pres);
 	private:
 		void repoke_init();
 		bool repoke_step(Area& area);

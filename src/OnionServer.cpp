@@ -47,6 +47,8 @@ extern "C" {
 			int lineno, const char *fmt, ...)=log_wrapper;
 }
 
+const std::string ErrNotFound = "<h1>File not found.</h1>";
+const std::string ErrReadFailed = "<h1>Error while reading File.</h1>";
 
 /* Helper functions */
 static bool check_regex(const std::string &s, const std::string &pattern){
@@ -89,9 +91,13 @@ onion_connection_status OnionServer::updateData(
 	 */
 	int actionid = atoi( onion_request_get_queryd(req.c_handler(), "actionid","0") );
 
-	if( ! updateSignal( &req, actionid, &res) ){
-		// Signal returns true if at least one handler writes into res.
-		// Write default reply, if nothing was written.
+	const int updateResult = updateSignal( &req, actionid, &res);
+	if( -3 == updateResult ){
+		// Nothing was written. Write default reply (empty string).
+		res.write("", 0);
+	}
+	else if( -2 == updateResult ){
+		// Nothing was written and reload should be forced.
 		std::string reply("reload");
 		res.write(reply.c_str(), reply.size() );
 	}
@@ -183,6 +189,7 @@ onion_connection_status OnionServer::getJobFolderWrapped(
 /*
  * Convert all enties of message queue into json code and send this file
  * to the client.
+ * Unused fragment of TinyPrint app.
  */
 onion_connection_status OnionServer::getPrinterMessages(
 		Onion::Request &req, Onion::Response &res ){
@@ -209,12 +216,12 @@ onion_connection_status OnionServer::getPrinterMessages(
 }
 
 
-/* SendSignal with actionid=10 to get png image from
+/* SendSignal with actionid=HTTP_ACTION_GET_PREVIEW_IMAGE to get png image from
  * DisplayManager.
  */
 onion_connection_status OnionServer::preview(
 		Onion::Request &req, Onion::Response &res ){
-	int actionid = 10;
+	int actionid = HTTP_ACTION_GET_PREVIEW_IMAGE;
 	if( ! updateSignal(&req, actionid, &res) ){
 		//signals did not wrote into response. Write default reply.
 		std::string reply("Could not generate Image.");
@@ -263,10 +270,10 @@ onion_connection_status OnionServer::search_file(
 		}//catch ( const boost::iobase::failure &ex )
 		catch ( const std::exception & ex ){
 			std::cerr << "Can not read " << filename << std::endl;
-			res.write( "<h1>Error while reading File.</h1>", 34);
+			res.write( ErrReadFailed.c_str(), ErrReadFailed.size());
 		}
 	}else{
-		res.write( "<h1>File not found.</h1>", 34);
+		res.write( ErrNotFound.c_str(), ErrNotFound.size());
 	}
 
 	return OCS_PROCESSED;
@@ -356,10 +363,10 @@ onion_connection_status OnionServer::getSettingKinectWrapped(
 		}//catch ( const boost::iobase::failure &ex )
 		catch ( const std::exception & ex ){
 			std::cerr << "Can not read " << filename << std::endl;
-			res.write( "<h1>Error while reading File.</h1>", 34);
+			res.write( ErrReadFailed.c_str(), ErrReadFailed.size());
 		}
 	}else{
-		res.write( "<h1>File not found.</h1>", 34);
+		res.write( ErrNotFound.c_str(), ErrNotFound.size());
 	}
 
 	return OCS_PROCESSED;
@@ -376,21 +383,9 @@ OnionServer::OnionServer(SettingKinect &settingKinect ):
 	m_mimedict(),
 	m_mimes(),
 	//m_urls(),
-	m_view(VIEW_NONE),
+	m_view(m_settingKinect.m_view),
 	m_settingKinect(settingKinect) {
 		//m_onion.setTimeout(5000);
-
-		// Store used urls
-		/*
-		m_urls.push_back( "" );
-		m_urls.push_back("index.html");
-		m_urls.push_back("kinect_settings.js");
-		m_urls.push_back("settings");
-		m_urls.push_back("messages");
-		m_urls.push_back("preview.png");
-		m_urls.push_back("update");
-		m_urls.push_back("^.*$");
-		*/
 
 		// Store used mime types
 		m_mimes.push_back("html");
@@ -432,9 +427,13 @@ void OnionServer::setupUrls() {
 	/* Send data */
 	m_url.add<OnionServer>("kinect_settings.js", this, &OnionServer::getSettingKinectWrapped );
 	m_url.add<OnionServer>("settings", this, &OnionServer::getSettingKinect );
-	m_url.add<OnionServer>("messages", this, &OnionServer::getPrinterMessages );
-	//m_url.add<OnionServer>("preview.png", this, &OnionServer::preview );
-	m_url.add<OnionServer>("preview.jpg", this, &OnionServer::preview );
+	//m_url.add<OnionServer>("messages", this, &OnionServer::getPrinterMessages );
+	m_url.add<OnionServer>("preview.image", this, &OnionServer::preview );
+#ifdef WEB_DISPLAY_USES_JPEG
+	m_url.add<OnionServer>("preview.jpg", this, &OnionServer::preview ); // Redundant
+#else
+	m_url.add<OnionServer>("preview.png", this, &OnionServer::preview ); // Redundant
+#endif
 
 	/* Recive data */
 	m_url.add<OnionServer>("update", this, &OnionServer::updateData );
@@ -480,22 +479,31 @@ int OnionServer::stop_server()
 View OnionServer::getView(View in){
 	if(m_view < 0) return in;
 	View ret = m_view;
+	m_view = VIEW_UNKNOWN;
 	return ret;
 };
 
 /* return value marks, if reply string contains data which should
  * return to the web client:
- * -2: No data written into reply. Input generate error. Currently, it's not handled.
- * -1: No data written into reply. Input generate state which require reloading of web page.
+ * -3: No data written into reply. Input generate state which require reloading of web page.
+ * -2: No data written into reply, but input processed successful.
+ * -1: No data written into reply. Input has generate error. (Currently not used.)
  *  0: data written into reply
- *  1: No data written into reply, but input processed successful.*/
-bool OnionServer::updateWebserver(
+ *  1: data written, but error occours.
+ *  2: two signals wrote data. The output is likely unuseable
+ 
+Old approach was:
+Signal return value is OR-Combination of signal handles.
+    true: request handling succesful. 
+		false: no handler deals with the request.
+ */
+int OnionServer::updateWebserver(
 		Onion::Request *preq, int actionid, Onion::Response *pres ){
-	VPRINT("Actionid: %i \n", actionid);
+	VPRINT("Http action id: %i \n", actionid);
 
 	switch(actionid){
-		case 40:
-			{ /* Command Message */
+		case HTTP_ACTION_SEND_COMMAND:
+			{ /* Command Message, unused */
 				const char* json_str = onion_request_get_post(preq->c_handler(), "cmd");
 				std::string reply;
 
@@ -509,18 +517,18 @@ bool OnionServer::updateWebserver(
 				}
 
 				pres->write(reply.c_str(), reply.size() );
-				return true;
+				return 0;
 			}
 			break;
 
-		case 9:{  //reset config values to defaults.
+		case HTTP_ACTION_RESET_CONFIG:{  //reset config values to defaults.
 						 m_settingKinect.loadConfigFile("");
 						 std::string reply("ok");
 						 pres->write(reply.c_str(), reply.size() );
-						 return true;
+						 return 0;
 					 }
 					 break;
-		case 8:{  //quit programm
+		case HTTP_ACTION_QUIT_PROGRAM:{  //quit programm
 						 std::string reply("quit");
 						 pres->write(reply.c_str(), reply.size() );
 						 VPRINT("Quitting...\n");
@@ -528,41 +536,41 @@ bool OnionServer::updateWebserver(
 						 //m_settingKinect.m_die = true;
 						 m_settingKinect.setMode(QUIT);
 						 m_settingKinect.unlock();
-						 return true;
+						 return 0;
 					 }
 					 break;
-		case 7:{  //load masks
+		case HTTP_ACTION_LOAD_MASKS:{  //load masks
 						 m_settingKinect.setMode(LOAD_MASKS);
 						 std::string reply("ok");
 						 pres->write(reply.c_str(), reply.size() );
-						 return true;
+						 return 0;
 					 }
 					 break;
-		case 6:{ //save masks
+		case HTTP_ACTION_SAVE_MASKS:{ //save masks
 						 m_settingKinect.setMode(SAVE_MASKS);
 						 std::string reply("ok");
 						 pres->write(reply.c_str(), reply.size() );
-						 return true;
+						 return 0;
 					 }
 					 break;
-		case 5:{ //select view
+		case HTTP_ACTION_SELECT_VIEW:{ //select view
 						 //m_view = atoi( onion_request_get_queryd(req,"view","0") );
 						 m_view = (View) atoi( onion_request_get_post(preq->c_handler(),"view") );
 						 VPRINT("Set view to %i.\n",(int)m_view);
 						 std::string reply("ok");
 						 pres->write(reply.c_str(), reply.size() );
-						 return true;
+						 return 0;
 					 }
 					 break;
-		case 4:{ //repoke
+		case HTTP_ACTION_REPOKE:{ //repoke
 						 VPRINT("Repoke\n");
 						 m_settingKinect.setMode(REPOKE_DETECTION);
 						 std::string reply("ok");
 						 pres->write(reply.c_str(), reply.size() );
-						 return true;
+						 return 0;
 					 }
 					 break;
-		case 3:{ // area detection
+		case HTTP_ACTION_SET_AREA_DETECTION:{ // area detection
 						 int start = atoi( onion_request_get_post(preq->c_handler(),"start") );
 						 if( start == 1)
 							 m_settingKinect.setMode(AREA_DETECTION_START);
@@ -571,10 +579,10 @@ bool OnionServer::updateWebserver(
 						 }
 						 std::string reply("ok");
 						 pres->write(reply.c_str(), reply.size() );
-						 return true;
+						 return 0;
 					 }
 					 break;
-		case 2:{
+		case HTTP_ACTION_SAVE_CONFIG:{
 						 const char* configFilename = onion_request_get_post(preq->c_handler(), "configFilename");
 						 VPRINT("Save new settingKinectGrid: %s\n",configFilename);
 						 if( check_configFilename(configFilename) ){
@@ -586,10 +594,10 @@ bool OnionServer::updateWebserver(
 						 }
 						 std::string reply("ok");
 						 pres->write(reply.c_str(), reply.size() );
-						 return true;
+						 return 0;
 					 }
 					 break;
-		case 1:{
+		case HTTP_ACTION_LOAD_CONFIG:{
 						 const char* configFilename = onion_request_get_post(preq->c_handler(), "configFilename");
 						 VPRINT("Load new settingKinectGrid: %s\n",configFilename);
 						 if( check_configFilename(configFilename) ){
@@ -600,7 +608,7 @@ bool OnionServer::updateWebserver(
 						 /* force reload of website */
 						 std::string reply("reload");
 						 pres->write(reply.c_str(), reply.size() );
-						 return true;
+						 return 0;
 					 }
 					 break;
 					 //case 0: // this case will be handled in webserverUpdateConfig
@@ -609,7 +617,7 @@ bool OnionServer::updateWebserver(
 						break;
 	}
 
-	return false;
+	return -3;
 }
 
 

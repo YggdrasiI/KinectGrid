@@ -78,6 +78,7 @@ enum FunctionMode{
 
 // Selection of output image
 enum View {
+	VIEW_UNKNOWN=-1,
 	VIEW_NONE=0,
 	VIEW_DEPTH,
 	VIEW_MASK,
@@ -88,7 +89,8 @@ enum View {
 	NUM_VIEWS
 };
 
-// Selection of output device
+// List of output devices
+/* Update constans in json_settings_editor.js if you change this enum.*/
 enum DisplayMode {
 	DISPLAY_MODE_NONE=0,
 	DISPLAY_MODE_CV, // use OpenCV highgui for drawing window
@@ -97,6 +99,24 @@ enum DisplayMode {
 	NUM_DISPLAY_MODES
 };
 
+// List of webserver operations
+/* Update constans in json_settings_editor.js if you change this enum.*/
+enum HttpAction {
+	HTTP_ACTION_UPDATE_CONFIG=0,
+	HTTP_ACTION_LOAD_CONFIG=1,
+	HTTP_ACTION_SAVE_CONFIG=2,
+	HTTP_ACTION_SET_AREA_DETECTION=3,
+	HTTP_ACTION_REPOKE=4,
+	HTTP_ACTION_SELECT_VIEW=5,
+	HTTP_ACTION_SAVE_MASKS=6,
+	HTTP_ACTION_LOAD_MASKS=7,
+	HTTP_ACTION_QUIT_PROGRAM=8,
+	HTTP_ACTION_RESET_CONFIG=9,
+	HTTP_ACTION_GET_PREVIEW_IMAGE=10,
+	HTTP_ACTION_REGENERATE_MASKS=12,
+	HTTP_ACTION_SEND_COMMAND=40, //unused
+	NUM_HTTP_ACTIONS
+};
 
 class Area{
 	public:

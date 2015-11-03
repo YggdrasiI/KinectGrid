@@ -103,7 +103,7 @@ public:
 void print_help(){
 	printf(
 			"--config/-c [filename]: Load settings from filename.\n"
-			"--display/-d [x11|web]: Select output for images.\n"
+			"--display/-d [x11|web|none]: Select output for images.\n"
 			"--sleep/-s:    Reduce refresh rate of blob detection if no activity was noticed.\n"
 			"--rgb:      Start Kinect with video mode (Debugging)\n"
 			"--no-kinect: Omit kinect usage and just start webserver (Debugging)\n"
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
 	Fps fps;
 
 	// Handle input arguments
-	for( int i=0; i<argc; ++i ){
+	for( int i=1; i<argc; ++i ){
 		if( strcmp("-h",argv[i]) == 0 || strcmp("--help",argv[i]) == 0 ){
 			print_help();
 			return 0;
@@ -146,17 +146,24 @@ int main(int argc, char **argv) {
 			continue;
 		}
 		if( strcmp("-d",argv[i]) == 0 || strcmp("--display",argv[i]) == 0 ){
-			displayMode = DISPLAY_MODE_CV;
+			displayMode = DISPLAY_MODE_NONE;
 			if( i+1<argc ){
 				if( strcmp("web", argv[i+1]) == 0){
 					displayMode = DISPLAY_MODE_WEB;
-				}
+					++i;
+				}else
 				if( strcmp("x11", argv[i+1]) == 0){
 					displayMode = DISPLAY_MODE_CV;
-				}
+					++i;
+				}else
 				if( strcmp("directfb", argv[i+1]) == 0){
 					displayMode = DISPLAY_MODE_NONE; //todo
-				}
+					++i;
+				}else
+				if( strcmp("none", argv[i+1]) == 0){
+					displayMode = DISPLAY_MODE_NONE; 
+					++i;
+				}else
 				if( strncmp("-", argv[i+1], 1) != 0){
 					printf("Unknown argument for %s: %s.\n", argv[i], argv[i+1]);
 					++i;
@@ -170,9 +177,9 @@ int main(int argc, char **argv) {
 			if( i+1<argc ){
 				if( strncmp("-", argv[i+1], 1) != 0){
 					configfile = argv[i+1];
+					++i;
 				}else{
 					printf("Missing argument for %s.\n", argv[i]);
-					++i;
 				}
 			}
 			continue;
@@ -212,7 +219,6 @@ int main(int argc, char **argv) {
 	time_t last_blob_detection = time(NULL);
 
 	settingKinect.m_displayMode = displayMode;
-	eView = VIEW_DEPTH;//for debugging
 
 	if(withKinect){
 		freenect = new Freenect::Freenect;
@@ -222,13 +228,12 @@ int main(int argc, char **argv) {
 		ia = new ImageAnalysis(device, &settingKinect);
 
 		//Set Signals
-		settingKinect.updateSig.connect(boost::bind(&MyFreenectDevice::update,device, _1, _2));
-		settingKinect.updateSig.connect(boost::bind(&ImageAnalysis::resetMask,ia, _1, _2));
+		settingKinect.updateSig.connect( boost::bind(&MyFreenectDevice::update,device, _1, _2) );
+		settingKinect.updateSig.connect( boost::bind(&ImageAnalysis::resetMask,ia, _1, _2) );
 
+		onion.updateSignal.connect( boost::bind(&ImageAnalysis::http_actions, ia, _1, _2, _3) );
 		if( settingKinect.m_displayMode == DISPLAY_MODE_WEB ) {
-			onion.updateSignal.connect(
-					boost::bind(&ImageAnalysis::getDisplayedImage, ia, _1, _2, _3)
-					);
+			onion.updateSignal.connect( boost::bind(&ImageAnalysis::getWebDisplayImage, ia, _1, _2, _3) );
 		}
 
 		if( rgbMode )
@@ -384,7 +389,7 @@ int main(int argc, char **argv) {
 			}
 			settingKinect.unlockMode(mode);
 
-			//check if webserver get new viewnumber
+			//check if webserver (other thread) has got new viewnumber.
 			eView = onion.getView(eView);
 
 			// Replace depth view with rgb view if rgb mode is on.
@@ -416,6 +421,19 @@ int main(int argc, char **argv) {
 				}
 			}
 
+			/* Reset flag for volatile images. */
+			if( settingKinect.m_displayMode == DISPLAY_MODE_WEB ) {
+				switch (eView){
+					case VIEW_DEPTH:
+					case VIEW_RGB:
+					case VIEW_AREAS:
+					case VIEW_FILTERED:
+					default:
+						ia->m_png_redraw = true; 
+						break;
+				}
+			}
+
 			fps.next(stdout);
 
 			//if mode is HAND_DETECTION and long time no blob was detected, sleep.
@@ -431,7 +449,6 @@ int main(int argc, char **argv) {
 				}
 			}
 
-
 		}else{ //without Kinect
 			FunctionMode mode = settingKinect.getModeAndLock();
 			if( mode == QUIT ){
@@ -440,8 +457,6 @@ int main(int argc, char **argv) {
 			}
 			settingKinect.unlockMode(mode);
 		}
-
-		//ia->m_png_redraw = true;
 
 		// Idle and wait on user input
 		if( settingKinect.m_displayMode == DISPLAY_MODE_CV ) {
@@ -461,6 +476,7 @@ int main(int argc, char **argv) {
 			}
 			if( k > 48 && k<58 ){ // '1'<=k<='9'
 				eView = (View) (k-48);
+				ia->m_png_redraw = true; // new image available
 			}
 
 		}else{
