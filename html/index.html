@@ -89,9 +89,9 @@ $(function(){
 
 	<div class="containerL preview" id="previewContainer" >
 		<h1><a href="preview.html">Preview</a></h1>
-		<div id="web_preview" style="display:none">
+		<div id="web_preview" style="display:none; margin-left:3em;">
 			<p>
-			<span style="padding-left:3em" >Automatic refresh: <input id="previewRefresh" type="checkbox" xchecked="checked" /> 
+			<span>Automatic refresh: <input id="previewRefresh" type="checkbox" xchecked="checked" /> 
 				Input scale: <select id="previewScaleIn">
 					<option value="100">100%</option>
 					<option value="50" selected>50%</option>
@@ -105,10 +105,10 @@ $(function(){
 					<option value="25" >25%</option>
 				</select>
 			</span><br />
-			<span id="info"></span>
+			<span id="info"></span><br />
 			</p>
 			<span id="previewImg" onClick="reloadImage(true)" title="Click to reload.">
-				<img src="preview.image?scale=50&force=1" width="300px" />
+				<img src="preview.image?scale=50&force=1" />
 			</span>
 		</div>
 		<div id="no_web_preview" style="display:block">
