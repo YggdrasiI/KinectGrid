@@ -3,12 +3,12 @@
 #include <stdio.h>
 #include <jpeglib.h>
 #include <onion/extras/png.h>
+#ifdef WEB_DISPLAY_USES_JPEG
+#define JPEG_QUALITY 80
 #include <onion/extras/jpeg.h>
+#endif
 #include "ImageAnalysis.h"
 
-#ifdef USE_JPEG
-#define JPEG_QUALITY 80
-#endif
 
 
 ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingKinect):
@@ -37,6 +37,10 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 	m_depthMask = Scalar(255);//temporary full mask
 	m_areaMask = Scalar(0);
 	m_areaGrid = Scalar(255);
+
+  // Fill buffer images to find them easer during debugging.
+	m_png_imgC1 = Scalar(128);
+	m_png_imgC3 = Scalar(0, 255, 0);
 }
 
 ImageAnalysis::~ImageAnalysis()
@@ -99,7 +103,7 @@ FunctionMode ImageAnalysis::hand_detection()
 	if(m_pSettingKinect->m_kinectProp.directFiltering){
 		Mat fMRoi(m_filteredMat,roi);
 		Mat dMRoi16U(m_depthMask16U,roi);
-		/* Direct evluation of masked deptframe.
+		/* Direct evaluation of masked deptframe.
 		Advantages: Faster.
 		Disadvantages: No depth frame, no bluring.
 		*/
@@ -447,27 +451,63 @@ void ImageAnalysis::finishDepthMaskCreation(){
 	//m_depthMask = max(m_depthMask,getFrontMask());//this would be bad for hand blobs which overlap the borders
 
 	/* Set up m_depthMask16U for directFiltering mode */
-	if( m_pSettingKinect->m_kinectProp.directFiltering){
-		//remap mask to 16UC1 format.
-		int m = m_pSettingKinect->m_kinectProp.minDepth;
-		int M = m_pSettingKinect->m_kinectProp.maxDepth;
-		float alphaInv = ( M-m )/( 0.0-255.0 );
-		float betaInv = ( m*0 - M*255.0 )/(0-255);
-		m_depthMask.convertTo(m_depthMask16U, CV_16UC1, alphaInv, betaInv);
-	}
+	//remap mask to 16UC1 format.
+	int m = m_pSettingKinect->m_kinectProp.minDepth;
+	int M = m_pSettingKinect->m_kinectProp.maxDepth;
+	float alphaInv = ( M-m )/( 0.0-255.0 );
+	float betaInv = ( m*0 - M*255.0 )/(0-255);
+	m_depthMask.convertTo(m_depthMask16U, CV_16UC1, alphaInv, betaInv);
+
 	m_depthMaskCounter = 0;
 }
 
 
 typedef Vec<uchar, 4> VT;
 
-bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion::Response *pres){
+int ImageAnalysis::http_actions(Onion::Request *preq, int actionid, Onion::Response *pres){
 
 	switch(actionid){
-		case 10:
+		case HTTP_ACTION_REGENERATE_MASKS:
+			{ /* Regenerate masks */
+				resetMask( m_pSettingKinect, MASK|FRONT_MASK);
+				std::string reply("ok");
+				pres->write(reply.c_str(), reply.size() );
+				return 0;
+			}
+			break;
+		default:
+			break;
+	}
+	return -3;
+}
+
+// Handler for DISPLAY_MODE_WEB.
+int ImageAnalysis::getWebDisplayImage(Onion::Request *preq, int actionid, Onion::Response *pres){
+
+	switch(actionid){
+		case HTTP_ACTION_SELECT_VIEW:
+			{ 
+				//VPRINT("HTTP_ACTION_SELECT_VIEW: Reset redraw flag.\n");
+				m_png_redraw = true; 
+				// action handled by OnionServer::updateWebserver, too.
+				return -3;
+			}
+			break;
+		case HTTP_ACTION_GET_PREVIEW_IMAGE:
 			{ /* Generate image */
 				int scale = atoi( onion_request_get_queryd(preq->c_handler(),"scale","100") );
 				const char *force = onion_request_get_queryd(preq->c_handler(),"force","0");
+
+				std::string key("Content-Type");
+#ifdef WEB_DISPLAY_USES_JPEG
+				std::string mimetype("image/jpeg");
+#else
+				std::string mimetype("image/png");
+#endif
+				// Set header which informs that the image should not read from cache.
+				// Required in Chrome (Nov, 2015). 
+				pres->setHeader(key,mimetype);
+				pres->setHeader("Cache-Control", " no-store,max-age=0, must-revalidate");
 
 				//check if image generation is forced
 				if( *force == '1' ) m_png_redraw = true;
@@ -477,20 +517,20 @@ bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion:
 				VPRINT("redraw: %i, scale: %i, newscale: %i", m_png_redraw?1:0, m_png_scale, scale);
 
 				if( !m_png_redraw && scale==m_png_scale ){
+					VPRINT("No new preview image. Send 1x1 dummy image.\n");
 					//There was no change between the last sended image.
 					//std::string reply = "noNewImage";
 					//onion_response_write(res, reply.c_str(), reply.size() ); 
 					unsigned char image[4];
 					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
-#ifdef USE_JPEG
+#ifdef WEB_DISPLAY_USES_JPEG
 					onion_jpeg_response( image , 4, JCS_EXT_RGBX, 1, 1, JPEG_QUALITY, pres->c_handler() );
 #else
 					onion_png_response( image, 4, 1, 1, pres->c_handler() );
 #endif
 					m_png_mutex.unlock();
-					return true;
+					return 0;
 				}
-
 
 				if( /*m_pSettingKinect->m_withKinect == false ||*/
 						m_pSettingKinect->m_displayMode != DISPLAY_MODE_WEB ||
@@ -499,46 +539,50 @@ bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion:
 					//generate 1x1 pixel
 					unsigned char image[4];
 					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
-#ifdef USE_JPEG
+#ifdef WEB_DISPLAY_USES_JPEG
 					onion_jpeg_response( image , 4, JCS_EXT_RGBX, 1, 1, JPEG_QUALITY, pres->c_handler() );
 #else
 					onion_png_response( image, 4, 1, 1, pres->c_handler() );
 #endif
 					m_png_mutex.unlock();
 					m_png_redraw = false;
-					return true;
+					return 0;
 				}
 
 
-				VPRINT("(PNG) View: %i\n", m_pSettingKinect->m_view);
+				VPRINT("(PNG/JPG) View: %i\n", m_pSettingKinect->m_view);
 				int channels = 1;//4=RGBA, -4=ABRG 
 				Mat* png = NULL;
 				switch (m_pSettingKinect->m_view){
 					case VIEW_RGB:
 						channels=4;
-						cv::swap( m_rgb, m_png_imgC3);
+						//cv::swap( m_rgb, m_png_imgC3);
+						std::swap( m_rgb, m_png_imgC3);
 						png=&m_png_imgC3;
+						break;
 					case VIEW_AREAS:
 						channels=4;
-						//cv::swap( m_areaCol, m_png_imgC3);
-						getColoredAreas();
-						png=&m_rgb;
+						png=&m_areaCol;
 						break;
 					case VIEW_MASK:
-						//cv::swap( m_depthMask, m_png_imgC1);
+						//std::swap( m_depthMask, m_png_imgC1);
+						//m_png_imgC1 = m_depthMask;
 						png=&m_depthMask;
 						break;
 					case VIEW_FILTERED:
-						cv::swap( m_filteredMat, m_png_imgC1);
+						std::swap( m_filteredMat, m_png_imgC1);
+						//m_png_imgC1 = m_filteredMat;
 						png=&m_png_imgC1;
 						break;
 					case VIEW_FRONTMASK:
-						//cv::swap( m_areaGrid, m_png_imgC1);
+						//std::swap( m_areaGrid, m_png_imgC1);
+						//m_png_imgC1 = m_areaGrid;
 						png=&m_areaGrid;
 						break;
 					case VIEW_DEPTH:
 					default:
-						cv::swap( m_depthf, m_png_imgC1);
+						std::swap( m_depthf, m_png_imgC1);
+						//m_png_imgC1 = m_depthf;
 						png=&m_png_imgC1;
 						break;
 				}
@@ -548,17 +592,18 @@ bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion:
 
 				// Return empty file if selected image does not contain data.
 				if( png == NULL || png->empty() /*|| png->size().width == 0 || png->size().height == 0*/ ){
+					VPRINT("No image available.\n");
 					//generate 1x1 pixel image
 					unsigned char image[4];
 					image[0] = 0; image[1] = 0; image[2] = 0; image[3] = 0;
-#ifdef USE_JPEG
+#ifdef WEB_DISPLAY_USES_JPEG
 					onion_jpeg_response( image , 4, JCS_EXT_RGBX, 1, 1, JPEG_QUALITY, pres->c_handler() );
 #else
 					onion_png_response( image, 4, 1, 1, pres->c_handler() );
 #endif
 					m_png_mutex.unlock();
 					m_png_redraw = false;
-					return true;
+					return 0;
 				}
 
 				if( scale == 100 ){
@@ -592,7 +637,7 @@ bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion:
 						}
 
 					}
-#ifdef USE_JPEG
+#ifdef WEB_DISPLAY_USES_JPEG
 							onion_jpeg_response( (unsigned char*) image , channels, channels==1?JCS_GRAYSCALE:JCS_EXT_RGBX, roi.width, roi.height, JPEG_QUALITY, pres->c_handler() );
 #else
 							onion_png_response( (unsigned char*) image , channels, roi.width, roi.height, pres->c_handler() );
@@ -645,7 +690,7 @@ bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion:
 								}
 							}
 
-#ifdef USE_JPEG
+#ifdef WEB_DISPLAY_USES_JPEG
 							onion_jpeg_response( (unsigned char*) image , channels, channels==1?JCS_GRAYSCALE:JCS_EXT_RGBX, w2, h2, JPEG_QUALITY, pres->c_handler() );
 #else
 							onion_png_response( (unsigned char*) image , channels, w2, h2, pres->c_handler() );
@@ -657,12 +702,12 @@ bool ImageAnalysis::getDisplayedImage(Onion::Request *preq, int actionid, Onion:
 						m_png_redraw = false;
 						m_png_scale  = scale;
 
-						return true;
+						return 0;
 					}
 			break;
 		default:
 			break;
 	}
 
-	return false; 
+	return -3;
 }

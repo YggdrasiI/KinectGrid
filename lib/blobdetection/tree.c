@@ -375,7 +375,7 @@ unsigned int sum_areas(Node * const root, const unsigned int * const comp_size){
  *
  * The algorithm loops over every node and eval
  * 2S_F + comp_size(i) - N_F, which will stored in node->data->area.
- * After all children of a node was processed the approimation
+ * After all children of a node was processed the approximation
  * starts, which will replace node->data->area.
  *
  * */
@@ -519,7 +519,7 @@ static inline unsigned int number_of_coarse_roi(BlobtreeRect* roi, unsigned int 
  * Finally, the barycenter will be evaluated.
  *
  * Notes:
- * - This function SUPERSEDS sum_areas and changes the area value, too.
+ * - This function SUPERSEEDS sum_areas and changes the area value, too.
  *   => Call other functions, which set the area value (i.e. approx areas)
  *   after this function.
  * - This function changes the values of the arguments pixel_sum_*.

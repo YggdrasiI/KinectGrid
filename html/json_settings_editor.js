@@ -1047,6 +1047,11 @@ function repoke(){
 	send("update?actionid=4","");
 }
 
+function manual_mask_generation(){
+	send("update?actionid=12","");
+}
+
+
 function setView(i){
 	send("update?actionid=5","view="+i);
 }

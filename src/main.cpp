@@ -464,7 +464,8 @@ int main(int argc, char **argv) {
 			}
 
 		}else{
-			sleep(1+sleepSeconds);
+			if( sleepSeconds>0 )
+				sleep(sleepSeconds);
 		}
 
 	}
