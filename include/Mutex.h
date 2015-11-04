@@ -11,8 +11,8 @@ public:
 	void lock() {
 		pthread_mutex_lock( &m_mutex );
 	}
-	void trylock() {
-		pthread_mutex_trylock( &m_mutex );
+	bool trylock() {
+		return (0 == pthread_mutex_trylock( &m_mutex ));
 	}
 	void unlock() {
 		pthread_mutex_unlock( &m_mutex );

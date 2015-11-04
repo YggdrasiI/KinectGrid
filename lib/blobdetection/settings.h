@@ -98,9 +98,15 @@
 
 /* Derive some environment variables from the above settings.
  */
-#ifdef BLOB_DIMENSION ## BLOB_BARYCENTER
+//#ifdef BLOB_DIMENSION ## BLOB_BARYCENTER //short version throws waring in gcc.
+#ifdef BLOB_DIMENSION 
 /* Update current position for each step */
 	#define PIXEL_POSITION
+#else
+#ifdef BLOB_BARYCENTER
+/* Update current position for each step */
+	#define PIXEL_POSITION
+#endif
 #endif
 
 

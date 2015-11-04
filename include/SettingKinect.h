@@ -76,6 +76,7 @@ class SettingKinect: public JsonConfig{
 		uint8_t /*unsigned char*/ m_rangeMap[2048];
 
 	public:
+		FunctionMode getMode() const;
 		FunctionMode getModeAndLock();
 		void setMode(FunctionMode mode);
 		void unlockMode(FunctionMode mode);

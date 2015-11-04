@@ -30,8 +30,15 @@ void SettingKinect::setMode(FunctionMode mode){
 	m_mode_mutex.unlock();
 }
 
+FunctionMode SettingKinect::getMode() const{
+	return m_mode;
+}
+
 FunctionMode SettingKinect::getModeAndLock(){
-	m_mode_mutex.lock();
+	//m_mode_mutex.lock();
+	if( !m_mode_mutex.trylock() ){
+			printf("Locking of settingMode FAILED!\n");
+	}
 	return m_mode;
 }
 

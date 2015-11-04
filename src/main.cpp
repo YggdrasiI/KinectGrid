@@ -111,6 +111,31 @@ void print_help(){
 			);
 }
 
+/* Callback for mouseclick in OpenCV window.
+ * Used for area detection.
+ */
+struct OnMouseData{
+	ImageAnalysis *ia;
+	SettingKinect *pSettingKinect;
+};
+
+static void cvOnMouse( int event, int x, int y, int flags, void* userdata) {
+	if( event != cv::EVENT_LBUTTONDOWN )
+		return;
+	OnMouseData *data = (OnMouseData*)userdata;	
+	if( data->ia == NULL || data->pSettingKinect == NULL ){
+		VPRINT("Userdata pointer of mouse handler NULL.\n");
+		return;
+	}
+
+	FunctionMode mode = data->pSettingKinect->getModeAndLock();
+	if( mode == AREA_DETECTION ){
+		VPRINT("Mouse callback! event=%i point(%i,%i)\n", event, x, y);
+		data->ia->area_detection_opencv_click(x,y);
+	}
+	data->pSettingKinect->unlockMode(mode);
+}
+
 
 int main(int argc, char **argv) {
 
@@ -216,6 +241,7 @@ int main(int argc, char **argv) {
 	TrackerCvBlobsLib tracker(&settingKinect);
 #endif
 	View &eView = settingKinect.m_view;
+	OnMouseData mouseData = {NULL, &settingKinect};
 	time_t last_blob_detection = time(NULL);
 
 	settingKinect.m_displayMode = displayMode;
@@ -226,6 +252,7 @@ int main(int argc, char **argv) {
 		device = &mydevice;
 
 		ia = new ImageAnalysis(device, &settingKinect);
+		mouseData.ia = ia;
 
 		//Set Signals
 		settingKinect.updateSig.connect( boost::bind(&MyFreenectDevice::update,device, _1, _2) );
@@ -246,9 +273,9 @@ int main(int argc, char **argv) {
 		 * But I see no advancement.
 		 */
 		//cvStartWindowThread();
-
 		if( settingKinect.m_displayMode == DISPLAY_MODE_CV ) {
-			namedWindow("img",CV_WINDOW_AUTOSIZE);
+			cv::namedWindow("img",CV_WINDOW_AUTOSIZE);
+			cv::setMouseCallback("img", cvOnMouse, &mouseData);
 		}
 
 		if( rgbMode ){
@@ -379,7 +406,7 @@ int main(int argc, char **argv) {
 				case AREA_DETECTION:
 					{
 						mode = ia->area_detection(&tracker);
-						if( ia->m_area_detection_step == AREA_DETECTION_STEP_WEB){
+						if( ia->m_area_detection_step == AREA_DETECTION_STEP_BY_CLICK){
 							//Debug, Slow down because above function returns immediately.
 							settingKinect.unlockMode(mode);
 							usleep(50000);		

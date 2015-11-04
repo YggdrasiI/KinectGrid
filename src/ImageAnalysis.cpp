@@ -146,7 +146,7 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 	int backupMinBlobSize = m_pSettingKinect->m_kinectProp.minBlobArea;
 
 	switch (m_area_detection_step) {
-	case AREA_DETECTION_STEP_WEB: 
+	case AREA_DETECTION_STEP_BY_CLICK: 
 		{ // Do noting this state indicate that the user selects an
 			// area on the webinterface.
 		} break;
@@ -235,7 +235,54 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 
 	return AREA_DETECTION;
 }
-//++++++++
+
+/* For area detection in OpenCV window.
+*/
+int ImageAnalysis::area_detection_opencv_click(int x, int y){
+
+  //0. Disable detection via Kinect.
+	m_area_detection_step = AREA_DETECTION_STEP_BY_CLICK;
+
+	//1. Evaluate global coordinates
+	x += m_pSettingKinect->m_kinectProp.roi.x;
+	y += m_pSettingKinect->m_kinectProp.roi.y;
+
+	if( x < 0 || y < 0 ||
+			x >= m_areaMask.size().width || y >= m_areaMask.size().height ){
+		VPRINT("area_detection_opencv_click, x=%i or y=%i are out of range.\n", x, y);
+		return -2;
+	}
+
+	//2. Look into areaMask to get area id for this pixel
+	uchar areaid = (uchar) m_areaMask.data[x + y*m_areaMask.size().width];
+
+	VPRINT("area_detection_opencv_click, x=%i or y=%i, id=%i\n", x, y, areaid);
+	if( areaid == MAXAREAS+1 ){
+		//3a. Register new area
+		Area area;
+		area.id = ((int) m_area_detection_areas.size()) + 1;
+		area.repoke_x = (double) x;
+		area.repoke_y = (double) y;
+
+		if( !repoke_step(area) ){
+			// registration failed
+			VPRINT("area_detection_opencv_click, no area found, x=%f, y=%f, id=%i\n",
+					area.repoke_x, area.repoke_y, area.id);
+			return -1;
+		}else{
+			return area.id;
+		}
+	}
+	if( areaid == 1){ //Second click on first area
+		//3b.  // Let the 'main loop' (area_detection) finish the registration.
+		m_area_detection_step = AREA_DETECTION_STEP_FINISH;
+		return 0;
+	}
+	if( areaid == 0){ //Click on this area are ignored
+		return -1;
+	}
+	return -4;
+}
 
 void ImageAnalysis::genFrontMask(){
 	m_areaGrid = Scalar(255/*0*/);
@@ -507,51 +554,19 @@ int ImageAnalysis::http_actions(Onion::Request *preq, int actionid, Onion::Respo
 					return 0;
 				}
 
-				m_area_detection_step = AREA_DETECTION_STEP_WEB;
+				//0. Disable detection via Kinect.
+				m_area_detection_step = AREA_DETECTION_STEP_BY_CLICK;
 
 				//1. Evaluate global coordinates
 				int x = atoi( onion_request_get_queryd(preq->c_handler(), "x","-1") );
 				int y = atoi( onion_request_get_queryd(preq->c_handler(), "y","-1") );
-				if( x < 0 || y < 0 ){
-					VPRINT("HTTP_ACTION_AREA_DETECTION_CLICK, x=%i or y=%i are not positive.\n", x, y);
-					pres->write("-2", 2);
-					return 0;
-				}
-				x += m_pSettingKinect->m_kinectProp.roi.x;
-				y += m_pSettingKinect->m_kinectProp.roi.y;
 
-				//2. Look into areaMask to get area id for this pixel
-				uchar areaid = (uchar) m_areaMask.data[x + y*m_areaMask.size().width];
-				
-				VPRINT("HTTP_ACTION_AREA_DETECTION_CLICK, x=%i or y=%i, id=%i\n", x, y, areaid);
-				if( areaid == MAXAREAS+1 ){
-					//3a. Register new area
-					Area area;
-					area.id = ((int) m_area_detection_areas.size()) + 1;
-					area.repoke_x = (double) x;
-					area.repoke_y = (double) y;
-
-					if( !repoke_step(area) ){
-						// registration failed
-						VPRINT("HTTP_ACTION_AREA_DETECTION_CLICK, no area found, x=%f, y=%f, id=%i\n",
-								area.repoke_x, area.repoke_y, area.id);
-						pres->write("-1", 2);
-						return 0;
-					}else{
-						char buffer [12];
-					  int cx;
-						cx = snprintf ( buffer, 12, "%d", area.id );
-						pres->write(buffer, cx);
-						return 0;
-					}
-				}
-				if( areaid == 1){ //Second click on first area
-					//3b.  // Let the 'main loop' (area_detection) finish the registration.
-					m_area_detection_step = AREA_DETECTION_STEP_FINISH;
-					pres->write("0", 1);
-					return 0;
-				}
-				pres->write("-4", 2);
+				int ret = area_detection_opencv_click(x,y);
+				//Propagate return value to website
+				char buffer[12];
+				int cx;
+				cx = snprintf ( buffer, 12, "%d", ret );
+				pres->write(buffer, cx);
 				return 0;
 			}
 			break;

@@ -22,7 +22,7 @@ enum areaDetectionStep {
 	AREA_DETECTION_STEP_WAIT_BLOB,
 	AREA_DETECTION_STEP_WAIT_VOID,
 	AREA_DETECTION_STEP_FINISH,
-	AREA_DETECTION_STEP_WEB,
+	AREA_DETECTION_STEP_BY_CLICK, // Extra state for detection over frontent (web or x11).
 };
 
 class ImageAnalysis{
@@ -68,6 +68,16 @@ class ImageAnalysis{
 		int http_actions(Onion::Request *preq, int actionid, Onion::Response *pres);
 		// extra signal for web display mode
 		int getWebDisplayImage(Onion::Request *preq, int actionid, Onion::Response *pres);
+		/* For area detection in OpenCV window.
+		 * Return values:
+		 *	-4 Unknown result/error
+		 *	-3 Serer not in detection mode. Done nothing.
+		 *	-2 Wrong input
+		 *	-1 No area found for coordinates
+		 *	 0 Server finished detection.
+		 *	>0 Server found area and return it's id.
+		 */
+		int area_detection_opencv_click(int x, int y);
 	private:
 		void repoke_init();
 		bool repoke_step(Area& area);
