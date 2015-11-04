@@ -368,15 +368,23 @@ int main(int argc, char **argv) {
 					}
 					break;
 				case AREA_DETECTION_END:
-					ia->m_area_detection_step = 3;
+					ia->m_area_detection_step = AREA_DETECTION_STEP_FINISH;
 					mode = ia->area_detection(&tracker);
 					break;
 				case AREA_DETECTION_START:
-					ia->m_area_detection_step = 0;
+					ia->m_area_detection_step = AREA_DETECTION_STEP_INIT;
 					eView = VIEW_AREAS;
+					mode = ia->area_detection(&tracker);
+					break;
 				case AREA_DETECTION:
 					{
 						mode = ia->area_detection(&tracker);
+						if( ia->m_area_detection_step == AREA_DETECTION_STEP_WEB){
+							//Debug, Slow down because above function returns immediately.
+							settingKinect.unlockMode(mode);
+							usleep(50000);		
+							mode = settingKinect.getModeAndLock();
+						}
 					}
 					break;
 				case QUIT:

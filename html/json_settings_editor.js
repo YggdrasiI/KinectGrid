@@ -57,6 +57,7 @@ HTTP_ACTIONS = {
 	"RESET_CONFIG" : 9,
 	"GET_PREVIEW_IMAGE" : 10,
 	"REGENERATE_MASKS" : 12,
+	"AREA_DETECTION_CLICK" : 13,
 }
 
 
@@ -83,6 +84,9 @@ open_files = 0;
 
 /* Init setTimeout reference holder */
 if( typeof refreshTimeout == 'undefined' ) refreshTimeout = null; 
+
+/* Some operation should invoke an automatic update of the preview image. */
+forceImageUpdate = false; 
 
 /* Fill in json values on desired
  * positions on the page. Raw values
@@ -1107,7 +1111,6 @@ function toggleDisplay(button){
 	 * */
 	send("update?actionid=5","display=2",
 			function(data){
-				return;
 				if( data == 1 ){
 					button.value = "Hide Display"
 				}else{
@@ -1118,11 +1121,15 @@ function toggleDisplay(button){
 }
 
 function areaDetection(i){
-	send("update?actionid="+HTTP_ACTIONS["AREA_DETECTION"],"start="+i);
+	send("update?actionid="+HTTP_ACTIONS["SET_AREA_DETECTION"],"start="+i);
+	forceImageUpdate = true;
+	if( i == 1)
+		$("#info").empty().append("Click into image to select area.");
 }
 
 function repoke(){
 	send("update?actionid="+HTTP_ACTIONS["REPOKE"],"");
+	forceImageUpdate = true;
 }
 
 function manual_mask_generation(){
@@ -1132,6 +1139,7 @@ function manual_mask_generation(){
 
 function setView(i){
 	send("update?actionid="+HTTP_ACTIONS["SELECT_VIEW"],"view="+i);
+	forceImageUpdate = true;
 }
 
 function saveMasks(){
@@ -1145,8 +1153,12 @@ function loadMasks(){
 
 function quit(){
 	ok = !request_confirmation || confirm("Quit KinectGrid?");
-	if( ok )
+	if( ok ){
+		window.clearTimeout(refreshTimeout);
+		server_online = false;
 		send("update?actionid="+HTTP_ACTIONS["QUIT_PROGRAM"],"");
+		refreshTimeout = window.setTimeout("refresh2(true)", REFRESH_INTERVAL_MS_OFFLINE);
+	}
 }
 
 function resetConfig(){
@@ -1154,6 +1166,7 @@ function resetConfig(){
 	if( !ok ) return;
 
 	send("update?actionid="+HTTP_ACTIONS["RESET_CONFIG"],"");
+	forceImageUpdate = true;
 }
 
 /* Send serial command */
@@ -1201,5 +1214,52 @@ function deepCopy(p,c) {
 
 function openWindow(url){
 	var w = window.open('index2.html');
+}
+
+/*
+ * Area detection. Return true if area detection mode is active.
+ */
+AREA_DETECTION_MODES = [
+TOKENS["modeState"].indexOf("AREA_DETECTION"),
+TOKENS["modeState"].indexOf("AREA_DETECTION_START"),
+TOKENS["modeState"].indexOf("AREA_DETECTION_END"),
+];
+function isAreaDetectionMode(){
+	return ( -1 < AREA_DETECTION_MODES.indexOf(json_kinect.mode) );
+}
+
+/*
+ * Area detection.
+ * Detect pixel coordinates on preview image and send them
+ * to the server. 
+ */
+function areaDetection_sendCoordinates(x,y){
+	x = parseInt(x);
+	y = parseInt(y);
+	send("update?actionid="+HTTP_ACTIONS["AREA_DETECTION_CLICK"]+"&x="+x+"&y="+y,"",
+			function(data){
+			data = parseInt(data)
+			if( isNaN(data) ) data = -4;
+			if( data == -4 ){
+			$("#info").empty().append("Unknown return value.");
+			}
+			if( data == -3 ){
+			$("#info").empty().append("Server not in area detection mode.");
+			}
+			if( data == -2 ){
+			$("#info").empty().append("Input parsing failed.");
+			}
+			if( data == -1 ){
+			$("#info").empty().append("No area found.");
+			}
+			if( data == 0 ){
+			$("#info").empty().append("Area detection finished.");
+			}
+			if( data > 0 ){
+			$("#info").empty().append("Area "+data+" added. Click on area 1 to finish detection.");
+			setTimeout( function() { reloadImage(true); }, 1000); 
+			}
+			}
+	);
 }
 

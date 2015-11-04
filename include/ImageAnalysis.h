@@ -15,6 +15,15 @@
 // used in area detection.
 #define CV_FLOODFILL_MASK_ONLY   (1 << 17)
 
+/* Internal start for area detetion modes. */
+enum areaDetectionStep {
+	AREA_DETECTION_STEP_UNSET=-1,
+	AREA_DETECTION_STEP_INIT=0,
+	AREA_DETECTION_STEP_WAIT_BLOB,
+	AREA_DETECTION_STEP_WAIT_VOID,
+	AREA_DETECTION_STEP_FINISH,
+	AREA_DETECTION_STEP_WEB,
+};
 
 class ImageAnalysis{
 	public:

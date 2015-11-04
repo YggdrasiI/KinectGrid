@@ -58,6 +58,7 @@ cJSON *SettingKinect::genJson()
 	cJSON_AddItemToObject(root, "tuio25Dblb_port", cJSON_CreateNumber(m_tuio25Dblb_port));
 	cJSON_AddItemToObject(root, "masks", cJSON_CreateString(m_masks.c_str() ));
 	cJSON_AddItemToObject(root, "display", cJSON_CreateNumber(m_displayMode));
+	cJSON_AddItemToObject(root, "mode", cJSON_CreateNumber(m_mode));
 
 	/* Sub node. This values will transmitted to the web interface */
 	cJSON *html = cJSON_CreateArray();	

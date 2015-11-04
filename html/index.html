@@ -105,11 +105,11 @@ $(function(){
 					<option value="25" >25%</option>
 				</select>
 			</span><br />
-			<span id="info"></span><br />
+			<span id="info">Click on image for manual reload.</span><br />
 			</p>
-			<span id="previewImg" onClick="reloadImage(true)" title="Click to reload.">
+			<div id="previewImg" title="" style="display:inline-block; background-color:#222222;min-width:100px; min-height:100px;">
 				<img src="preview.image?scale=50&force=1" />
-			</span>
+			</div>
 		</div>
 		<div id="no_web_preview" style="display:block">
 			<p>Only available if program was started with <i>--display web</i> option. 

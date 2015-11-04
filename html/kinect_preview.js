@@ -10,6 +10,7 @@ offline_skip = 0
 
 /* Already set by json_settings_editor.js, but this script works standalone, too. */
 if( typeof server_online == 'undefined' ) server_online = true;
+if( typeof forceImageUpdate == 'undefined' ) forceImageUpdate = false; 
 if( typeof refreshTimeout_previewImage == 'undefined' ) refreshTimeout_previewImage = null; 
 
 function utf8_to_b64( str ){
@@ -18,6 +19,20 @@ function utf8_to_b64( str ){
 
 function b64_to_utf8( str ){
 	return decodeURIComponent(escape(window.atob( str )));
+}
+
+function previewImageClick(el, x, y){
+	window.clearTimeout(refreshTimeout_previewImage);
+
+	if( isAreaDetectionMode() ){
+		console.log("Coords "+x+", "+y);
+		//Send cursor position and update image later
+		areaDetection_sendCoordinates(x,y);
+		//setTimeout( function() { reloadImage(true); }, 1000); 
+	}else{
+		//Update image
+		reloadImage(true);
+	}
 }
 
 function reloadImage(manual){
@@ -33,15 +48,19 @@ function reloadImage(manual){
 		}
 	}
 
-	if( !manual && $("#previewRefresh").prop("checked") != true ){
+	automatic = ($("#previewRefresh").prop("checked") != true )
+	if( forceImageUpdate  ){
+		forceImageUpdate = false;
+		automatic = true;
+	}
+
+	if( !manual && !automatic ){
 		refreshTimeout_previewImage = window.setTimeout("reloadImage(false)", RELOAD_MS);
 		return true;
 	}
 
-	var scaleIn = parseInt($("#previewScaleIn").prop("zoomval"));
-	if( isNaN(scaleIn) ) scaleIn = 100;
-	var scaleOut = parseInt($("#previewScaleOut").prop("zoomval"));
-	if( isNaN(scaleOut) ) scaleOut = 100;
+	var scaleIn = parseInt($("#previewScaleIn").prop("zoomval")) || 100;
+	var scaleOut = parseInt($("#previewScaleOut").prop("zoomval")) || 100;
 	var d = new Date();
 	var newImg = new Image();
 
@@ -55,7 +74,7 @@ function reloadImage(manual){
 		}else{
 			newImg.width = newImg.naturalWidth*(scaleOut/100.0);
 			newImg.height = newImg.naturalHeight*(scaleOut/100.0);
-			if(manual) $("#info").empty().fadeIn(0).append("Load new image").fadeOut(400);
+			//if(manual) $("#info").empty().fadeIn(0).append("Load new image").fadeOut(400);
 			$("#previewImg").empty().append($(newImg));
 		}
 	};
@@ -67,8 +86,6 @@ function reloadImage(manual){
 			if ( !newImg.complete || !newImg.naturalWidth )
 			{
 			server_online = false;
-			// replace by black pixel 
-			newImg.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNg+A8AAQIBANEay48AAAAASUVORK5CYII="; 
 			window.clearTimeout(refreshTimeout_previewImage);
 			refreshTimeout_previewImage = window.setTimeout("reloadImage(false)", RELOAD_MS);
 			}
@@ -95,8 +112,7 @@ $(function(){
 		scaleSelectOut.prop("zoomval", scaleSelectOut.val());
 
 		//Update current image size, too.
-		var scaleOut = parseInt(scaleSelectOut.prop("zoomval"));
-		if( isNaN(scaleOut) ) scaleOut = 100;
+		var scaleOut = parseInt(scaleSelectOut.prop("zoomval")) || 100;
 		var curImg = $("#previewImg img").get(0);
 		curImg.width = curImg.naturalWidth*(scaleOut/100.0);
 		curImg.height = curImg.naturalHeight*(scaleOut/100.0);
@@ -105,3 +121,27 @@ $(function(){
 });
 
 refreshTimeout_previewImage = window.setTimeout("reloadImage(false)", RELOAD_MS + 3000);
+
+
+
+// Event handler for area detection
+$(function(){
+		//note that offset.top is wrong for display:inline...
+	$("#previewImg").css("position","relative");
+	$("#previewImg").click(function(event){
+			var offset = $( this ).offset();
+			event.stopPropagation();
+			var relX = parseInt(event.pageX-offset.left);
+			var relY = parseInt(event.pageY-offset.top);
+
+			var scaleIn = parseInt($("#previewScaleIn").prop("zoomval")) || 100;
+			var scaleOut = parseInt($("#previewScaleOut").prop("zoomval")) || 100;
+			console.log( "input: "+relX+","+relY);
+			relX /= ( (scaleOut*scaleIn)/10000.0 );
+			relY /= ( (scaleOut*scaleIn)/10000.0 );
+			console.log( "scaled: "+relX+","+relY);
+
+			previewImageClick($(this),relX,relY);
+			});
+		});
+

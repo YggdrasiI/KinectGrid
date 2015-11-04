@@ -26,7 +26,7 @@ ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingK
 	m_area_detection_mask  (Size(KRES_X+2,KRES_Y+2),CV_8UC1),
   m_areaCol_ok(false),
 	m_maskFront_ok(false),
-	m_area_detection_step(0),
+	m_area_detection_step(AREA_DETECTION_STEP_UNSET),
 	m_png_redraw(false),
 	m_png_scale(-1),
 	m_png_imgC1  (Size(KRES_X,KRES_Y),CV_8UC1),
@@ -146,7 +146,11 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 	int backupMinBlobSize = m_pSettingKinect->m_kinectProp.minBlobArea;
 
 	switch (m_area_detection_step) {
-	case 2:
+	case AREA_DETECTION_STEP_WEB: 
+		{ // Do noting this state indicate that the user selects an
+			// area on the webinterface.
+		} break;
+	case AREA_DETECTION_STEP_WAIT_VOID:
 		{// Wait util no blob is detected.
 			//printf("area detection 2\n");
 			hand_detection();
@@ -154,24 +158,24 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_kinectProp.roi), m_areaMask, true, NULL);
 			m_pSettingKinect->m_kinectProp.minBlobArea = backupMinBlobSize;
 			if( tracker->getBlobs().size() == 0 ){
-				m_area_detection_step = 1;
+				m_area_detection_step = AREA_DETECTION_STEP_WAIT_BLOB;
 			}
 		} break;
-	case 3://for AREA_DETECTION_END
+	case AREA_DETECTION_STEP_FINISH://for AREA_DETECTION_END
 		{
-			//printf("area detection 3\n");
-			m_area_detection_step = 3;
+			VPRINT("End of area detection.\n");
+			m_area_detection_step = AREA_DETECTION_STEP_UNSET;
 			repoke_finish();
 			return HAND_DETECTION;
 		} break;
-	case 0:
+	case AREA_DETECTION_STEP_INIT:
 		{
-			printf("area detection 0\n");
+			VPRINT("Init of area detection (Clear areas and area mask).\n");
 			repoke_init();
 			genColoredAreas();
-			m_area_detection_step = 1;
+			m_area_detection_step = AREA_DETECTION_STEP_WAIT_BLOB;
 		}//no break!
-	case 1:
+	case AREA_DETECTION_STEP_WAIT_BLOB:
 		{
 			//printf("area detection 1\n");
 			//Mat& depth = m_depthMaskWithoutThresh;
@@ -185,7 +189,7 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 				if( blobs[i].event != BLOB_MOVE) continue;
 				if( blobs[i].areaid == 1 ){
 					/* detection finshed. */
-					m_area_detection_step = 0;
+					m_area_detection_step = AREA_DETECTION_STEP_UNSET;//or INIT;
 
 					//reset pixels with MAXAREAS+1 value
 					repoke_finish();
@@ -206,11 +210,13 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 					if( ! repoke_step(area) )
 						return AREA_DETECTION;
 
-					m_area_detection_step = 2;
+					m_area_detection_step = AREA_DETECTION_STEP_WAIT_VOID;
 					break;
 				}
 			}
 		}break;
+	case AREA_DETECTION_STEP_UNSET:
+		break;
 	default:
 		{
 			printf("Unknown state during area detection\n");
@@ -479,6 +485,63 @@ int ImageAnalysis::http_actions(Onion::Request *preq, int actionid, Onion::Respo
 				resetMask( m_pSettingKinect, MASK|FRONT_MASK);
 				std::string reply("ok");
 				pres->write(reply.c_str(), reply.size() );
+				return 0;
+			}
+			break;
+		case HTTP_ACTION_AREA_DETECTION_CLICK:
+			{ /* CLICK ON PREVIEW IMAGE */
+				FunctionMode mode = m_pSettingKinect->getModeAndLock();
+				m_pSettingKinect->unlockMode(mode);
+				if( mode != AREA_DETECTION ){
+					pres->write("-3", 2);
+					return 0;
+				}
+
+				m_area_detection_step = AREA_DETECTION_STEP_WEB;
+
+				//1. Evaluate global coordinates
+				int x = atoi( onion_request_get_queryd(preq->c_handler(), "x","-1") );
+				int y = atoi( onion_request_get_queryd(preq->c_handler(), "y","-1") );
+				if( x < 0 || y < 0 ){
+					VPRINT("HTTP_ACTION_AREA_DETECTION_CLICK, x=%i or y=%i are not positive.\n", x, y);
+					pres->write("-2", 2);
+					return 0;
+				}
+				x += m_pSettingKinect->m_kinectProp.roi.x;
+				y += m_pSettingKinect->m_kinectProp.roi.y;
+
+				//2. Look into areaMask to get area id for this pixel
+				uchar areaid = (uchar) m_areaMask.data[x + y*m_areaMask.size().width];
+				
+				VPRINT("HTTP_ACTION_AREA_DETECTION_CLICK, x=%i or y=%i, id=%i\n", x, y, areaid);
+				if( areaid == MAXAREAS+1 ){
+					//3a. Register new area
+					Area area;
+					area.id = ((int) m_area_detection_areas.size()) + 1;
+					area.repoke_x = (double) x;
+					area.repoke_y = (double) y;
+
+					if( !repoke_step(area) ){
+						// registration failed
+						VPRINT("HTTP_ACTION_AREA_DETECTION_CLICK, no area found, x=%f, y=%f, id=%i\n",
+								area.repoke_x, area.repoke_y, area.id);
+						pres->write("-1", 2);
+						return 0;
+					}else{
+						char buffer [12];
+					  int cx;
+						cx = snprintf ( buffer, 12, "%d", area.id );
+						pres->write(buffer, cx);
+						return 0;
+					}
+				}
+				if( areaid == 1){ //Second click on first area
+					//3b.  // Let the 'main loop' (area_detection) finish the registration.
+					m_area_detection_step = AREA_DETECTION_STEP_FINISH;
+					pres->write("0", 1);
+					return 0;
+				}
+				pres->write("-4", 2);
 				return 0;
 			}
 			break;
