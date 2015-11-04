@@ -25,7 +25,6 @@ function previewImageClick(el, x, y){
 	window.clearTimeout(refreshTimeout_previewImage);
 
 	if( isAreaDetectionMode() ){
-		console.log("Coords "+x+", "+y);
 		//Send cursor position and update image later
 		areaDetection_sendCoordinates(x,y);
 		//setTimeout( function() { reloadImage(true); }, 1000); 
@@ -48,7 +47,7 @@ function reloadImage(manual){
 		}
 	}
 
-	automatic = ($("#previewRefresh").prop("checked") != true )
+	automatic = ($("#previewRefresh").prop("checked") == true )
 	if( forceImageUpdate  ){
 		forceImageUpdate = false;
 		automatic = true;
@@ -136,10 +135,8 @@ $(function(){
 
 			var scaleIn = parseInt($("#previewScaleIn").prop("zoomval")) || 100;
 			var scaleOut = parseInt($("#previewScaleOut").prop("zoomval")) || 100;
-			console.log( "input: "+relX+","+relY);
 			relX /= ( (scaleOut*scaleIn)/10000.0 );
 			relY /= ( (scaleOut*scaleIn)/10000.0 );
-			console.log( "scaled: "+relX+","+relY);
 
 			previewImageClick($(this),relX,relY);
 			});
