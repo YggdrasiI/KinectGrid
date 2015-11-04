@@ -460,11 +460,12 @@ int main(int argc, char **argv) {
 			if( settingKinect.m_displayMode == DISPLAY_MODE_WEB ) {
 				switch (eView){
 					case VIEW_DEPTH:
-					case VIEW_RGB:
-					case VIEW_AREAS:
 					case VIEW_FILTERED:
-					default:
+					case VIEW_RGB:
 						ia->m_png_redraw = true; 
+						break;
+					case VIEW_AREAS:
+					default:
 						break;
 				}
 			}

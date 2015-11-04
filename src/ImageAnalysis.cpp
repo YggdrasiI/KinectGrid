@@ -331,6 +331,7 @@ void ImageAnalysis::genColoredAreas(){
 		m_areaCol_ok = true;
 	}
 
+	m_png_redraw = true; 
 }
 
 

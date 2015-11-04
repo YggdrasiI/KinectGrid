@@ -7,6 +7,8 @@
 		margin: 0px;
 	}
 	h1 { font-size:120%; }
+	h2 { font-size:110%; }
+	h3 { font-size:100%; }
 	a { text-decoration:none; }
 
 	#div { border: 1px solid blue; }
@@ -16,8 +18,8 @@
 		/*border:1px solid black;*/
 	}
 
-	.containerL {float:left; width:42em; }
-	.containerR {float:right; width:42em; }
+	.containerL {float:left; max-width:42em; width:45%; }
+	.containerR {float:right; max-width:42em; width:45%; }
 
 	.containerL spanX, .containerR spanX { width:10em; }
 	.containerL input, .containerR input { text-align:center;}
