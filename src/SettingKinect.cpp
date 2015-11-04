@@ -226,14 +226,14 @@ int SettingKinect::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 
 		// fill m_area, if empty. (if-criteria should improved?!)
 		if( m_areas.size() == 0){
-			printf("Init m_areas\n");
+			VPRINT("Init m_areas\n");
 			cJSON* areas = cJSON_GetObjectItem(jsonNew,"areas");
 			if( areas != NULL ){
 				int na =  cJSON_GetArraySize(areas);
-				printf("Init m_areas(2)\n");
+				VPRINT("Init m_areas(2)\n");
 				cJSON* area;
 				for(int i=0;i<na;i++){
-					printf("get %ith area.\n",i+1);
+					VPRINT("get %ith area.\n",i+1);
 					area = cJSON_GetArrayItem(areas, i);
 					Area a;
 					a.id = cJSON_GetObjectItem(area,"id")->valueint;
@@ -244,15 +244,12 @@ int SettingKinect::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 				}
 			}
 		}
-
-		//call signal
-		printf("Changes: %i\n",changes);
-	  //updateSig(this,changes);
 	}
 
 	unlock();
 
 	//call update signal
+	VPRINT("Changes for updateSig: %i\n",changes);
 	//updateSettings(changes);	
 	updateSig(this,changes);
 

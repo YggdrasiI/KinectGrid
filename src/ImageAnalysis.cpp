@@ -49,7 +49,7 @@ ImageAnalysis::~ImageAnalysis()
 }
 
 FunctionMode ImageAnalysis::depth_mask_detection(){
-	//printf("depth mask detection\n");
+	//VPRINT("depth mask detection\n");
 	
 	if( m_depthMaskCounter > 0){
 		// Depth mask already detected. Reset m_depthMaskCounter and begin again.
@@ -81,7 +81,7 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 			if( m_pSettingKinect->m_kinectProp.clipping)
 				m_pdevice->setRoi(true,m_pSettingKinect->m_kinectProp.roi);
 
-			printf("Depth mask detection finished.\n");
+			VPRINT("Depth mask detection finished.\n");
 			return HAND_DETECTION;
 		}
 		return DEPTH_MASK_DETECTION;
@@ -93,7 +93,7 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 
 FunctionMode ImageAnalysis::hand_detection()
 {
-//	printf("hand detection\n");
+//	VPRINT("hand detection\n");
 	if( m_depthMaskCounter < 0)
 		return depth_mask_detection();
 
@@ -166,11 +166,21 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 			VPRINT("End of area detection.\n");
 			m_area_detection_step = AREA_DETECTION_STEP_UNSET;
 			repoke_finish();
+			if( m_pSettingKinect->m_kinectProp.areaThresh ){
+				VPRINT("Re-enable area thresh during detection.\n");
+				resetMask(m_pSettingKinect, BACK_MASK);
+			}
 			return HAND_DETECTION;
 		} break;
 	case AREA_DETECTION_STEP_INIT:
 		{
 			VPRINT("Init of area detection (Clear areas and area mask).\n");
+			if( m_pSettingKinect->m_kinectProp.areaThresh ){
+				VPRINT("Disable area thresh during detection.\n");
+				m_pSettingKinect->m_kinectProp.areaThresh = false;
+				resetMask(m_pSettingKinect, BACK_MASK);
+				m_pSettingKinect->m_kinectProp.areaThresh = true;
+			}
 			repoke_init();
 			genColoredAreas();
 			m_area_detection_step = AREA_DETECTION_STEP_WAIT_BLOB;
@@ -305,7 +315,7 @@ void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 
 	if( changes & (MASK|MOTOR|CONFIG) ){
 	/* Start all steps of depth mask detection. */
-		printf("ImageAnalysis: Create new mask\n");
+		VPRINT("ImageAnalysis: Create new mask\n");
 		//m_depthMaskWithoutThresh = Scalar(0);
 		//m_depthMask = Scalar(255);//temporary full mask
 		m_depthMaskCounter = -NMASKFRAMES;
@@ -403,7 +413,7 @@ bool ImageAnalysis::repoke_step(Area& area){
 	border = border - changeable ;
 	//Scalar avg = mean( m_depthf(area.rect), border(area.rect) );
 	Scalar avg = mean( m_depthMask(cc2)/*m_depthf*/, border );
-	printf("Avarage depth of area border: %f\n", avg[0] );
+	VPRINT("Avarage depth of area border: %f\n", avg[0] );
 	area.depth = (int)avg[0];
 
 	printf("Add Area %i\n",area.id);
@@ -413,7 +423,7 @@ bool ImageAnalysis::repoke_step(Area& area){
 
 void ImageAnalysis::repoke_finish(){
 	//reset pixels with MAXAREAS+1 value
-	//printf("Reset!!\n");
+	//VPRINT("Reset!!\n");
 	threshold(m_areaMask, m_areaMask,MAXAREAS,0,THRESH_TOZERO_INV);
 	genColoredAreas();
 
@@ -433,7 +443,7 @@ void ImageAnalysis::repoke_finish(){
 void ImageAnalysis::addAreaThresh(/*Mat& src,*/ std::vector<Area> areas, Mat& areaMask,  Mat& dst){
 	Mat v(dst.size(),dst.type());
 	for( int i=0; i<areas.size(); i++){
-		printf("Depth of area %i: %i\n",i+1,areas[i].depth);
+		VPRINT("Depth of area %i: %i\n",i+1,areas[i].depth);
 		/* The minus value:
 		 * The detection should begin "short" behind the frame. The minDepth and
 		 * maxDepth value affect the depth unit length. Thus, this values need to be consides.
@@ -482,7 +492,7 @@ int ImageAnalysis::http_actions(Onion::Request *preq, int actionid, Onion::Respo
 	switch(actionid){
 		case HTTP_ACTION_REGENERATE_MASKS:
 			{ /* Regenerate masks */
-				resetMask( m_pSettingKinect, MASK|FRONT_MASK);
+				resetMask(m_pSettingKinect, MASK|FRONT_MASK);
 				std::string reply("ok");
 				pres->write(reply.c_str(), reply.size() );
 				return 0;

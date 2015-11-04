@@ -316,7 +316,7 @@ int main(int argc, char **argv) {
 						frame << sname << "_frame" << ".png";
 						Mat tmpLoadImg0 = cv::imread(frame.str(),0);
 						if(tmpLoadImg0.empty()) {
-							printf("[Note] Can't load frame mask '%s'.\n", frame.str().c_str() );
+							VPRINT("[Note] Can't load frame mask '%s'.\n", frame.str().c_str() );
 							loadingFailed = true;
 						}else{
 							ia->m_areaGrid = tmpLoadImg0;
@@ -326,7 +326,7 @@ int main(int argc, char **argv) {
 						depth << sname << "_depth" << ".png";
 						Mat tmpLoadImg1 = cv::imread(depth.str(),0);
 						if(tmpLoadImg1.empty()) {
-							printf("[Note] Can't load depth mask '%s'.\n", depth.str().c_str() );
+							VPRINT("[Note] Can't load depth mask '%s'.\n", depth.str().c_str() );
 							loadingFailed = true;
 							//ia->m_depthMaskWithoutThresh = Scalar(0); //optional
 						}else{
@@ -494,7 +494,7 @@ int main(int argc, char **argv) {
 
 	}
 
-	printf("Quitting KinectGrid...\n");
+	printf("Shutdown KinectGrid...\n");
 
 	if(withKinect){
 		if(rgbMode)
