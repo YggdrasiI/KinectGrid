@@ -33,6 +33,7 @@ struct KinectProperties{
 	int marginBottom;
 	int marginFront;
 	int marginBack;
+	int marginFrame;
 	bool areaThresh;
 	bool directFiltering;
 	bool clipping;

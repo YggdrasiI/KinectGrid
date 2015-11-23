@@ -492,6 +492,8 @@ int main(int argc, char **argv) {
 				die = true;
 			}
 			settingKinect.unlockMode(mode);
+			// Idle
+			usleep(50000);		
 		}
 
 		// Idle and wait on user input

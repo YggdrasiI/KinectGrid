@@ -299,9 +299,9 @@ void ImageAnalysis::genFrontMask(){
 		Mat Kernel2(Size(7, 7), CV_8UC1); Kernel2.setTo(Scalar(1));
 		dilate(dfRoi, tmp, Kernel); 
 		erode(tmp, tmp, Kernel2); 
-		//threshold(dfRoi, dfRoi,255-m_pSettingKinect->m_kinectProp.marginFront,255,THRESH_BINARY);
+		//threshold(dfRoi, dfRoi,255-m_pSettingKinect->m_kinectProp.marginFrame,255,THRESH_BINARY);
 		//agRoi = min/*max*/(agRoi,dfRoi);
-		threshold(tmp, tmp,255-m_pSettingKinect->m_kinectProp.marginFront,1,THRESH_BINARY_INV);
+		threshold(tmp, tmp,255-m_pSettingKinect->m_kinectProp.marginFrame,1,THRESH_BINARY_INV);
 		agRoi -= tmp;
 	}
 	/* convert agRoi back to 0-255-Img */

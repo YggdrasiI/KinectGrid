@@ -6,7 +6,9 @@ inline long tuioSessionId(cBlob* b){
 		return 1000*b->areaid+b->handid;
 }
 
-static void localCoords(cBlob *pb, Area* pa, cv::Rect* roi, float *lx, float *ly, float *lz){
+static void localCoords(cBlob *pb, Area* pa,
+int minDepth, int maxDepth,
+cv::Rect* roi, float *lx, float *ly, float *lz){
 	//printf("Vars: (%f - (%i-%i))  / %i\n", pb->location.x, pa->rect.x, roi->x, pa->rect.width);
 	float x,y,z;
 	/*hflip coords. Where is the efficient position for flipping the whole input? convertTo? Is flip() fast?*/
@@ -23,10 +25,15 @@ static void localCoords(cBlob *pb, Area* pa, cv::Rect* roi, float *lx, float *ly
 			*ly = min((y+1)/2, 0.99999f);
 
 	/* Depth */
-	z = (pb->location.z - pa->depth)/25.0f/*100.0*/;
+	//z = (pb->location.z - pa->depth)/25.0f/*100.0*/;
+	const float m = max(minDepth,pa->depth);
+	const float S = max(1.0f, maxDepth-m);
+	z = (pb->location.z - m )/S;
+
 	*lz = (z<0)?0:((z<1)?z:0.99999f);
 }
-void MyTuioServer25D::send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& areas, cv::Rect& roi){
+
+void MyTuioServer25D::send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& areas, cv::Rect& roi, int minDepth, int maxDepth){
 
 	currentTime = TuioTime::getSessionTime();
 	initFrame(currentTime);
@@ -49,7 +56,7 @@ void MyTuioServer25D::send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& a
 				break;
 			case BLOB_DOWN:
 				{
-					localCoords(pb,pa,&roi,&lx,&ly,&lz);
+					localCoords(pb, pa, minDepth, maxDepth, &roi, &lx, &ly, &lz);
 					//assert( pb->cursor25D == NULL );
 					if( pb->cursor25D == NULL ){
 						pb->cursor25D = addTuioCursor(lx,ly,lz,tuioSessionId(pb));
@@ -63,7 +70,7 @@ void MyTuioServer25D::send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& a
 			case BLOB_MOVE:
 			default:
 				{
-					localCoords(pb,pa,&roi,&lx,&ly,&lz);
+					localCoords(pb, pa, minDepth, maxDepth, &roi, &lx, &ly, &lz);
 					//assert( pb->cursor25D != NULL );
 					if( pb->cursor25D == NULL ){
 						//printf("(2)Add cursor25D %i \n", (int)tuioSessionId(pb));

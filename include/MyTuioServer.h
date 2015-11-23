@@ -14,15 +14,15 @@ using namespace TUIO;
 
 class MyTuioServer: public TuioServer {
 	public:
-		MyTuioServer(const char *host, int port): TuioServer(host, port), verbose(false){
-			verbose = true;
+		MyTuioServer(const char *host, int port): TuioServer(host, port){
 			currentTime = TuioTime::getSessionTime();
-			//tuioServer->enablePeriodicMessages();
+			//enablePeriodicMessages();
+			disablePeriodicMessages();
 		};
-		MyTuioServer(): TuioServer(), verbose(false){
-			verbose = true;
+		MyTuioServer(): TuioServer(){
 			currentTime = TuioTime::getSessionTime();
-			//tuioServer->enablePeriodicMessages();
+			//enablePeriodicMessages();
+			disablePeriodicMessages();
 		};
 		~MyTuioServer() { };
 		void send_blobs(std::vector<cBlob>& blobs, std::vector<Area>& areas, cv::Rect& roi);
@@ -30,10 +30,7 @@ class MyTuioServer: public TuioServer {
 private:
 		TuioCursor *cursor;
 		TuioTime currentTime;
-		bool verbose;
-
 		//void processEvents();
-
 };
 
 #endif

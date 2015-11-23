@@ -80,6 +80,7 @@ $(function(){
 			<div class="prop" id="marginBottom"></div>
 			<div class="prop" id="marginFront"></div>
 			<div class="prop" id="marginBack"></div>
+			<div class="prop" id="marginFrame"></div>
 			<div class="prop" id="TUIO_2Dcur"></div>
 			<div class="prop" id="TUIO_25Dblb"></div>
 			<div class="prop" id="areaThresh"></div>
@@ -130,10 +131,10 @@ $(function(){
 			</li>
 			<li>Use <i>margin[Left|Top|Right|Bottom]</i> to crop image.
 			</li>
-			<li>Select front mask image
+			<li>Select frame mask image
 			<ol>
 				<li>Select frame mask view (press '5')</li>
-				<li>Raise <i>marginFront</i> till the frame is white and all other parts still black.</li>
+				<li>Raise <i>marginFrame</i> till the frame is white and all other parts still black.</li>
 			</ol>
 			This black/white-image will used to find the 'holes' of your frame. Ensure that the areas are full enclosed.
 			</li>
@@ -144,6 +145,7 @@ $(function(){
 				</li>
 				<li>If the option <i>areaThresh</i> is enabled, the depth mask inside an area depends by its border pixel distances.</li>
 			</ol>
+			<li>Optionally increase <i>marginFront</i> to shrink the range [0+marginBack, 255-marginFront] which will be mapped on [0,1] in the 2.5D TUIO messages.
 			</li>
 			<li>Save Configuration</li>
 		</ol>

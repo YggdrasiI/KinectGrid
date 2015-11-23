@@ -92,6 +92,8 @@ cJSON *SettingKinect::genJson()
 				m_kinectProp.marginFront,0,255,100) );
 	cJSON_AddItemToArray(html, jsonIntField("marginBack",
 				m_kinectProp.marginBack,0,255,100) );
+	cJSON_AddItemToArray(html, jsonIntField("marginFrame",
+				m_kinectProp.marginFrame,0,255,100) );
 	cJSON_AddItemToArray(html, jsonCheckbox("TUIO_2Dcur",
 				m_tuioProtocols[0]) );
 	cJSON_AddItemToArray(html, jsonCheckbox("TUIO_25Dblb",
@@ -146,6 +148,7 @@ void SettingKinect::loadDefaults()
 	m_kinectProp.marginBottom=0;
 	m_kinectProp.marginFront=0;
 	m_kinectProp.marginBack=0;
+	m_kinectProp.marginFrame=128;
 	m_kinectProp.areaThresh = false;
 	m_kinectProp.directFiltering = false;
 	m_kinectProp.clipping = true;
@@ -214,6 +217,7 @@ int SettingKinect::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 		if( JsonConfig::update(nhtml,ohtml,"marginBottom",&m_kinectProp.marginBottom) ) changes|=MARGIN;
 		if( JsonConfig::update(nhtml,ohtml,"marginFront",&m_kinectProp.marginFront) ) changes|=MARGIN|FRONT_MASK;
 		if( JsonConfig::update(nhtml,ohtml,"marginBack",&m_kinectProp.marginBack) ) changes|=BACK_MASK;
+		if( JsonConfig::update(nhtml,ohtml,"marginFrame",&m_kinectProp.marginFrame) ) changes|=MARGIN|FRONT_MASK;
 
 		if( JsonConfig::updateCheckbox(nhtml,ohtml,"TUIO_2Dcur",&m_tuioProtocols[0]) ) changes|=TUIO_PROTOCOL;
 		if( JsonConfig::updateCheckbox(nhtml,ohtml,"TUIO_25Dblb",&m_tuioProtocols[1]) ) changes|=TUIO_PROTOCOL;
