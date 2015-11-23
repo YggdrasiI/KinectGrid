@@ -5,6 +5,7 @@
 #include <cv.h>
 #include <cxcore.h>
 #include <highgui.h>
+#include <signal.h>
 
 #include <boost/signals2/signal.hpp>
 #include <boost/bind.hpp>
@@ -31,6 +32,8 @@
 #include <locale.h>
 //#include <time.h>
 #include <sys/time.h>
+
+static bool die(false);
 
 // for FPS estimation.
 class Fps
@@ -104,8 +107,9 @@ void print_help(){
 	printf(
 			"--config/-c [filename]: Load settings from filename.\n"
 			"--display/-d [x11|web|none]: Select output for images.\n"
-			"--sleep/-s:    Reduce refresh rate of blob detection if no activity was noticed.\n"
-			"--rgb:      Start Kinect with video mode (Debugging)\n"
+			"--refit/-r: Automatic search for areas after startup. (Otherwise a click on 'Refit' is required.)\n"
+			"--sleep/-s: Reduce refresh rate of blob detection if no activity was noticed.\n"
+			"--rgb: Start Kinect with video mode (Debugging)\n"
 			"--no-kinect: Omit kinect usage and just start webserver (Debugging)\n"
 			"--help/-h:  Show this help text\n\n"
 			);
@@ -136,21 +140,49 @@ static void cvOnMouse( int event, int x, int y, int flags, void* userdata) {
 	data->pSettingKinect->unlockMode(mode);
 }
 
+// Shutdown handlers for ^C.
+void setup_sigHandler( void (*h)(int) );
+
+static void sigHandler_sigint_hard(int sig)
+{
+	die = true;
+	exit(EXIT_SUCCESS);
+}
+static void sigHandler_sigint_soft(int sig)
+{
+	die = true;
+	setup_sigHandler(&sigHandler_sigint_hard);
+}
+
+void setup_sigHandler( void (*h)(int) ){
+	struct sigaction s;
+	struct sigaction t;
+
+	s.sa_handler = h;
+	sigemptyset(&s.sa_mask);
+	s.sa_flags = 0;
+	sigaction(SIGINT, &s, &t);
+}
+
 
 int main(int argc, char **argv) {
 
 	// Main state variables
-	bool die(false);
   bool withKinect(true);
 	bool rgbMode(false);
 	bool sleepMode(false);
+	bool autoRefit(false);
 
-	uint32_t sleepSeconds = 0;
+	uint32_t frameCounter(0);
+
+	uint32_t sleepSeconds(0);
 	DisplayMode displayMode = DISPLAY_MODE_NONE;
 	std::string configfile("default_settings.json");
 	string filename("snapshot");
 	string suffix(".png");
 	Fps fps;
+
+	setup_sigHandler(&sigHandler_sigint_soft);
 
 	// Handle input arguments
 	for( int i=1; i<argc; ++i ){
@@ -164,6 +196,10 @@ int main(int argc, char **argv) {
 		}
 		if( strcmp("-s",argv[i]) == 0 || strcmp("--sleep",argv[i]) == 0 ){
 			sleepMode = true;
+			continue;
+		}
+		if( strcmp("-r",argv[i]) == 0 || strcmp("--refit",argv[i]) == 0 ){
+			autoRefit = true;
 			continue;
 		}
 		if( strcmp("--rgb",argv[i]) == 0 ){
@@ -470,6 +506,7 @@ int main(int argc, char **argv) {
 				}
 			}
 
+			++frameCounter;
 			fps.next(stdout);
 
 			//if mode is HAND_DETECTION and long time no blob was detected, sleep.
@@ -483,6 +520,12 @@ int main(int argc, char **argv) {
 					last_blob_detection = time(NULL);
 					sleepSeconds = 0;
 				}
+			}
+
+			if( autoRefit && mode == HAND_DETECTION && frameCounter > 30){
+				autoRefit = false;
+				VPRINT("Repoke\n");
+				settingKinect.setMode(REPOKE_DETECTION);
 			}
 
 		}else{ //without Kinect
