@@ -15,5 +15,5 @@ sudo apt-get install \
 libfreenect-dev \
 liblo-dev libboost-signals-dev libboost-regex-dev libboost-system-dev \
 libpng-dev libjpeg-turbo8-dev \
-libopencv-core-dev libopencv-imgproc-dev libopencv-highgui-dev
+libopencv-core-dev libopencv-imgproc-dev libopencv-highgui-dev libcv-dev libhighgui-dev
 
