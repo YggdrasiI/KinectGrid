@@ -797,6 +797,10 @@ Tree* find_depthtree(
 
 
 void depthtree_find_blobs(Blobtree *blob, const unsigned char *data, const unsigned int w, const unsigned int h, const BlobtreeRect roi, const unsigned char *depth_map, DepthtreeWorkspace *workspace ){
+	// Avoid hard crash for null data.
+	if( data == NULL ){
+		VPRINTF("Runtime error: Input data is NULL! threshtree_filter_blobs aborts.\n");
+	}
 	//clear old tree
 	if( blob->tree != NULL){
 		tree_destroy(&blob->tree);

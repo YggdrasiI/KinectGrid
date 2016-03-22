@@ -1192,6 +1192,10 @@ void threshtree_find_blobs( Blobtree *blob,
 		const unsigned char thresh,
 		ThreshtreeWorkspace *workspace )
 {
+	// Avoid hard crash for null data.
+	if( data == NULL ){
+		VPRINTF("Runtime error: Input data is NULL! threshtree_filter_blobs aborts.\n");
+	}
 	//clear old tree
 	if( blob->tree != NULL){
 		tree_destroy(&blob->tree);

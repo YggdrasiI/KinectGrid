@@ -152,6 +152,11 @@ void SettingKinect::loadDefaults()
 	m_kinectProp.areaThresh = false;
 	m_kinectProp.directFiltering = false;
 	m_kinectProp.clipping = true;
+
+	m_kinectProp.roi.x = 0;
+	m_kinectProp.roi.y = 0;
+	m_kinectProp.roi.width = 640;
+	m_kinectProp.roi.height = 480;
 };
 
 /*

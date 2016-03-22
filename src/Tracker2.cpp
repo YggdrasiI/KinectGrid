@@ -63,6 +63,12 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 	cv::Rect *roicv = &m_pSettingKinect->m_kinectProp.roi;
 	const uchar* ptr = mat.data;
 
+  if( ptr == NULL ){
+		VPRINT("(Tracker2) No image data available. Region of intrest was (%d, %d, %d, %d) \n",
+        roicv->x, roicv->y, roicv->width, roicv->height);
+    return;
+  }
+
 	/*mat.data points to first entry of the ROI, not of the full matrix.
 	 * => Set left and top border of roi0 to 0 and reduce height value. 
 	 * */
