@@ -13,7 +13,7 @@ noted for the sake of completeness.
 	cd onion
 	mkdir build
 	cd build
-  cmake -DCMAKE_INSTALL_PREFIX=../../../lib/onion -DONION_EXAMPLES=0 -DONION_USE_SSL=0 -DONION_USE_SQLITE3=0 -DONION_USE_SYSTEMD=0 -DONION_USE_PAM=0 -DONION_USE_PNG=0 ..
+  cmake -DCMAKE_INSTALL_PREFIX=../../../lib/onion -DONION_EXAMPLES=0 -DONION_USE_SSL=0 -DONION_USE_SQLITE3=0 -DONION_USE_SYSTEMD=0 -DONION_USE_PAM=0 -DONION_USE_PNG=1 ..
 	make
 	make install
 

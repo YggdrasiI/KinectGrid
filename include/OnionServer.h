@@ -151,7 +151,7 @@ class OnionServer{
 		 *	Every signal handler gain access to
 		 *	- the raw request req,
 		 *	- the get param 'actionid' and,
-		 *	- rhe response data res
+		 *	- the response data res
 		 * Signal returns false, if no signall handler wrote into res.
 		 * For each actionid should only one signal handler wrote into the response struture res.
 		 *	*/

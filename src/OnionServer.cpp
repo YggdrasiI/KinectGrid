@@ -20,6 +20,13 @@ namespace fs = boost::filesystem;
 #include "SettingKinect.h"
 #include "OnionServer.h"
 
+/* Without this flag libonion creates an listening loop thread
+ * on its own.
+ * With this flag this class creates it's own thread by pthread.
+ * I recommend the first variant because the second one produces
+ * some issues at shutdown.
+ */
+//#define DETACH_MANUAL
 
 // This has to be extern, as we are compiling C++
 extern "C"{
@@ -375,10 +382,11 @@ onion_connection_status OnionServer::getSettingKinectWrapped(
 
 /*+++++++++++++ OnionServer-Class ++++++++++++++++++ */
 OnionServer::OnionServer(SettingKinect &settingKinect ):
+#ifndef DETACH_MANUAL
+	m_onion( O_THREADED|O_DETACH_LISTEN|O_NO_SIGTERM),
+#else
 	m_onion( O_ONE_LOOP),
-	//m_onion( O_THREADED),//never shutdown server
-	//m_onion( O_THREADED|O_DETACH_LISTEN ),
-	//m_onion( O_ONE_LOOP|O_DETACH_LISTEN ),
+#endif
 	m_url(m_onion),
 	m_mimedict(),
 	m_mimes(),
@@ -415,8 +423,6 @@ OnionServer::OnionServer(SettingKinect &settingKinect ):
 		updateSignal.connect(
 				boost::bind(&SettingKinect::webserverUpdateConfig,&m_settingKinect, _1, _2, _3)
 				);
-		//start_server();
-
 	}
 
 void OnionServer::setupUrls() {
@@ -457,16 +463,23 @@ int OnionServer::start_server() {
 	setupUrls();
 
 	//start loop as thread  (O_DETACH_LISTEN flag is set.)
-	//m_onion.listen();//loop
-	//return 0;
+	m_onion.listen();
+#ifndef DETACH_MANUAL
+	return 0;
+#else
 	return pthread_create( &m_pthread, NULL, &start_myonion_server, &m_onion);
+#endif
 }
 
 int OnionServer::stop_server()
 {
 	m_onion.listenStop();
+#ifndef DETACH_MANUAL
+	return 0;
+#else
 	int i = pthread_join( m_pthread, NULL);//wait till loop ends
 	return i;
+#endif
 }
 
 /* The user can select a new view over the webinterface (thread A), but this

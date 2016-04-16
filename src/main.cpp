@@ -584,7 +584,6 @@ int main(int argc, char **argv) {
 	}
 
 	/* Clean up objects */
-	sleep(1);
 	onion.stop_server();
 	sleep(1);
 
