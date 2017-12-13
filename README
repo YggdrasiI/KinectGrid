@@ -6,6 +6,15 @@ wiki page for some screenshots.
 
 Even on ARM platforms (I.e. beagleboard) are 30 fps reached.
 
+Installation:
+ Call 'make' to 
+ 1. Install the dependencies
+ 2. Compile and copy 3rd party libraries into lib subfolder
+ 3. Build KinectGrid with CMake in 'build' subfolder
+
+ If step 1 (suited for debian based systems only) failes, try to install the dependencies manually
+ and call make again.
+
 
 Known Problems:
  Kinect sensor did not shutdown if KinectGrid terminated with Ctrl+C.

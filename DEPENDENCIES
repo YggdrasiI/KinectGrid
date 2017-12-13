@@ -1,11 +1,12 @@
 List of used libraries:
 
-libonion		(webserver; no package available, see INSTALL for compiling)
+libonion		(webserver; no debian package available, see Makefile target 'onion' for compiling)
 OpenCV >= 2.3	(image analyse)
 libfreenect (kinect driver)
 libboost (for signal functionality)
 oscpack (OSC implementation)
 libjpeg8 or libpng
+cmake
 
 =======
 

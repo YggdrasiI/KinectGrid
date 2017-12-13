@@ -3,6 +3,7 @@ find_path(Freenect_INCLUDE_DIR
 	NAMES
 		libfreenect.h
 	PATHS
+		/usr/include
 		/usr/include/libfreenect
 		/usr/local/include/libfreenect
 		/opt/local/include/libfreenect
@@ -15,6 +16,7 @@ find_path(Freenect_LIBRARY_PATH
 		libfreenect.so
 	PATHS
 		/usr/lib
+    /usr/lib/x86_64-linux-gnu
 		/usr/local/lib64
 		/usr/local/lib
 		/opt/local/lib

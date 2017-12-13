@@ -881,3 +881,69 @@ void debug_print_matrix_char( unsigned char * data, unsigned int w, unsigned int
 	}
 	printf("\n");
 }
+
+
+//Functions declared 'extern inline' in tree.h
+void swap_silbings(Node *a, Node *b)
+{
+	Node *p = a->parent;
+	Node *c = p->child;
+	Node *d = p->child;
+	//serach c,d with ...,c,a,...,d,b order
+	if(c==a) c = NULL;
+	else{
+		while(c->silbing!=a) c=c->silbing;
+	}
+	if(d==b) d = NULL;
+	else{
+		while(d->silbing!=b) d=d->silbing;
+	}
+
+	//swap anchor of a and b
+	if( c == NULL ) p->child = b;
+	else c->silbing = b;
+	if( d == NULL ) p->child = a;
+	else d->silbing = a;
+	
+	//at least, swap silbings
+	d = a->silbing;
+	a->silbing = b->silbing;
+	b->silbing = d;
+}
+
+int cmp(Node *a, Node *b)
+{
+	if( a->height < b->height) return 0;
+	if( a->height > b->height) return 1;
+	if( a->width < b->width) return 0;
+	if( a->width > b->width) return 1;
+
+	/* Now assme, that children already sorted.
+	 * Then for topological equalness only i-th child of a needs
+	 * compared with i-th child of b.
+	 * */
+	int ret=0;
+	Node *ca = a->child;
+	Node *cb = b->child;
+	while( ret == 0 && ca!=NULL ){
+		ret = cmp(ca,cb);
+		ca=ca->silbing;
+		cb=cb->silbing;
+	}
+	return ret;
+}
+
+void swap_pnode(Node **a, Node **b)
+{
+    Node *tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+int successor(Node *parent, Node *child){
+	while( child != NULL ){
+		child = child->parent;
+		if( child == parent ) return 1;
+	}
+	return 0;
+}

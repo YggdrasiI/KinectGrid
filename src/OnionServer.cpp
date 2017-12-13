@@ -460,6 +460,7 @@ int OnionServer::start_server() {
 	m_onion.setHostname(host);
 	m_onion.setPort(port);
 
+  std::cout << "KinectGrid server url: http://" << "localhost" << ":" << port << std::endl;
 	setupUrls();
 
 	//start loop as thread  (O_DETACH_LISTEN flag is set.)
