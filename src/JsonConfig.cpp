@@ -69,10 +69,35 @@ char* JsonConfig::getConfig(bool regenerate)//const
 	return m_tmp_config_str;
 }
 
+char * _normalizeConfigFilename(const char* filename){
+  /* Add .json extension if required.
+   *
+   * C-style: Free return value after usage!
+   */
+
+  std::string str_filename(filename);
+
+  const char config_extension[] = ".json";
+  size_t filename_len = strlen(filename);
+  if( str_filename.length() < sizeof(config_extension) || 
+      1 == strcmp(str_filename.c_str() + str_filename.length()
+        - sizeof(config_extension), config_extension)
+    ){
+    printf("Append extension because given filename '%s' not ends with '%s'.\n", str_filename.c_str(), config_extension);
+    str_filename.append(config_extension);
+  }
+
+  return strdup(str_filename.c_str());
+}
+
 int JsonConfig::loadConfigFile(const char* filename)
 {
+  char *norm_filename = _normalizeConfigFilename(filename);
+  std::string str_filename = norm_filename;
+  free(norm_filename);
+
 	clearConfig();
-	if( FILE *f=fopen(filename,"rb") ){
+	if( FILE *f=fopen(str_filename.c_str(), "rb") ){
 		fseek(f,0,SEEK_END);
 		long len=ftell(f);
 		fseek(f,0,SEEK_SET);
@@ -83,10 +108,11 @@ int JsonConfig::loadConfigFile(const char* filename)
 		setConfig(data, CONFIG);
 		free(data);
 	}else{
-		printf("File %s not found. Use default values.\n",filename);
+		printf("File '%s' not found. Use default values.\n",str_filename.c_str());
 		loadDefaults();
 		regenerateConfig();
 		//update(m_pjson_root,NULL, CONFIG);
+    saveConfigFile(str_filename.c_str());
 		return 1;
 	}
 	return 0;
@@ -94,8 +120,13 @@ int JsonConfig::loadConfigFile(const char* filename)
 
 int JsonConfig::saveConfigFile(const char* filename)
 {
+  char *norm_filename = _normalizeConfigFilename(filename);
+  std::string str_filename = norm_filename;
+  free(norm_filename);
+
+
 	FILE *file;
-	file = fopen(filename,"w");
+	file = fopen(str_filename.c_str(), "w");
 	char* conf = getConfig();
 	/* Lock to avoid freeing of conf string during file writing.*/
 	m_json_mutex.lock();
