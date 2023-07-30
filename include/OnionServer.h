@@ -35,6 +35,8 @@ static void* start_myonion_server(void* arg){
 	printf("Onion server: Start listening.\n");
 	((Onion::Onion*)arg)->listen();//loop
 	printf("Onion server: Stop listening.\n");
+	return NULL; // This is equivalent to calling pthread_exit(3)
+	             // with the value supplied in the return statement.
 }
 
 // Signal return value combiner. 

@@ -6,15 +6,15 @@
 #define TRACKER_H
 
 #include <stdlib.h>
-#include <cv.h>
-#include <cxcore.h>
-#include <highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <vector>
 
 #include "blob.h"
 #include "SettingKinect.h"
 
-using namespace cv;
+//using namespace cv;
 
 class Tracker {
 	protected:
@@ -48,12 +48,12 @@ class Tracker {
 		std::vector<cBlob>& getBlobs();
 
 		virtual void trackBlobs(
-				const Mat &mat, const Mat &areaMask,
+				const cv::Mat &mat, const cv::Mat &areaMask,
 				bool history,
 				std::vector<Area> *pareas ) = 0;
 
 #ifdef CENTER_ADJUSTMENT
-		void get_tip(const Rect roi, const Mat &depth, const uint8_t thresh,
+		void get_tip(const cv::Rect roi, const cv::Mat &depth, const uint8_t thresh,
 				double *outx, double *outy, double *outz){
 
 			const uint32_t &N = m_count_N;
@@ -70,7 +70,7 @@ class Tracker {
 			int N2 = 0;
 			int sumX=0,sumY=0,sumZ=0;
 
-			MatConstIterator_<uint8_t> itDepth = depth.begin<uint8_t>();
+			cv::MatConstIterator_<uint8_t> itDepth = depth.begin<uint8_t>();
 
 			//Debug.. (unrequired) clearing
 			for( int i=0; i<256; i++){ m_mean_x[i] = 0; m_mean_y[i] = 0; }
@@ -144,7 +144,7 @@ class Tracker {
  * Params depth, mask should already shrinked to roi.
  * Mask argument comment out because this mask was already applied.
  * */
-static void get_tip_pos(int z, Rect roi, Mat &depth,/* Mat &mask,*/
+static void get_tip_pos(int z, cv::Rect roi, cv::Mat &depth,/* cv::Mat &mask,*/
 		uint8_t *weightMap, float *outx, float *outy){
 
 	uint8_t* pz = weightMap+256;
@@ -153,8 +153,8 @@ static void get_tip_pos(int z, Rect roi, Mat &depth,/* Mat &mask,*/
 	uint32_t sumy = 0;
 	uint32_t county = 0;
 	uint8_t w;
-	MatConstIterator_<uint8_t> itDepth = depth.begin<uint8_t>();
-//	MatConstIterator_<uint8_t> itMask = mask.begin<uint8_t>();
+	cv::MatConstIterator_<uint8_t> itDepth = depth.begin<uint8_t>();
+//	cv::MatConstIterator_<uint8_t> itMask = mask.begin<uint8_t>();
 		
 	//for( ; it1 != it1_end; ++it1, ++it2, ++dst_it ) 
 	for( int x=0; x<roi.width; x++){

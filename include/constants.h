@@ -1,7 +1,8 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#include <cv.h>
+//#include <opencv2/opencv.hpp>
+#include <opencv2/core/types.hpp>
 
 #define VERBOSE 1
 #ifdef VERBOSE

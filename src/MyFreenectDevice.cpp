@@ -56,7 +56,7 @@ bool MyFreenectDevice::getVideo(Mat& output)
 {
 	m_rgb_mutex.lock();
 	if(m_new_rgb_frame) {
-		cv::cvtColor(m_rgbMat, output, CV_RGB2BGR);
+		cv::cvtColor(m_rgbMat, output, cv::COLOR_RGB2BGR);
 		m_new_rgb_frame = false;
 		m_rgb_mutex.unlock();
 		return true;

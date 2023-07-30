@@ -1,5 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
 project(KinectGrid)
-cmake_minimum_required(VERSION 2.6)
+
 # Clipping require modified libfreenect
 OPTION(LIBFREENECT_OPT_CLIPPING "Enable clipping option. Require modified libfreenect driver." OFF)
 OPTION(MYBLOB "Use own lib for blob detection" ON)
@@ -7,29 +8,28 @@ OPTION(CENTER_ADJUSTMENT "Extended search of maximal depth of blob and better mi
 OPTION(WEB_DISPLAY_USES_JPEG "Encode images as JPEG instead of PNG (faster encoding)." ON)
 
 #set(PG_FLAGS "-O2 -pg -g -fno-omit-frame-pointer -DNDEBUG -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls ")
+set(BREAK_ON_FIRST_ERROR, "-Wfatal-errors")
 
-set(EXTRA_C_FLAGS "${PG_FLAGS}")
-set(EXTRA_C_FLAGS_DEBUG "")
-set(EXTRA_CXX_FLAGS "-std=c++0x ${PG_FLAGS}")
-set(EXTRA_CXX_FLAGS_DEBUG "-std=c++0x ")
+set(EXTRA_C_FLAGS "${PG_FLAGS} ${BREAK_ON_FIRST_ERROR}")
+set(EXTRA_C_FLAGS_DEBUG "${BREAK_ON_FIRST_ERROR}")
+set(EXTRA_CXX_FLAGS "-std=c++0x ${PG_FLAGS} ${BREAK_ON_FIRST_ERROR}")
+set(EXTRA_CXX_FLAGS_DEBUG "-std=c++0x ${BREAK_ON_FIRST_ERROR}")
 
 ## required and optional packages
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 find_package(Freenect REQUIRED)
 find_package(Onion REQUIRED)
 
-#set(OpenCV_DIR "/usr/include/opencv")
-#find_package(OpenCV REQUIRED)
-set(OpenCV_INCLUDE_DIR "/usr/include/opencv")
-set(OpenCV_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
-set(OpenCV_LIBS "opencv_core -lopencv_highgui -lopencv_imgproc") # Available in 2.4.3: calib3d contrib core features2d flann gpu highgui imgproc legacy ml objdetect video
+find_package( OpenCV REQUIRED core highgui imgproc)
+# => include_directories( ${OpenCV_INCLUDE_DIRS} )
+# => target_link_libraries( TARGET_NAME ${OpenCV_LIBS} )
+
 
 set(Boost_USE_STATIC_LIBS        OFF)
 #set(Boost_USE_MULTITHREADED      ON)
 #set(Boost_USE_STATIC_RUNTIME    OFF)
 #set(Boost_DEBUG TRUE)
 find_package(Boost COMPONENTS regex system REQUIRED)
-#find_package(Boost COMPONENTS signals2 REQUIRED)# not required, it is just a header.
 
 ## end required and optional packages
 
@@ -63,12 +63,13 @@ include_directories(
 		${Freenect_INCLUDE_DIR}
 		/usr/include/libusb-1.0
 		${Boost_INCLUDE_DIR}
-		${OpenCV_INCLUDE_DIR}
+		${OpenCV_INCLUDE_DIRS}
 	)
 link_directories (
 	${Freenect_LIBRARY_PATH}
 	${OpenCV_LIBRARY_PATH}
 	${Onion_LIBRARY_PATH}
+	${CMAKE_SOURCE_DIR}/lib/blobdetection/lib
 	${${CMAKE_PROJECT_NAME}_BINARY_DIR}/lib/cvblobslib
 	${Boost_LIBRARY_DIRS}
 	) 

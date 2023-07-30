@@ -350,3 +350,13 @@ void SettingKinect::setAreas(std::vector<Area> &new_areas){
 	//cJSON_Delete( );
 	//printf("Json updated?!\n%s", getConfig());
 }
+
+// Updates port entry in json struct and (redundant) m_port.
+void SettingKinect::setPort(std::string port){
+	m_port = port;
+	cJSON* json_port = cJSON_CreateString(m_port.c_str() );
+
+	m_json_mutex.lock();
+	cJSON_ReplaceItemInObject(m_pjson_root, "port", json_port);
+	m_json_mutex.unlock();
+}

@@ -18,7 +18,8 @@ MODIFICATIONS (Modification, Author, Date):
 #ifndef CBLOB_INSPECTA_INCLUDED
 #define CBLOB_INSPECTA_INCLUDED
 
-#include "cxcore.h"
+#include <opencv2/core/core.hpp>
+#include <opencv2/core/core_c.h>
 #include "BlobLibraryConfiguration.h"
 #include <functional>
 #include <vector>

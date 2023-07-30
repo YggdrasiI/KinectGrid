@@ -60,14 +60,14 @@ FunctionMode ImageAnalysis::depth_mask_detection(){
 		
 		//Disable clipping in libfreenect driver to get depth mask of
 		//full range.
-		m_pdevice->setRoi(false,Rect(0,0,0,0) );
+		m_pdevice->setRoi(false,cv::Rect(0,0,0,0) );
 	
-		m_depthMaskWithoutThresh = Scalar(0);
-		m_depthMask = Scalar(255);//temporary full mask
+		m_depthMaskWithoutThresh = cv::Scalar(0);
+		m_depthMask = cv::Scalar(255);//temporary full mask
 	}
 	if( m_depthMaskCounter < 0){
 		// Use (fullsize) early frames to generate mask
-		m_pdevice->getDepth8UC1(m_depthf, Rect(0,0,KRES_X,KRES_Y),
+		m_pdevice->getDepth8UC1(m_depthf, cv::Rect(0,0,KRES_X,KRES_Y),
 				m_pSettingKinect->m_kinectProp.minDepth,m_pSettingKinect->m_kinectProp.maxDepth);
 		if( m_depthMaskCounter > 2-NMASKFRAMES)//deprecated filtering of first frames
 			createMask(m_depthf,m_depthMaskWithoutThresh,/*m_pSettingKinect->m_kinectProp.marginBack,*/m_depthMaskWithoutThresh);
@@ -97,7 +97,7 @@ FunctionMode ImageAnalysis::hand_detection()
 	if( m_depthMaskCounter < 0)
 		return depth_mask_detection();
 
-	Rect roi = m_pSettingKinect->m_kinectProp.roi;
+	cv::Rect roi = m_pSettingKinect->m_kinectProp.roi;
 
 	m_png_mutex.trylock(); //Block png creation (avoid flickering)
 
@@ -286,10 +286,10 @@ int ImageAnalysis::area_detection_opencv_click(int x, int y){
 
 void ImageAnalysis::genFrontMask(){
 	m_areaGrid = Scalar(255/*0*/);
-	Rect roi = m_pSettingKinect->m_kinectProp.roi;
-	Mat agRoi(m_areaGrid,roi);
-	Mat dfRoi(m_depthf,roi);
-	Mat tmp(dfRoi.size(),dfRoi.type());
+	cv::Rect roi = m_pSettingKinect->m_kinectProp.roi;
+	cv::Mat agRoi(m_areaGrid,roi);
+	cv::Mat dfRoi(m_depthf,roi);
+	cv::Mat tmp(dfRoi.size(),dfRoi.type());
 //	Mat newAreaGrid = Mat(Size(roi.width,roi.height), CV_8UC1);
 	int nFrames = 10;
 	for(int i=0;i<nFrames; i++){
@@ -338,10 +338,26 @@ void ImageAnalysis::genColoredAreas(){
 Mat& ImageAnalysis::getColoredAreas(){
 	if( !m_areaCol_ok ) genColoredAreas();
 
+	/* // Older OpenCV approach
+	 * IplImage gray = m_depthf;
+	 * IplImage rgb = m_rgb;
+	 * cvMerge(&gray, &gray, &gray, NULL, &rgb);
+	 */
 
-	IplImage gray = m_depthf;
-	IplImage rgb = m_rgb;
-	cvMerge(&gray, &gray, &gray, NULL, &rgb);
+	// Newer approach without IplImage
+#if 0
+	cv::Mat ggg[3] = {m_depthf, m_depthf, m_depthf};
+	// forming an array of matrices is a quite efficient operation,
+	// because the matrix data is not copied, only the headers
+	cv::merge(ggg, 3, m_rgb);
+#else
+	// Unlike many other new-style C++ functions in OpenCV (see the introduction section and Mat::create ),
+	// cv::mixChannels requires the output arrays to be pre-allocated before calling the function. 
+	int from_to[] = {0,0, 0,1, 0,2}; // 0=>0, 0=>1, 0=>2
+	mixChannels(&m_depthf, 1, &m_rgb, 1, from_to, 3);
+#endif
+
+	// Adding coloured areas onto depth image
 	addWeighted(m_rgb,0.5f,m_areaCol,0.5f,0,m_rgb);
 	return m_rgb;
 }
@@ -417,7 +433,7 @@ bool ImageAnalysis::repoke_step(Area& area){
 	 * TODO: Looping of FloodFill with different low-high-values can improve results.
 	 * TODO: Limit floodFill to Roi.
 	 */
-	Rect cc;
+	cv::Rect cc;
 	floodFill(m_areaGrid/*m_depthMask*/, m_area_detection_mask, cvPoint(area.repoke_x, area.repoke_y),
 			Scalar(255), &cc, Scalar(0)/*low*/, Scalar(0)/*up*/, 4+FLOODFILL_MASK_ONLY);
 
@@ -437,14 +453,14 @@ bool ImageAnalysis::repoke_step(Area& area){
 	/* cc2=cc+Border. cc2 is used to left space for some border detection in (2) */
 	int l = max(cc.x-2,0); int t = max(cc.y-2,0);
 	int r = min(cc.x+cc.width+2,KRES_X); int b = min(cc.y+cc.height+2,KRES_Y);
-	Rect cc2(l,t,r-l,b-t);
+	cv::Rect cc2(l,t,r-l,b-t);
 
-	//Mat changeable = (m_areaMask(cc)==MAXAREAS+1);//cut of other areas
-	Mat changeable = (m_areaMask(cc2)==MAXAREAS+1);//cut of other areas
+	//cv::Mat changeable = (m_areaMask(cc)==MAXAREAS+1);//cut of other areas
+	cv::Mat changeable = (m_areaMask(cc2)==MAXAREAS+1);//cut of other areas
 	//get new !=0 values of m_area_detection_mask
 	changeable = min(changeable, m_area_detection_mask(
-				//Rect(cc.x+1,cc.y+1,cc.width,cc.height)//shift by (1,1)
-				Rect(cc2.x+1,cc2.y+1,cc2.width,cc2.height)//shift by (1,1)
+				//cv::Rect(cc.x+1,cc.y+1,cc.width,cc.height)//shift by (1,1)
+				cv::Rect(cc2.x+1,cc2.y+1,cc2.width,cc2.height)//shift by (1,1)
 				));
 
 	changeable *= area.id;
@@ -689,7 +705,7 @@ int ImageAnalysis::getWebDisplayImage(Onion::Request *preq, int actionid, Onion:
 				}
 
 
-				Rect roi = m_pSettingKinect->m_kinectProp.roi;
+				cv::Rect roi = m_pSettingKinect->m_kinectProp.roi;
 
 				// Return empty file if selected image does not contain data.
 				if( png == NULL || png->empty() /*|| png->size().width == 0 || png->size().height == 0*/ ){

@@ -6,9 +6,8 @@
 #include <vector>
 #include <cmath>
 #include <pthread.h>
-#include <cv.h>
-#include <cxcore.h>
-//#include <highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
 
 #include "Mutex.h"
 #include "BlobResult.h"

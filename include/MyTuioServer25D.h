@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <vector>
-#include <cv.h>
+#include <opencv2/opencv.hpp>
 #include "constants.h"
 #include "blob.h"
 

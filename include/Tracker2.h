@@ -6,13 +6,15 @@
 #define TRACKER2_H
 
 #include "Tracker.h"
-#include "threshtree.h" 
+namespace Blob { // Namespace avoids collision with OpenCv's Node
+#include "blobdetection/threshtree.h" 
+}
 
 
 class Tracker2: public Tracker {
 	private:
-		Blobtree *m_blob;
-		ThreshtreeWorkspace *m_workspace;
+		Blob::Blobtree *m_blob;
+		Blob::ThreshtreeWorkspace *m_workspace;
 
 	public:
 		Tracker2(SettingKinect* pSettingKinect);
@@ -20,7 +22,7 @@ class Tracker2: public Tracker {
 		~Tracker2();
 
 		void trackBlobs(
-				const Mat &mat, const Mat &areaMask,
+				const cv::Mat &mat, const cv::Mat &areaMask,
 				bool history,
 				std::vector<Area> *pareas ) ;
 };

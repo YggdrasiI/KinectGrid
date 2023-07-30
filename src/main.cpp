@@ -2,9 +2,9 @@
 #include <vector>
 #include <cmath>
 #include <pthread.h>
-#include <cv.h>
-#include <cxcore.h>
-#include <highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <signal.h>
 
 #include <boost/signals2/signal.hpp>
@@ -104,14 +104,19 @@ public:
 };
 
 void print_help(){
+	// Generate default values
+	SettingKinect settingKinect_default(false);
+
 	printf(
-			"--config/-c [filename]: Load settings from filename.\n"
-			"--display/-d [x11|web|none]: Select output for images.\n"
+			"--config/-c {filename}: Load settings from filename.\n"
+			"--display/-d {x11|web|none}: Select output for images.\n"
 			"--refit/-r: Automatic search for areas after startup. (Otherwise a click on 'Refit' is required.)\n"
 			"--sleep/-s: Reduce refresh rate of blob detection if no activity was noticed.\n"
 			"--rgb: Start Kinect with video mode (Debugging)\n"
 			"--no-kinect: Omit kinect usage and just start webserver (Debugging)\n"
+			"--port/-p {number}: Set port of web frontend (default: %s).\n"
 			"--help/-h:  Show this help text\n\n"
+			, settingKinect_default.m_port.c_str()
 			);
 }
 
@@ -181,6 +186,7 @@ int main(int argc, char **argv) {
 	string filename("snapshot");
 	string suffix(".png");
 	Fps fps;
+	std::string port_arg(""); // overrides value in settings file
 
 	setup_sigHandler(&sigHandler_sigint_soft);
 
@@ -245,12 +251,28 @@ int main(int argc, char **argv) {
 			}
 			continue;
 		}
+		if( strcmp("-p", argv[i]) == 0 || strcmp("--port", argv[i]) == 0 ){
+			if( i+1<argc ){
+				if( strncmp("-", argv[i+1], 1) != 0){
+					int port = std::atoi(argv[i+1]);
+					port_arg = std::string(argv[i+1]);
+					++i;
+				}else{
+					printf("Missing argument for %s.\n", argv[i]);
+				}
+			}
+			continue;
+		}
 		std::cout << "Unknown command line option: " << argv[i] << std::endl;
 	}
 
 	//Load & Create settings
 	SettingKinect settingKinect(withKinect);
 	settingKinect.init(configfile.c_str());
+
+	if (port_arg.length() > 0) {
+		settingKinect.setPort(port_arg);
+	}
 
 	if( !withKinect ) settingKinect.m_displayMode = DISPLAY_MODE_NONE;
 	if( rgbMode ) settingKinect.m_view = VIEW_RGB;
@@ -310,7 +332,7 @@ int main(int argc, char **argv) {
 		 */
 		//cvStartWindowThread();
 		if( settingKinect.m_displayMode == DISPLAY_MODE_CV ) {
-			cv::namedWindow("img",CV_WINDOW_AUTOSIZE);
+			cv::namedWindow("img",cv::WindowFlags::WINDOW_AUTOSIZE);
 			cv::setMouseCallback("img", cvOnMouse, &mouseData);
 		}
 
@@ -541,7 +563,7 @@ int main(int argc, char **argv) {
 
 		// Idle and wait on user input
 		if( settingKinect.m_displayMode == DISPLAY_MODE_CV ) {
-			char k = cvWaitKey(10+1000*sleepSeconds);
+			char k = cv::waitKey(10+1000*sleepSeconds);
 			if( k == 27 ){
 				printf("End main loop\n");
 				die = true;
@@ -577,10 +599,10 @@ int main(int argc, char **argv) {
 
 		delete ia;
 		delete freenect;
-		cvDestroyAllWindows();
+		cv::destroyAllWindows();
 
 		//wait some time to give img-window enouth time to close.
-		cvWaitKey(10);
+		cv::waitKey(10);
 	}
 
 	/* Clean up objects */

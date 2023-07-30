@@ -1,4 +1,4 @@
-install: dependencies onion
+install: dependencies onion blobdetection
 	@test -d "build" || mkdir "build"
 	cd build && cmake .. && make
 	@echo "\n\tKinectGrid compiled. To start it, i.e. use\n\n" \
@@ -22,9 +22,9 @@ dependencies:
 	@touch .skip_deps_install
 	sudo apt-get install \
 		libfreenect-dev \
-		liblo-dev libboost-signals-dev libboost-regex-dev libboost-system-dev \
+		liblo-dev libboost-regex-dev libboost-system-dev \
 		libpng-dev libjpeg-turbo8-dev \
-		libopencv-core-dev libopencv-imgproc-dev libopencv-highgui-dev libcv-dev libhighgui-dev
+		libopencv-core-dev libopencv-imgproc-dev libopencv-highgui-dev
 
 
 onion: lib/onion/lib/libonion.so
@@ -38,6 +38,19 @@ lib/onion/lib/libonion.so:
 		( test -d build || mkdir build )
 	cd 3rdparty/onion/build && \
 		cmake -DCMAKE_INSTALL_PREFIX=../../../lib/onion -DONION_EXAMPLES=0 -DONION_USE_SSL=0 -DONION_USE_SQLITE3=0 -DONION_USE_SYSTEMD=0 -DONION_USE_PAM=0 -DONION_USE_PNG=1 .. && \
+		make && \
+		make install
+
+blobdetection: lib/blobdetection/lib/libthreshtree.so
+
+lib/blobdetection/lib/libthreshtree.so:
+	echo "Clone and build blobdetection library"
+	cd 3rdparty && \
+		( test -d blobdetection || git clone https://github.com/YggdrasiI/blobdetection.git)
+	cd 3rdparty/blobdetection && \
+		( test -d build || mkdir build )
+	cd 3rdparty/blobdetection/build && \
+		cmake -DCMAKE_INSTALL_PREFIX=../../../lib/blobdetection -DWITH_EXAMPLES=0 .. && \
 		make && \
 		make install
 

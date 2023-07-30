@@ -13,8 +13,8 @@ Tracker2::Tracker2(double min_area, double max_area, double max_radius) :
   threshtree_create_workspace( KRES_X, KRES_Y, &m_workspace );
 	blobtree_create(&m_blob);
 	blobtree_set_grid(m_blob, 2,2);
-	blobtree_set_filter(m_blob, F_TREE_DEPTH_MIN, 1);//depth=0 => background
-	blobtree_set_filter(m_blob, F_TREE_DEPTH_MAX, 1);//depth=1 => blobs
+	blobtree_set_filter(m_blob, Blob::F_TREE_DEPTH_MIN, 1);//depth=0 => background
+	blobtree_set_filter(m_blob, Blob::F_TREE_DEPTH_MAX, 1);//depth=1 => blobs
 }
 
 Tracker2::Tracker2(SettingKinect* pSettingKinect) :
@@ -25,8 +25,8 @@ Tracker2::Tracker2(SettingKinect* pSettingKinect) :
   threshtree_create_workspace( KRES_X, KRES_Y, &m_workspace );
 	blobtree_create(&m_blob);
 	blobtree_set_grid(m_blob, 2,2);
-	blobtree_set_filter(m_blob, F_TREE_DEPTH_MIN, 1);//depth=0 => background
-	blobtree_set_filter(m_blob, F_TREE_DEPTH_MAX, 1);//depth=1 => blobs
+	blobtree_set_filter(m_blob, Blob::F_TREE_DEPTH_MIN, 1);//depth=0 => background
+	blobtree_set_filter(m_blob, Blob::F_TREE_DEPTH_MAX, 1);//depth=1 => blobs
 }
 
 Tracker2::~Tracker2()
@@ -35,29 +35,29 @@ Tracker2::~Tracker2()
   threshtree_destroy_workspace( &m_workspace );
 }
 
-void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std::vector<Area> *pareas)
+void Tracker2::trackBlobs(const cv::Mat &mat, const cv::Mat &areaMask, bool history, std::vector<Area> *pareas)
 {
 	double min_area = *m_pmin_area;
 	double max_area = *m_pmax_area;
 	double max_radius_2 = *m_pmax_radius * *m_pmax_radius;
 	double x, y, min_x, min_y, max_x, max_y;
 	double min_depth,max_depth;
-	Scalar sdepth, sstddev;
+	cv::Scalar sdepth, sstddev;
 	cBlob temp;
 	bool new_hand(true);
 	int mat_area(mat.size().width*mat.size().height);
 
 	// we will convert the matrix object passed from our cFilter class to an object of type IplImage for calling the CBlobResult constructor
-	IplImage img;
-	IplImage areaImg;
+	//IplImage img;
+	//IplImage areaImg;
 
 	// storage of the current blobs and the blobs from the previous frame
-	Size s;	Point p;
+	cv::Size s;	cv::Point p;
 	mat.locateROI(s,p);
-	areaImg = areaMask;
+	//areaImg = areaMask;
 
 	// convert our OpenCV matrix object to one of type IplImage
-	img = mat;
+	//img = mat;
 
 	//Gen blob tree structure
 	cv::Rect *roicv = &m_pSettingKinect->m_kinectProp.roi;
@@ -72,11 +72,11 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 	/*mat.data points to first entry of the ROI, not of the full matrix.
 	 * => Set left and top border of roi0 to 0 and reduce height value. 
 	 * */
-	BlobtreeRect roi0 = {0,0,roicv->width,roicv->height };
+	Blob::BlobtreeRect roi0 = {0,0,roicv->width,roicv->height };
 
-	threshtree_find_blobs(m_blob, ptr, s.width, s.height-p.y, roi0, 1, m_workspace);
-	blobtree_set_filter(m_blob, F_AREA_MIN, min_area);
-	blobtree_set_filter(m_blob, F_AREA_MAX, max_area);
+	Blob::threshtree_find_blobs(m_blob, ptr, s.width, s.height-p.y, roi0, 1, m_workspace);
+	Blob::blobtree_set_filter(m_blob, Blob::F_AREA_MIN, min_area);
+	Blob::blobtree_set_filter(m_blob, Blob::F_AREA_MAX, max_area);
 
 	// clear the blobs from two frames ago
 	blobs_previous.clear();
@@ -90,21 +90,21 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 	// populate the blobs vector with the current frame
 	blobs.clear();
 
-	BlobtreeRect *roi;
-	Node *curNode = blobtree_first(m_blob);
+	Blob::BlobtreeRect *roi;
+	Blob::Node *curNode = blobtree_first(m_blob);
 	while( curNode != NULL ){
 		//printf("Check node %i\n", curNode->data.id);
-	  roi = &((Blob*)curNode->data)->roi;
+	  roi = &((Blob::Blob*)curNode->data)->roi;
 #ifdef BLOB_BARYCENTER
-		x     = ((Blob*)curNode->data)->barycenter[0];
-		y     = ((Blob*)curNode->data)->barycenter[1];
+		x     = ((Blob::Blob*)curNode->data)->barycenter[0];
+		y     = ((Blob::Blob*)curNode->data)->barycenter[1];
 #else
 		x     = roi->x + roi->width/2;
 		y     = roi->y + roi->height/2;
 #endif
 
-//		temp.areaid = areaMask.at<uchar>((int)x+p.x,(int)y+p.y);//?!not works
-		temp.areaid = (uchar) areaImg.imageData[ ((int)x+p.x) + ((int)y+p.y)*areaMask.size().width];//works
+		temp.areaid = areaMask.at<uchar>((int)x+p.x,(int)y+p.y);//?!not works
+		//temp.areaid = (uchar) areaImg.imageData[ ((int)x+p.x) + ((int)y+p.y)*areaMask.size().width];//works
 		if( temp.areaid == 0 ){
 			curNode = blobtree_next(m_blob);
 			continue;
@@ -124,12 +124,12 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 
 #ifdef CENTER_ADJUSTMENT
 		//Improved Detection of blob midpoint require big rect.
-		Rect r(roi->x,roi->y,roi->width,roi->height);
+		cv::Rect r(roi->x,roi->y,roi->width,roi->height);
 #else
-		Rect r( x-3, y-3, min(7,max_x-min_x), min(7, max_y-min_y));
+		cv::Rect r( x-3, y-3, min(7,max_x-min_x), min(7, max_y-min_y));
 #endif
 
-		Mat matR = mat(r);
+		cv::Mat matR = mat(r);
 
 #ifdef CENTER_ADJUSTMENT
 		/* Approximante position of tip of Blob
@@ -272,23 +272,23 @@ void Tracker2::trackBlobs(const Mat &mat, const Mat &areaMask, bool history, std
 				counter++;
 				tb = blobs[i];
 				if(true || ! *m_pnotDrawBlob ){
-					cvLine(&img,
-							Point((int)tb.origin.x,(int)tb.origin.y),
-							Point((int)tb.location.x,(int)tb.location.y),Scalar(230),2);
-					cvRectangle(&img,
-							Point((int)tb.min.x,(int)tb.min.y),
-							Point((int)tb.max.x,(int)tb.max.y),Scalar(255),2);
+					cv::line(mat,
+							cv::Point((int)tb.origin.x,(int)tb.origin.y),
+							cv::Point((int)tb.location.x,(int)tb.location.y),cv::Scalar(230),2);
+					cv::rectangle(mat,
+							cv::Point((int)tb.min.x,(int)tb.min.y),
+							cv::Point((int)tb.max.x,(int)tb.max.y),cv::Scalar(255),2);
 					/**/
 					//test barycenter
-					cvRectangle(&img,
-							Point((int)tb.min.x,(int)tb.min.y),
-							Point((int)tb.max.x,(int)tb.max.y),Scalar(50),-1);
-					cvRectangle(&img,
-							Point((int)tb.back.x-2,(int)tb.back.y-2),
-							Point((int)tb.back.x+2,(int)tb.back.y+2),Scalar(200),2);
-					cvRectangle(&img,
-							Point((int)tb.location.x-2,(int)tb.location.y-2),
-							Point((int)tb.location.x+2,(int)tb.location.y+2),Scalar(250),2);
+					cv::rectangle(mat,
+							cv::Point((int)tb.min.x,(int)tb.min.y),
+							cv::Point((int)tb.max.x,(int)tb.max.y),cv::Scalar(50),-1);
+					cv::rectangle(mat,
+							cv::Point((int)tb.back.x-2,(int)tb.back.y-2),
+							cv::Point((int)tb.back.x+2,(int)tb.back.y+2),cv::Scalar(200),2);
+					cv::rectangle(mat,
+							cv::Point((int)tb.location.x-2,(int)tb.location.y-2),
+							cv::Point((int)tb.location.x+2,(int)tb.location.y+2),cv::Scalar(250),2);
 					/**/
 				}
 			}

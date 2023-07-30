@@ -119,6 +119,7 @@ class SettingKinect: public JsonConfig{
 
 		bool updateRoi(int x, int y, int width, int height);
 		void setAreas(std::vector<Area> &new_areas);
+		void setPort(std::string port);
 
 };
 
