@@ -8,8 +8,8 @@ MyFreenectDevice::MyFreenectDevice(freenect_context *_ctx, int _index):
 //	m_gamma(2048),
 	m_new_rgb_frame(false),
 	m_new_depth_frame(false),
-	m_depthMat(Size(640,480),CV_16UC1),
-	m_rgbMat(Size(640,480),CV_8UC3,Scalar(0))
+	m_depthMat(cv::Size(640,480),CV_16UC1),
+	m_rgbMat(cv::Size(640,480),CV_8UC3,cv::Scalar(0))
 {
 
 /*
@@ -52,7 +52,7 @@ void MyFreenectDevice::DepthCallback(void* _depth, uint32_t timestamp)
 	m_depth_mutex.unlock();
 }
 
-bool MyFreenectDevice::getVideo(Mat& output)
+bool MyFreenectDevice::getVideo(cv::Mat& output)
 {
 	m_rgb_mutex.lock();
 	if(m_new_rgb_frame) {
@@ -69,7 +69,7 @@ bool MyFreenectDevice::getVideo(Mat& output)
 /*
  Convert depth to U8C1 to avoid copy and convert later.
 */
-bool MyFreenectDevice::getDepth8UC1(Mat& output, Rect roi) 
+bool MyFreenectDevice::getDepth8UC1(cv::Mat& output, cv::Rect roi) 
 {
 	m_depth_mutex.lock();
 	if(m_new_depth_frame) {
@@ -92,7 +92,7 @@ bool MyFreenectDevice::getDepth8UC1(Mat& output, Rect roi)
  * => Depths of interests will be spread into full image space.
  * Note that the range will be inverted. => Background=Black.
  */
-bool MyFreenectDevice::getDepth8UC1(Mat& output, Rect roi, int m, int M) 
+bool MyFreenectDevice::getDepth8UC1(cv::Mat& output, cv::Rect roi, int m, int M) 
 {
 	if(m_new_depth_frame) {
 		float alpha = (0.0-255.0)/(M-m);
@@ -112,7 +112,7 @@ bool MyFreenectDevice::getDepth8UC1(Mat& output, Rect roi, int m, int M)
  Masked Version. (No blur!)
  mask.type = CV_8UC1.
 */
-bool MyFreenectDevice::getDepth8UC1(Mat& dst, Rect roi, int m, int M, Mat& mask) 
+bool MyFreenectDevice::getDepth8UC1(cv::Mat& dst, cv::Rect roi, int m, int M, cv::Mat& mask) 
 {
 	m_depth_mutex.lock();
 	if(m_new_depth_frame) {
@@ -120,12 +120,12 @@ bool MyFreenectDevice::getDepth8UC1(Mat& dst, Rect roi, int m, int M, Mat& mask)
 		const int alphaDenominator = M - m;
 		const int beta = (255*M - 0*m) / ( M - m );
 
-		Mat dRoi = m_depthMat(roi);
-		MatConstIterator_<uint16_t> it1 = dRoi.begin<uint16_t>(),
+		cv::Mat dRoi = m_depthMat(roi);
+		cv::MatConstIterator_<uint16_t> it1 = dRoi.begin<uint16_t>(),
 			it1_end = dRoi.end<uint16_t>();
-		MatConstIterator_<uchar> it2 = mask.begin<uchar>();
-		MatIterator_<uchar> dst_it = dst.begin<uchar>();
-		dst = Scalar(0);
+		cv::MatConstIterator_<uchar> it2 = mask.begin<uchar>();
+		cv::MatIterator_<uchar> dst_it = dst.begin<uchar>();
+		dst = cv::Scalar(0);
 		for( ; it1 != it1_end; ++it1, ++it2, ++dst_it ) { 
 			//previous memcopy for 99%-else case?!
 			uchar tmp  = (*it1*alphaEnumerator)/alphaDenominator + beta;
@@ -147,7 +147,7 @@ bool MyFreenectDevice::getDepth8UC1(Mat& dst, Rect roi, int m, int M, Mat& mask)
  Masked Version. (No blur!)
  mask.type = CV_16UC1. (=> Switch if and multiplication)
 */
-bool MyFreenectDevice::getDepth8UC1_b(Mat& dst, Rect roi, int m, int M, Mat& mask) 
+bool MyFreenectDevice::getDepth8UC1_b(cv::Mat& dst, cv::Rect roi, int m, int M, cv::Mat& mask) 
 {
 	if(m_new_depth_frame) {
 		m_depth_mutex.lock();
@@ -155,15 +155,15 @@ bool MyFreenectDevice::getDepth8UC1_b(Mat& dst, Rect roi, int m, int M, Mat& mas
 		const int alphaDenominator = M - m;
 		const int beta = (255*M - 0*m) / ( M - m );
 
-		Mat dRoi = m_depthMat(roi);
-		MatConstIterator_<uint16_t> it1 = dRoi.begin<uint16_t>(),
+		cv::Mat dRoi = m_depthMat(roi);
+		cv::MatConstIterator_<uint16_t> it1 = dRoi.begin<uint16_t>(),
 			it1_end = dRoi.end<uint16_t>();
-		MatConstIterator_<uint16_t> it2 = mask.begin<uint16_t>();
-		MatIterator_<uchar> dst_it = dst.begin<uchar>();
+		cv::MatConstIterator_<uint16_t> it2 = mask.begin<uint16_t>();
+		cv::MatIterator_<uchar> dst_it = dst.begin<uchar>();
 		uchar tmp;
 
 		//fill with zeros
-		dst = Scalar(0);
+		dst = cv::Scalar(0);
 		for( ; it1 != it1_end; ++it1, ++it2, ++dst_it ) { 
 			if( *it1<*it2 ) *dst_it = (alphaEnumerator * *it1)/alphaDenominator + beta;
 		}
@@ -176,20 +176,20 @@ bool MyFreenectDevice::getDepth8UC1_b(Mat& dst, Rect roi, int m, int M, Mat& mas
 	}
 }
 
-bool MyFreenectDevice::getDepth8UC1_b(Mat& dst, Rect roi, uint8_t *map, Mat& mask) 
+bool MyFreenectDevice::getDepth8UC1_b(cv::Mat& dst, cv::Rect roi, uint8_t *map, cv::Mat& mask) 
 {
 	if(m_new_depth_frame) {
 		m_depth_mutex.lock();
 
-		Mat dRoi = m_depthMat(roi);
-		MatConstIterator_<uint16_t> it1 = dRoi.begin<uint16_t>(),
+		cv::Mat dRoi = m_depthMat(roi);
+		cv::MatConstIterator_<uint16_t> it1 = dRoi.begin<uint16_t>(),
 			it1_end = dRoi.end<uint16_t>();
-		MatConstIterator_<uint16_t> it2 = mask.begin<uint16_t>();
-		MatIterator_<uchar> dst_it = dst.begin<uchar>();
+		cv::MatConstIterator_<uint16_t> it2 = mask.begin<uint16_t>();
+		cv::MatIterator_<uchar> dst_it = dst.begin<uchar>();
 		uchar tmp;
 
 		//fill with zeros
-		dst = Scalar(0);
+		dst = cv::Scalar(0);
 		//should be automatically unrolled?!
 		for( ; it1 != it1_end; ++it1, ++it2, ++dst_it ) { 
 			if( *it1<*it2 ) *dst_it = *(map+ *it1);
@@ -204,7 +204,7 @@ bool MyFreenectDevice::getDepth8UC1_b(Mat& dst, Rect roi, uint8_t *map, Mat& mas
 	}
 }
 
-bool MyFreenectDevice::getDepth(Mat& output)
+bool MyFreenectDevice::getDepth(cv::Mat& output)
 {
 	m_depth_mutex.lock();
 	if(m_new_depth_frame) {
@@ -229,7 +229,7 @@ void MyFreenectDevice::update(SettingKinect* pSettingKinect, int changes){
 			if( pSettingKinect->m_kinectProp.clipping)
 				setRoi(true,pSettingKinect->m_kinectProp.roi);
 			else
-				setRoi(false,Rect(0,0,0,0));
+				setRoi(false,cv::Rect(0,0,0,0));
 	}
 
 	// Set Led of device

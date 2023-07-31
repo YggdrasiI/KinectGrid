@@ -9,7 +9,7 @@
 #include <fstream>
 //#include <sys/types.h>
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/stream.hpp>
 #include "boost/filesystem.hpp"
@@ -416,12 +416,18 @@ OnionServer::OnionServer(SettingKinect &settingKinect ):
 
 
 		//add default signal handler.
-		updateSignal.connect(
-				boost::bind(&OnionServer::updateWebserver,this, _1, _2, _3)
+		updateSignal.connect(boost::bind(
+					&OnionServer::updateWebserver,this,
+					boost::placeholders::_1,
+					boost::placeholders::_2,
+					boost::placeholders::_3)
 				);
 		//add signal handler of m_settingKinect
-		updateSignal.connect(
-				boost::bind(&SettingKinect::webserverUpdateConfig,&m_settingKinect, _1, _2, _3)
+		updateSignal.connect(boost::bind(
+					&SettingKinect::webserverUpdateConfig,&m_settingKinect,
+					boost::placeholders::_1,
+					boost::placeholders::_2,
+					boost::placeholders::_3)
 				);
 	}
 

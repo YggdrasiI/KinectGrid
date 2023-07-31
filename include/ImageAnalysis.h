@@ -27,16 +27,16 @@ enum areaDetectionStep {
 
 class ImageAnalysis{
 	public:
-		Mat m_depthf  ;
-		Mat m_filterMat;
-		Mat m_depthMask;
-		Mat m_depthMaskWithoutThresh;
-		Mat m_depthMask16U;
-		Mat m_filteredMat;
-		Mat m_areaMask;
-		Mat m_areaGrid;
-		Mat m_areaCol;//colored representation.
-		Mat m_rgb; //tmp var for rgb images ret(Size(640,480),CV_8UC3);
+		cv::Mat m_depthf  ;
+		cv::Mat m_filterMat;
+		cv::Mat m_depthMask;
+		cv::Mat m_depthMaskWithoutThresh;
+		cv::Mat m_depthMask16U;
+		cv::Mat m_filteredMat;
+		cv::Mat m_areaMask;
+		cv::Mat m_areaGrid;
+		cv::Mat m_areaCol;//colored representation.
+		cv::Mat m_rgb; //tmp var for rgb images ret(cv::Size(640,480),CV_8UC3);
 		bool m_areaCol_ok;
 		bool m_maskFront_ok;
 		int m_area_detection_step;
@@ -44,13 +44,13 @@ class ImageAnalysis{
 		::Mutex m_png_mutex;
 		int m_png_scale; //mark last scale factor of png.
 	private:
-		Mat m_area_detection_mask;
+		cv::Mat m_area_detection_mask;
 		MyFreenectDevice* m_pdevice;
 		SettingKinect* m_pSettingKinect;
 		int m_depthMaskCounter;//use -depthMaskCounter Frames for mask generation
 		std::vector<Area> m_area_detection_areas;
-		Mat m_png_imgC1;
-		Mat m_png_imgC3;
+		cv::Mat m_png_imgC1;
+		cv::Mat m_png_imgC3;
 	public:
 		ImageAnalysis(MyFreenectDevice* device, SettingKinect* pSettingKinect);
 		~ImageAnalysis();
@@ -61,8 +61,8 @@ class ImageAnalysis{
 		void resetMask(SettingKinect* pSettingKinect, int changes);
 		void genFrontMask();
 		void genColoredAreas();
-		Mat &getColoredAreas();
-		Mat &getFrontMask();
+		cv::Mat &getColoredAreas();
+		cv::Mat &getFrontMask();
 		void finishDepthMaskCreation();
 		// general signal handling of this object.
 		int http_actions(Onion::Request *preq, int actionid, Onion::Response *pres);
@@ -82,7 +82,7 @@ class ImageAnalysis{
 		void repoke_init();
 		bool repoke_step(Area& area);
 		void repoke_finish();
-		void addAreaThresh(/*Mat& src,*/ std::vector<Area> areas, Mat& areaMask,  Mat& dst);
+		void addAreaThresh(/*cv::Mat& src,*/ std::vector<Area> areas, cv::Mat& areaMask,  cv::Mat& dst);
 };
 
 
@@ -93,21 +93,21 @@ class ImageAnalysis{
 /*
  * 
  */
-inline void addThresh(Mat& src, int nthresh, Mat& dst){
+inline void addThresh(cv::Mat& src, int nthresh, cv::Mat& dst){
 	dst = max(src,nthresh);
 }
 
-static void createMask(Mat& src, Mat& oldMask,/* int nthresh,*/ Mat& mask){
+static void createMask(cv::Mat& src, cv::Mat& oldMask,/* int nthresh,*/ cv::Mat& mask){
 
 	//Increase dark (near) parts to filter contour errors.
-	Mat Kernel(Size(3, 3), CV_8UC1);
-	Kernel.setTo(Scalar(1));
+	cv::Mat Kernel(cv::Size(3, 3), CV_8UC1);
+	Kernel.setTo(cv::Scalar(1));
 	dilate(src, mask, Kernel); 
 	dilate(mask, mask, Kernel); 
 	//dilate(mask, mask, Kernel); 
 
-	/*Mat threshold(src.size(), src.type());
-	threshold.setTo(Scalar(nthresh));
+	/*cv::Mat threshold(src.size(), src.type());
+	threshold.setTo(cv::Scalar(nthresh));
 	mask = max(mask,threshold);*/
 	//mask = max(mask+4,nthresh);
 
@@ -116,9 +116,9 @@ static void createMask(Mat& src, Mat& oldMask,/* int nthresh,*/ Mat& mask){
 }
 
 //dst will used as tmp val
-static void filter(Mat& src, Mat& mask, int nthresh, Mat& dst){
-	Mat tmp(src.size(), src.type());
-	blur(src, tmp, Size(3,3));
+static void filter(cv::Mat& src, cv::Mat& mask, int nthresh, cv::Mat& dst){
+	cv::Mat tmp(src.size(), src.type());
+	blur(src, tmp, cv::Size(3,3));
 
 	dst = mask < tmp ;//0-1-image
 	tmp.copyTo(dst, dst);// 0-'blob-depth'-image
@@ -126,22 +126,22 @@ static void filter(Mat& src, Mat& mask, int nthresh, Mat& dst){
 }
 
 /* Output black/white  */
-static void filterBW(Mat& src, Mat& mask, int nthresh, Mat& dst){
-	Mat tmp(src.size(), src.type());
-	blur(src, tmp, Size(3,3));
+static void filterBW(cv::Mat& src, cv::Mat& mask, int nthresh, cv::Mat& dst){
+	cv::Mat tmp(src.size(), src.type());
+	blur(src, tmp, cv::Size(3,3));
 
 	dst = mask < tmp ;//0-1-image
 }
 
 //no blur test
-static void filterNoBlur(Mat& src, Mat& mask, int nthresh, Mat& dst){
-	Mat tmp(src.size(), src.type());
+static void filterNoBlur(cv::Mat& src, cv::Mat& mask, int nthresh, cv::Mat& dst){
+	cv::Mat tmp(src.size(), src.type());
 	dst = mask < tmp ;//0-1-image
 	src.copyTo(dst, dst);// 0-'blob-depth'-image
 }
 
-static void filterBWNoBlur(Mat& src, Mat& mask, int nthresh, Mat& dst){
-	Mat tmp(src.size(), src.type());
+static void filterBWNoBlur(cv::Mat& src, cv::Mat& mask, int nthresh, cv::Mat& dst){
+	cv::Mat tmp(src.size(), src.type());
 	dst = mask < tmp ;//0-1-image
 }
 

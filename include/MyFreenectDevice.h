@@ -14,7 +14,7 @@
 
 #include "SettingKinect.h"
 
-using namespace cv;
+//using namespace cv;
 using namespace std;
 
 
@@ -27,22 +27,22 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 	void VideoCallback(void* _rgb, uint32_t timestamp);
 	// Do not call directly even in child
 	void DepthCallback(void* _depth, uint32_t timestamp); 
-	bool getVideo(Mat& output); 
-	bool getDepth(Mat& output);
+	bool getVideo(cv::Mat& output); 
+	bool getDepth(cv::Mat& output);
 /*
  Convert depth direct to U8C1 to avoid copy and convert later.
 */
-	bool getDepth8UC1(Mat& output, Rect roi); 
-	bool getDepth8UC1(Mat& output, Rect roi, int m, int M); 
-	bool getDepth8UC1(Mat& output, Rect roi, int m, int M, Mat& mask); 
-	bool getDepth8UC1_b(Mat& output, Rect roi, int m, int M, Mat& mask); 
-	bool getDepth8UC1_b(Mat& dst, Rect roi, uint8_t *map, Mat& mask);
+	bool getDepth8UC1(cv::Mat& output, cv::Rect roi); 
+	bool getDepth8UC1(cv::Mat& output, cv::Rect roi, int m, int M); 
+	bool getDepth8UC1(cv::Mat& output, cv::Rect roi, int m, int M, cv::Mat& mask); 
+	bool getDepth8UC1_b(cv::Mat& output, cv::Rect roi, int m, int M, cv::Mat& mask); 
+	bool getDepth8UC1_b(cv::Mat& dst, cv::Rect roi, uint8_t *map, cv::Mat& mask);
 
 	/* propagate setting changes */
 	void update(SettingKinect* pSettingKinect, int changes);
 
 	/* Enable clipping in libfreenect driver */
-	int setRoi(bool enable,const Rect roi){
+	int setRoi(bool enable,const cv::Rect roi){
 #ifdef LIBFREENECT_OPT_CLIPPING 
 		int top = roi.y;
 		int bottom = KRES_Y - roi.height - roi.y ;
@@ -59,8 +59,8 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 	std::vector<uint8_t> m_buffer_depth;
 	std::vector<uint8_t> m_buffer_rgb;
 //	std::vector<uint16_t> m_gamma;
-	Mat m_depthMat;
-	Mat m_rgbMat;
+	cv::Mat m_depthMat;
+	cv::Mat m_rgbMat;
 	::Mutex m_rgb_mutex;
 	::Mutex m_depth_mutex;
 	bool m_new_rgb_frame;

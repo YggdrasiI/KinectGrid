@@ -13,35 +13,35 @@
 
 ImageAnalysis::ImageAnalysis(MyFreenectDevice* pdevice, SettingKinect* pSettingKinect):
 	m_pSettingKinect(pSettingKinect),
-//	m_depthMat(Size(KRES_X,KRES_Y),CV_16UC1),
-	m_depthf  (Size(KRES_X,KRES_Y),CV_8UC1),
-	m_filterMat  (Size(KRES_X,KRES_Y),CV_8UC1),
-	m_depthMask  (Size(KRES_X,KRES_Y),CV_8UC1),
-	m_depthMaskWithoutThresh  (Size(KRES_X,KRES_Y),CV_8UC1),//backup to generate new deptMask
-	m_depthMask16U  (Size(KRES_X,KRES_Y),CV_16UC1),// = (m_depthMask - b)/a
-	m_filteredMat  (Size(KRES_X,KRES_Y),CV_8UC1),
-	m_areaMask  (Size(KRES_X,KRES_Y),CV_8UC1), //mask of areas, ids=0,1,..., offcut=255
-	m_rgb  (Size(KRES_X,KRES_Y),CV_8UC3),
-	m_areaGrid  (Size(KRES_X,KRES_Y),CV_8UC1), //binary image of obstacles
-	m_area_detection_mask  (Size(KRES_X+2,KRES_Y+2),CV_8UC1),
+//	m_depthMat(cv::Size(KRES_X,KRES_Y),CV_16UC1),
+	m_depthf  (cv::Size(KRES_X,KRES_Y),CV_8UC1),
+	m_filterMat  (cv::Size(KRES_X,KRES_Y),CV_8UC1),
+	m_depthMask  (cv::Size(KRES_X,KRES_Y),CV_8UC1),
+	m_depthMaskWithoutThresh  (cv::Size(KRES_X,KRES_Y),CV_8UC1),//backup to generate new deptMask
+	m_depthMask16U  (cv::Size(KRES_X,KRES_Y),CV_16UC1),// = (m_depthMask - b)/a
+	m_filteredMat  (cv::Size(KRES_X,KRES_Y),CV_8UC1),
+	m_areaMask  (cv::Size(KRES_X,KRES_Y),CV_8UC1), //mask of areas, ids=0,1,..., offcut=255
+	m_rgb  (cv::Size(KRES_X,KRES_Y),CV_8UC3),
+	m_areaGrid  (cv::Size(KRES_X,KRES_Y),CV_8UC1), //binary image of obstacles
+	m_area_detection_mask  (cv::Size(KRES_X+2,KRES_Y+2),CV_8UC1),
   m_areaCol_ok(false),
 	m_maskFront_ok(false),
 	m_area_detection_step(AREA_DETECTION_STEP_UNSET),
 	m_png_redraw(false),
 	m_png_scale(-1),
-	m_png_imgC1  (Size(KRES_X,KRES_Y),CV_8UC1),
-	m_png_imgC3  (Size(KRES_X,KRES_Y),CV_8UC3),
+	m_png_imgC1  (cv::Size(KRES_X,KRES_Y),CV_8UC1),
+	m_png_imgC3  (cv::Size(KRES_X,KRES_Y),CV_8UC3),
 	m_png_mutex(),
 	m_pdevice(pdevice),
 	m_depthMaskCounter(-NMASKFRAMES)//use -depthMaskCounter Frames as mask
 {
-	m_depthMask = Scalar(255);//temporary full mask
-	m_areaMask = Scalar(0);
-	m_areaGrid = Scalar(255);
+	m_depthMask = cv::Scalar(255);//temporary full mask
+	m_areaMask = cv::Scalar(0);
+	m_areaGrid = cv::Scalar(255);
 
   // Fill buffer images to find them easer during debugging.
-	m_png_imgC1 = Scalar(128);
-	m_png_imgC3 = Scalar(0, 255, 0);
+	m_png_imgC1 = cv::Scalar(128);
+	m_png_imgC3 = cv::Scalar(0, 255, 0);
 }
 
 ImageAnalysis::~ImageAnalysis()
@@ -103,8 +103,8 @@ FunctionMode ImageAnalysis::hand_detection()
 
 	// Analyse Roi of depth frame
 	if(m_pSettingKinect->m_kinectProp.directFiltering){
-		Mat fMRoi(m_filteredMat,roi);
-		Mat dMRoi16U(m_depthMask16U,roi);
+		cv::Mat fMRoi(m_filteredMat,roi);
+		cv::Mat dMRoi16U(m_depthMask16U,roi);
 		/* Direct evaluation of masked deptframe.
 		Advantages: Faster.
 		Disadvantages: No depth frame, no bluring.
@@ -119,9 +119,9 @@ FunctionMode ImageAnalysis::hand_detection()
 		}
 
 	}else{
-		Mat dfRoi(m_depthf,roi);
-		Mat fMRoi(m_filteredMat,roi);
-		Mat dMRoi(m_depthMask,roi);
+		cv::Mat dfRoi(m_depthf,roi);
+		cv::Mat fMRoi(m_filteredMat,roi);
+		cv::Mat dMRoi(m_depthMask,roi);
 		while(! m_pdevice->getDepth8UC1(dfRoi, roi,
 				m_pSettingKinect->m_kinectProp.minDepth,m_pSettingKinect->m_kinectProp.maxDepth))
 		{
@@ -188,7 +188,7 @@ FunctionMode ImageAnalysis::area_detection(Tracker *tracker)
 	case AREA_DETECTION_STEP_WAIT_BLOB:
 		{
 			//printf("area detection 1\n");
-			//Mat& depth = m_depthMaskWithoutThresh;
+			//cv::Mat& depth = m_depthMaskWithoutThresh;
 			hand_detection();
 			m_pSettingKinect->m_kinectProp.minBlobArea = max(backupMinBlobSize,256);
 			tracker->trackBlobs(m_filteredMat(m_pSettingKinect->m_kinectProp.roi), m_areaMask, true, NULL);
@@ -285,48 +285,48 @@ int ImageAnalysis::area_detection_opencv_click(int x, int y){
 }
 
 void ImageAnalysis::genFrontMask(){
-	m_areaGrid = Scalar(255/*0*/);
+	m_areaGrid = cv::Scalar(255/*0*/);
 	cv::Rect roi = m_pSettingKinect->m_kinectProp.roi;
 	cv::Mat agRoi(m_areaGrid,roi);
 	cv::Mat dfRoi(m_depthf,roi);
 	cv::Mat tmp(dfRoi.size(),dfRoi.type());
-//	Mat newAreaGrid = Mat(Size(roi.width,roi.height), CV_8UC1);
+//	cv::Mat newAreaGrid = cv::Mat(cv::Size(roi.width,roi.height), CV_8UC1);
 	int nFrames = 10;
 	for(int i=0;i<nFrames; i++){
 		m_pdevice->getDepth8UC1(dfRoi, roi,
 				m_pSettingKinect->m_kinectProp.minDepth,m_pSettingKinect->m_kinectProp.maxDepth);
-		Mat Kernel(Size(9, 9), CV_8UC1); Kernel.setTo(Scalar(1));
-		Mat Kernel2(Size(7, 7), CV_8UC1); Kernel2.setTo(Scalar(1));
+		cv::Mat Kernel(cv::Size(9, 9), CV_8UC1); Kernel.setTo(cv::Scalar(1));
+		cv::Mat Kernel2(cv::Size(7, 7), CV_8UC1); Kernel2.setTo(cv::Scalar(1));
 		dilate(dfRoi, tmp, Kernel); 
 		erode(tmp, tmp, Kernel2); 
-		//threshold(dfRoi, dfRoi,255-m_pSettingKinect->m_kinectProp.marginFrame,255,THRESH_BINARY);
+		//threshold(dfRoi, dfRoi,255-m_pSettingKinect->m_kinectProp.marginFrame,255,cv::THRESH_BINARY);
 		//agRoi = min/*max*/(agRoi,dfRoi);
-		threshold(tmp, tmp,255-m_pSettingKinect->m_kinectProp.marginFrame,1,THRESH_BINARY_INV);
+		threshold(tmp, tmp,255-m_pSettingKinect->m_kinectProp.marginFrame,1,cv::THRESH_BINARY_INV);
 		agRoi -= tmp;
 	}
 	/* convert agRoi back to 0-255-Img */
-	threshold(agRoi, agRoi,255-(2*nFrames/3+1),255,THRESH_BINARY);
+	threshold(agRoi, agRoi,255-(2*nFrames/3+1),255,cv::THRESH_BINARY);
 
   m_maskFront_ok = true;
 }
 
 void ImageAnalysis::genColoredAreas(){
-	m_areaCol = Scalar(0,0,0);
-	Mat col(Size(640,480),CV_8UC3);
+	m_areaCol = cv::Scalar(0,0,0);
+	cv::Mat col(cv::Size(640,480),CV_8UC3);
 	int r,g,b;
 
-	Mat m = (m_areaMask==MAXAREAS+1);
+	cv::Mat m = (m_areaMask==MAXAREAS+1);
 	r = 0; g = 255; b = 200;
-	col = Scalar(b,g,r);
+	col = cv::Scalar(b,g,r);
 	col.copyTo(m_areaCol,m);
 
 	//for(int i=0; i<m_areas.size(); i++){
 	for(int i=0; i<MAXAREAS; i++){
-		Mat m = (m_areaMask==i+1);
+		cv::Mat m = (m_areaMask==i+1);
 		r = AREACOLORS[i%10][0];
 		g = AREACOLORS[i%10][1];
 		b = AREACOLORS[i%10][2];
-		col = Scalar(b,g,r);
+		col = cv::Scalar(b,g,r);
 		col.copyTo(m_areaCol,m);
 		m_areaCol_ok = true;
 	}
@@ -335,7 +335,7 @@ void ImageAnalysis::genColoredAreas(){
 }
 
 
-Mat& ImageAnalysis::getColoredAreas(){
+cv::Mat& ImageAnalysis::getColoredAreas(){
 	if( !m_areaCol_ok ) genColoredAreas();
 
 	/* // Older OpenCV approach
@@ -351,7 +351,7 @@ Mat& ImageAnalysis::getColoredAreas(){
 	// because the matrix data is not copied, only the headers
 	cv::merge(ggg, 3, m_rgb);
 #else
-	// Unlike many other new-style C++ functions in OpenCV (see the introduction section and Mat::create ),
+	// Unlike many other new-style C++ functions in OpenCV (see the introduction section and cv::Mat::create ),
 	// cv::mixChannels requires the output arrays to be pre-allocated before calling the function. 
 	int from_to[] = {0,0, 0,1, 0,2}; // 0=>0, 0=>1, 0=>2
 	mixChannels(&m_depthf, 1, &m_rgb, 1, from_to, 3);
@@ -362,7 +362,7 @@ Mat& ImageAnalysis::getColoredAreas(){
 	return m_rgb;
 }
 
-Mat& ImageAnalysis::getFrontMask(){
+cv::Mat& ImageAnalysis::getFrontMask(){
 	if( !m_maskFront_ok ) genFrontMask();
 	return m_areaGrid;
 }
@@ -380,8 +380,8 @@ void ImageAnalysis::resetMask(SettingKinect* pSettingKinect, int changes){
 	if( changes & (MASK|MOTOR|CONFIG) ){
 	/* Start all steps of depth mask detection. */
 		VPRINT("ImageAnalysis: Create new mask\n");
-		//m_depthMaskWithoutThresh = Scalar(0);
-		//m_depthMask = Scalar(255);//temporary full mask
+		//m_depthMaskWithoutThresh = cv::Scalar(0);
+		//m_depthMask = cv::Scalar(255);//temporary full mask
 		m_depthMaskCounter = -NMASKFRAMES;
 	}else	if( changes & BACK_MASK ){
 	/* Invoke last step of depth mask detection. */
@@ -415,11 +415,11 @@ void ImageAnalysis::repoke_init(){
 			getFrontMask();
 
 			//2pixel wider and taller for floodfill
-			m_area_detection_mask = Scalar(0);
+			m_area_detection_mask = cv::Scalar(0);
 			//reset area mask and set full roi to one big area
-			m_areaMask = Scalar(0);
+			m_areaMask = cv::Scalar(0);
 			/* Set value in Roi to MAXAREAS+1. (Tracker ignore blobs in area=0) */
-			m_areaMask(m_pSettingKinect->m_kinectProp.roi) = Scalar(MAXAREAS+1);
+			m_areaMask(m_pSettingKinect->m_kinectProp.roi) = cv::Scalar(MAXAREAS+1);
 			m_area_detection_areas.clear();
 
 			genColoredAreas();
@@ -435,10 +435,10 @@ bool ImageAnalysis::repoke_step(Area& area){
 	 */
 	cv::Rect cc;
 	floodFill(m_areaGrid/*m_depthMask*/, m_area_detection_mask, cvPoint(area.repoke_x, area.repoke_y),
-			Scalar(255), &cc, Scalar(0)/*low*/, Scalar(0)/*up*/, 4+FLOODFILL_MASK_ONLY);
+			cv::Scalar(255), &cc, cv::Scalar(0)/*low*/, cv::Scalar(0)/*up*/, 4+cv::FLOODFILL_MASK_ONLY);
 
 	area.rect = cc;
-	area.color = Scalar( AREACOLORS[area.id%10][0], AREACOLORS[area.id%10][1], AREACOLORS[area.id%10][2]);
+	area.color = cv::Scalar( AREACOLORS[area.id%10][0], AREACOLORS[area.id%10][1], AREACOLORS[area.id%10][2]);
 	area.area = cc.width*cc.height;
 	
 	if( area.area < 800.0 ){
@@ -464,19 +464,19 @@ bool ImageAnalysis::repoke_step(Area& area){
 				));
 
 	changeable *= area.id;
-	//Mat areaMaskDst = m_areaMask(cc);
-	Mat areaMaskDst = m_areaMask(cc2);
+	//cv::Mat areaMaskDst = m_areaMask(cc);
+	cv::Mat areaMaskDst = m_areaMask(cc2);
 	changeable.copyTo( areaMaskDst, changeable );
 	genColoredAreas();
 
 	/* (2) Find depth information of the obstacle. Simply search minimal depth along the border of the area.
 	*/
-	Mat border(changeable.size(),changeable.type());
-	Mat Kernel(Size(3, 3), CV_8UC1); Kernel.setTo(Scalar(1));
+	cv::Mat border(changeable.size(),changeable.type());
+	cv::Mat Kernel(cv::Size(3, 3), CV_8UC1); Kernel.setTo(cv::Scalar(1));
 	dilate(changeable, border , Kernel);
 	border = border - changeable ;
-	//Scalar avg = mean( m_depthf(area.rect), border(area.rect) );
-	Scalar avg = mean( m_depthMask(cc2)/*m_depthf*/, border );
+	//cv::Scalar avg = mean( m_depthf(area.rect), border(area.rect) );
+	cv::Scalar avg = mean( m_depthMask(cc2)/*m_depthf*/, border );
 	VPRINT("Avarage depth of area border: %f\n", avg[0] );
 	area.depth = (int)avg[0];
 
@@ -488,7 +488,7 @@ bool ImageAnalysis::repoke_step(Area& area){
 void ImageAnalysis::repoke_finish(){
 	//reset pixels with MAXAREAS+1 value
 	//VPRINT("Reset!!\n");
-	threshold(m_areaMask, m_areaMask,MAXAREAS,0,THRESH_TOZERO_INV);
+	threshold(m_areaMask, m_areaMask,MAXAREAS,0,cv::THRESH_TOZERO_INV);
 	genColoredAreas();
 
 	//update depthMask, if depthMask depends from areaMask
@@ -504,18 +504,18 @@ void ImageAnalysis::repoke_finish(){
  * Set for each area the pixels to area.depth. Position of areas will extract from areaMask.
  * Function should not called frequently.
  * */
-void ImageAnalysis::addAreaThresh(/*Mat& src,*/ std::vector<Area> areas, Mat& areaMask,  Mat& dst){
-	Mat v(dst.size(),dst.type());
+void ImageAnalysis::addAreaThresh(/*cv::Mat& src,*/ std::vector<Area> areas, cv::Mat& areaMask,  cv::Mat& dst){
+	cv::Mat v(dst.size(),dst.type());
 	for( int i=0; i<areas.size(); i++){
 		VPRINT("Depth of area %i: %i\n",i+1,areas[i].depth);
 		/* The minus value:
 		 * The detection should begin "short" behind the frame. The minDepth and
 		 * maxDepth value affect the depth unit length. Thus, this values need to be consides.
 		 * */
-		v = Scalar(areas[i].depth-
+		v = cv::Scalar(areas[i].depth-
 				0.5 * (255/(m_pSettingKinect->m_kinectProp.maxDepth-m_pSettingKinect->m_kinectProp.minDepth) )
 				);
-		Mat a = (areaMask == areas[i].id);
+		cv::Mat a = (areaMask == areas[i].id);
 		v.copyTo(dst,a);
 	}
 }
@@ -549,7 +549,7 @@ void ImageAnalysis::finishDepthMaskCreation(){
 }
 
 
-typedef Vec<uchar, 4> VT;
+typedef cv::Vec<uchar, 4> VT;
 
 int ImageAnalysis::http_actions(Onion::Request *preq, int actionid, Onion::Response *pres){
 
@@ -664,7 +664,7 @@ int ImageAnalysis::getWebDisplayImage(Onion::Request *preq, int actionid, Onion:
 
 				VPRINT("(PNG/JPG) View: %i\n", m_pSettingKinect->m_view);
 				int channels = 1;//4=RGBA, -4=ABRG 
-				Mat* png = NULL;
+				cv::Mat* png = NULL;
 				switch (m_pSettingKinect->m_view){
 					case VIEW_RGB:
 						channels=4;
@@ -726,12 +726,12 @@ int ImageAnalysis::getWebDisplayImage(Onion::Request *preq, int actionid, Onion:
 				if( scale == 100 ){
 					/* copy pixels and generate file for this subimage */
 					unsigned char image[channels*roi.width*roi.height];
-					Mat pngRoi(*png,roi);
+					cv::Mat pngRoi(*png,roi);
 
 					if( channels == 4 ){
 						/* Four channel image  */
 						unsigned char *dst_it = image;
-						MatConstIterator_<VT> it = pngRoi.begin<VT>(),
+						cv::MatConstIterator_<VT> it = pngRoi.begin<VT>(),
 							it_end = pngRoi.end<VT>();
 						for( ; it != it_end; ++it, ++dst_it ) {
 							const VT pix = *it;
@@ -746,8 +746,8 @@ int ImageAnalysis::getWebDisplayImage(Onion::Request *preq, int actionid, Onion:
 						}
 					}else{
 						/* Grayscale image  */
-						MatConstIterator_<uchar> it = pngRoi.begin<uchar>();
-						const MatConstIterator_<uchar> it_end = pngRoi.end<uchar>();
+						cv::MatConstIterator_<uchar> it = pngRoi.begin<uchar>();
+						const cv::MatConstIterator_<uchar> it_end = pngRoi.end<uchar>();
 						unsigned char *dst_it = image;
 						for( ; it != it_end; ++it, ++dst_it ) { 
 							*dst_it = *it; 
@@ -765,7 +765,7 @@ int ImageAnalysis::getWebDisplayImage(Onion::Request *preq, int actionid, Onion:
 							/* Same as above but copy subset of all pixel */
 							roi.width = (roi.width/4)*4;
 							roi.height = (roi.height/4)*4;
-							Mat pngRoi(*png,roi);
+							cv::Mat pngRoi(*png,roi);
 							//rescale to 50% or 25%				
 							int w2 = roi.width*scale/100;
 							int h2 = roi.height*scale/100;
@@ -775,7 +775,7 @@ int ImageAnalysis::getWebDisplayImage(Onion::Request *preq, int actionid, Onion:
 							unsigned char image[channels*w2*h2];
 
 							if( channels == 4 ){
-								MatConstIterator_<VT> it = pngRoi.begin<VT>();
+								cv::MatConstIterator_<VT> it = pngRoi.begin<VT>();
 								uint8_t *pimage = (uint8_t*) image;
 								uint8_t *nextRowImage = pimage + w2 * 4;
 								for( int i=0 ; i<h2; ++i ){
@@ -794,7 +794,7 @@ int ImageAnalysis::getWebDisplayImage(Onion::Request *preq, int actionid, Onion:
 								}
 							}else{
 								//uint32_t *pdata = (uint32_t*) data_ptr;//4*char, ARGB
-								MatConstIterator_<uchar> it = pngRoi.begin<uchar>();
+								cv::MatConstIterator_<uchar> it = pngRoi.begin<uchar>();
 
 								uint8_t *pimage = (uint8_t*) image;
 								uint8_t *nextRowImage = pimage + w2;

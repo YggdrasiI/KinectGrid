@@ -8,7 +8,7 @@
 #include <signal.h>
 
 #include <boost/signals2/signal.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 
 //for usleep
 #include <unistd.h>
@@ -313,12 +313,26 @@ int main(int argc, char **argv) {
 		mouseData.ia = ia;
 
 		//Set Signals
-		settingKinect.updateSig.connect( boost::bind(&MyFreenectDevice::update,device, _1, _2) );
-		settingKinect.updateSig.connect( boost::bind(&ImageAnalysis::resetMask,ia, _1, _2) );
+		settingKinect.updateSig.connect( boost::bind(
+					&MyFreenectDevice::update,device,
+					boost::placeholders::_1,
+					boost::placeholders::_2) );
+		settingKinect.updateSig.connect( boost::bind(
+					&ImageAnalysis::resetMask,ia, 
+					boost::placeholders::_1,
+					boost::placeholders::_2) );
 
-		onion.updateSignal.connect( boost::bind(&ImageAnalysis::http_actions, ia, _1, _2, _3) );
+		onion.updateSignal.connect( boost::bind(
+					&ImageAnalysis::http_actions, ia,
+					boost::placeholders::_1,
+					boost::placeholders::_2,
+					boost::placeholders::_3) );
 		if( settingKinect.m_displayMode == DISPLAY_MODE_WEB ) {
-			onion.updateSignal.connect( boost::bind(&ImageAnalysis::getWebDisplayImage, ia, _1, _2, _3) );
+			onion.updateSignal.connect( boost::bind(
+						&ImageAnalysis::getWebDisplayImage, ia,
+						boost::placeholders::_1,
+						boost::placeholders::_2,
+						boost::placeholders::_3) );
 		}
 
 		if( rgbMode )
@@ -360,7 +374,7 @@ int main(int argc, char **argv) {
 						if( settingKinect.m_kinectProp.clipping)
 							device->setRoi(true,settingKinect.m_kinectProp.roi);
 						else
-							device->setRoi(false,Rect(0,0,0,0));
+							device->setRoi(false,cv::Rect(0,0,0,0));
 
 						while( !device->getVideo(ia->m_rgb) ){
 							usleep(50);
@@ -399,7 +413,7 @@ int main(int argc, char **argv) {
 
 						std::ostringstream frame;
 						frame << sname << "_frame" << ".png";
-						Mat tmpLoadImg0 = cv::imread(frame.str(),0);
+						cv::Mat tmpLoadImg0 = cv::imread(frame.str(),0);
 						if(tmpLoadImg0.empty()) {
 							VPRINT("[Note] Can't load frame mask '%s'.\n", frame.str().c_str() );
 							loadingFailed = true;
@@ -409,11 +423,11 @@ int main(int argc, char **argv) {
 
 						std::ostringstream depth;
 						depth << sname << "_depth" << ".png";
-						Mat tmpLoadImg1 = cv::imread(depth.str(),0);
+						cv::Mat tmpLoadImg1 = cv::imread(depth.str(),0);
 						if(tmpLoadImg1.empty()) {
 							VPRINT("[Note] Can't load depth mask '%s'.\n", depth.str().c_str() );
 							loadingFailed = true;
-							//ia->m_depthMaskWithoutThresh = Scalar(0); //optional
+							//ia->m_depthMaskWithoutThresh = cv::Scalar(0); //optional
 						}else{
 							ia->m_depthMaskWithoutThresh = tmpLoadImg1;
 						}
