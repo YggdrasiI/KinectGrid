@@ -78,10 +78,11 @@ char * _normalizeConfigFilename(const char* filename){
   std::string str_filename(filename);
 
   const char config_extension[] = ".json";
-  size_t filename_len = strlen(filename);
-  if( str_filename.length() < sizeof(config_extension) || 
-      1 == strcmp(str_filename.c_str() + str_filename.length()
-        - sizeof(config_extension), config_extension)
+  const size_t filename_len = strlen(filename);
+	const size_t extension_len = sizeof(config_extension)-1;
+  if( str_filename.length() < extension_len || 
+      0 != strncmp(str_filename.c_str() +
+				(str_filename.length()- extension_len), config_extension, extension_len)
     ){
     printf("Append extension because given filename '%s' not ends with '%s'.\n", str_filename.c_str(), config_extension);
     str_filename.append(config_extension);

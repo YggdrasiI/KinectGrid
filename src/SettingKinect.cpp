@@ -208,7 +208,7 @@ int SettingKinect::update(cJSON *jsonNew, cJSON *jsonOld, int changes){
 			m_rangeMap[2047/*FREENECT_DEPTH_RAW_NO_VALUE*/] = 0;
 
 			// Map values below minimal distance to zero
-			for( int i=m_kinectProp.minDepth-1; i; --i){
+			for( int i=m_kinectProp.minDepth-1; i>0; --i){
 				m_rangeMap[i] = 0;
 			}
 
