@@ -519,7 +519,7 @@ Signal return value is OR-Combination of signal handles.
  */
 int OnionServer::updateWebserver(
 		Onion::Request *preq, int actionid, Onion::Response *pres ){
-	VPRINT("Http action id: %i \n", actionid);
+	//VPRINT("Http action id: %i \n", actionid);
 
 	switch(actionid){
 		case HTTP_ACTION_SEND_COMMAND:

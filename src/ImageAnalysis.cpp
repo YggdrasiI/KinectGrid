@@ -626,7 +626,7 @@ int ImageAnalysis::getWebDisplayImage(Onion::Request *preq, int actionid, Onion:
 				m_png_mutex.lock();
 				//here, m_png_redraw could be false (second image request at the same time).
 
-				VPRINT("redraw: %i, scale: %i, newscale: %i", m_png_redraw?1:0, m_png_scale, scale);
+				VPRINT("redraw: %i, scale: %i, newscale: %i\n", m_png_redraw?1:0, m_png_scale, scale);
 
 				if( !m_png_redraw && scale==m_png_scale ){
 					VPRINT("No new preview image. Send 1x1 dummy image.\n");

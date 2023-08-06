@@ -40,25 +40,17 @@ void Tracker2::trackBlobs(const cv::Mat &mat, const cv::Mat &areaMask, bool hist
 	double min_area = *m_pmin_area;
 	double max_area = *m_pmax_area;
 	double max_radius_2 = *m_pmax_radius * *m_pmax_radius;
-	double x, y, min_x, min_y, max_x, max_y;
-	double min_depth,max_depth;
+	//double x, y, min_x, min_y, max_x, max_y;
+	//double min_depth,max_depth;
+	int x, y, min_x, min_y, max_x, max_y;
+	int min_depth,max_depth;
 	cv::Scalar sdepth, sstddev;
 	cBlob temp;
 	bool new_hand(true);
 	int mat_area(mat.size().width*mat.size().height);
 
-	// we will convert the matrix object passed from our cFilter class to an object of type IplImage for calling the CBlobResult constructor
-	//IplImage img;
-	//IplImage areaImg;
-
 	// storage of the current blobs and the blobs from the previous frame
-	cv::Size s;	cv::Point p;
-	mat.locateROI(s,p);
-	//areaImg = areaMask;
-
-	// convert our OpenCV matrix object to one of type IplImage
-	//img = mat;
-
+	
 	//Gen blob tree structure
 	cv::Rect *roicv = &m_pSettingKinect->m_kinectProp.roi;
 	const uchar* ptr = mat.data;
@@ -69,12 +61,17 @@ void Tracker2::trackBlobs(const cv::Mat &mat, const cv::Mat &areaMask, bool hist
     return;
   }
 
+	// mat could be a submatrix, but areaMask has complete range.
+	// we need the offset information of mat to compare pixels of mat with areaMask.
+	cv::Size parentMatSize;	cv::Point parentMatPoint;
+	mat.locateROI(parentMatSize,parentMatPoint);
+
 	/*mat.data points to first entry of the ROI, not of the full matrix.
 	 * => Set left and top border of roi0 to 0 and reduce height value. 
 	 * */
 	Blob::BlobtreeRect roi0 = {0,0,roicv->width,roicv->height };
 
-	Blob::threshtree_find_blobs(m_blob, ptr, s.width, s.height-p.y, roi0, 1, m_workspace);
+	Blob::threshtree_find_blobs(m_blob, ptr, parentMatSize.width, parentMatSize.height-parentMatPoint.y, roi0, 1, m_workspace);
 	Blob::blobtree_set_filter(m_blob, Blob::F_AREA_MIN, min_area);
 	Blob::blobtree_set_filter(m_blob, Blob::F_AREA_MAX, max_area);
 
@@ -103,8 +100,46 @@ void Tracker2::trackBlobs(const cv::Mat &mat, const cv::Mat &areaMask, bool hist
 		y     = roi->y + roi->height/2;
 #endif
 
-		temp.areaid = areaMask.at<uchar>((int)x+p.x,(int)y+p.y);//?!not works
-		//temp.areaid = (uchar) areaImg.imageData[ ((int)x+p.x) + ((int)y+p.y)*areaMask.size().width];//works
+#ifndef NDEBUG
+		printf("(x, p.x; y, p.y)=(%.3f, %i, %.3f, %i)\n",
+				x, parentMatPoint.x,
+				y, parentMatPoint.y);
+
+		// Translate (y,x)-position of submatrix in index of full matrix.
+		const int fullmatrixPixelPos = ((int)y+parentMatPoint.y) * parentMatSize.width + ((int)x+parentMatPoint.x);
+		const int submatrixPixelPos = ((int)y) * mat.size().width + ((int)x);
+		if (0 > submatrixPixelPos || submatrixPixelPos >= mat_area) {
+			printf("Error: Blob center position outside of image?!\n"
+					"Local index: %i\n"
+					"Local position: (%i, y=%i)\n",
+					submatrixPixelPos,
+					(int)(x), (int)(y));
+		}
+		if (0 > fullmatrixPixelPos || fullmatrixPixelPos >= areaMask.size().width * areaMask.size().height) {
+			printf("Error: Blob center position outside of areaMask?!\n"
+					"Global index: %i\n"
+					"Local position: (%i, %i)\n"
+					"Position inside of mask: (%i, %i)\n"
+					"Mask dimension: (%i, %i)",
+					fullmatrixPixelPos,
+					(int)(x), (int)(y),
+					(int)(x+parentMatPoint.x), (int)(y+parentMatPoint.y),
+					areaMask.size().width, areaMask.size().height);
+			curNode = blobtree_next(m_blob);
+			continue;
+		}
+
+		/*int areaid1 = areaMask.at<uchar>((int)(y) + parentMatPoint.y, (int)(x) + parentMatPoint.x);// row/y, column/x order
+		int areaid2 = ((uchar *) areaMask.data)[fullmatrixPixelPos];
+		printf("Vergleich: %s %i %i\n", areaid1==areaid2?"":"NEIN", areaid1, areaid2);
+		*/
+#endif
+
+		//temp.areaid = areaMask.at<uchar>((int)(y) + parentMatPoint.y, (int)(x) + parentMatPoint.x);// row/y, column/x order
+		// or
+		const uchar* am = &areaMask.at<uchar>(0);
+		temp.areaid = am[fullmatrixPixelPos];
+
 		if( temp.areaid == 0 ){
 			curNode = blobtree_next(m_blob);
 			continue;
@@ -150,11 +185,11 @@ void Tracker2::trackBlobs(const cv::Mat &mat, const cv::Mat &areaMask, bool hist
 			thresh =  m_pSettingKinect->m_kinectProp.marginBack;
 		}
 		get_tip(r, matR, thresh, &x, &y, &max_depth);
-
+		printf("TIP: %f %f %f\n", x, y, max_depth);
 
 		/* Compare depth of hand with depth of area and throw blob away if hand to far away. */
 		if(pareas != NULL && max_depth - (*pareas)[temp.areaid-1].depth < -1 ){
-			//printf("Hand not reached area depth.\n");
+			printf("Hand not reached area depth.\n");
 			curNode = blobtree_next(m_blob);
 			continue ;
 		}

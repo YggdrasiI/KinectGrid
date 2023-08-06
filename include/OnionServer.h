@@ -95,11 +95,11 @@ struct http_signal_mixer
 			if (first == last)
 				return T();
 
-			VPRINT("http sig %i, ", *first);
+			//VPRINT("http sig %i, ", *first);
 			T ret_value = *first;
 			++first;
 			while (first != last) {
-				VPRINT(" %i, ", *first);
+				//VPRINT(" %i, ", *first);
 				if( ret_value < (T)0 ){
 					if (ret_value < *first)
 						ret_value = *first;
@@ -113,7 +113,7 @@ struct http_signal_mixer
 				++first;
 			}
 
-			VPRINT(" => %i\n", ret_value);
+			//VPRINT(" => %i\n", ret_value);
 			return ret_value;
 		}
 };

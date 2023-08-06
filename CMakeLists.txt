@@ -46,8 +46,6 @@ if(MYBLOB)
 	# Use add_definition on top level
 	# to propagate it to all subdirs.
 	add_definitions(-DMYBLOB)
-	# Enable barycenter option for blobdetection lib.
-	add_definitions(-DBLOB_BARYCENTER)
 else(MYBLOB)
 	message(STATUS "Use cvblobslib for blob detection.")
 endif(MYBLOB)
