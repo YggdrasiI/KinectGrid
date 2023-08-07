@@ -52,7 +52,9 @@ if(Onion_FOUND)
 	message(STATUS " - Library path: ${Onion_LIBRARY_PATH}")
 	message(STATUS " - Binaries: ${Onion_BIN_DIR}")
 else(Onion_FOUND)
-	message(FATAL_ERROR "Could not find onion installation.")
+	if(REQUIRED)
+		message(FATAL_ERROR "Could not find onion installation.")
+	endif(REQUIRED)
 endif(Onion_FOUND)
 
 

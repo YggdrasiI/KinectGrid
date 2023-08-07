@@ -10,7 +10,8 @@ cmake
 
 =======
 
-List of packages (Ubuntu, not minimal)
+== Debian/Ubuntu ==
+List of packages (not minimal)
 
 sudo apt-get install \
 libfreenect-dev \
@@ -18,3 +19,13 @@ liblo-dev libboost-regex-dev libboost-system-dev \
 libpng-dev libjpeg-turbo8-dev \
 libopencv-core-dev libopencv-imgproc-dev libopencv-highgui-dev
 
+
+== Arch/Manjaro ==
+
+Installing packages e.g. by
+
+	sudo pacman -S opencv boost boost-libs
+	git clone --depth=1 https://aur.archlinux.org/libfreenect.git \
+	&& cd libfreenect && echo "Disable python dependencies in PKGBUILD" \
+	&& git apply ./3rdparty/libfreenect_without_python.patch \
+	&& makepkg -i

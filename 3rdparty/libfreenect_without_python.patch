@@ -1,0 +1,23 @@
+diff --git a/PKGBUILD b/PKGBUILD
+index a1b888f..a9c044c 100644
+--- a/PKGBUILD
++++ b/PKGBUILD
+@@ -11,7 +11,8 @@ depends=(
+   'glibc' 'gcc-libs' 'bash' 'libusb' 'libgl' 'glu'
+   'freeglut' 'python'
+ )
+-makedepends=('cmake' 'libxmu' 'cython0' 'python-numpy')
++# makedepends=('cmake' 'libxmu' 'cython0' 'python-numpy')
++makedepends=('cmake' 'libxmu')
+ optdepends=('opencv: support for python demos'
+             'python-matplotlib: support for python demos')
+ source=(${pkgname}-${pkgver}.tar.gz::https://github.com/OpenKinect/libfreenect/archive/v${pkgver}.tar.gz)
+@@ -23,7 +24,7 @@ build() {
+     -DPROJECT_INCLUDE_INSTALL_DIR='/usr/include' \
+     -DBUILD_REDIST_PACKAGE=OFF \
+     -DBUILD_OPENNI2_DRIVER=ON \
+-    -DBUILD_PYTHON3=ON \
++    -DBUILD_PYTHON=OFF \
+     -DOpenGL_GL_PREFERENCE=GLVND \
+     -Wno-dev
+ 
